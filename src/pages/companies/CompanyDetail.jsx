@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
+import api from '../../services/api'
 import { 
   Building2, 
   Users, 
@@ -10,7 +11,6 @@ import {
   Bell,
   Settings,
   Activity,
-  DollarSign,
   ArrowLeft,
   Edit,
   MoreVertical,
@@ -21,33 +21,24 @@ import {
   User,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from 'lucide-react'
 
 const tabs = [
   { id: 'general', name: 'Genel Bilgiler', icon: Building2 },
-  { id: 'personnel', name: 'Personeller', icon: Users },
+  { id: 'employees', name: 'Çalışanlar', icon: Users },
   { id: 'projects', name: 'Projeler', icon: FolderKanban },
-  { id: 'patrol', name: 'Devriye', icon: Shield },
-  { id: 'operations', name: 'Operasyon', icon: Activity },
-  { id: 'accounting', name: 'Muhasebe', icon: DollarSign },
-  { id: 'documents', name: 'Belgeler', icon: FileText },
-  { id: 'notifications', name: 'Bildirimler', icon: Bell },
-  { id: 'settings', name: 'Ayarlar', icon: Settings },
+  { id: 'patrols', name: 'Devriyeler', icon: Shield },
 ]
 
-function TabContent({ activeTab, company }) {
-  const { personnel, projects, patrols } = useApp()
-  
-  const companyPersonnel = personnel.filter(p => p.company === company.name)
-  const companyProjects = projects.filter(p => p.company === company.name)
-  const companyPatrols = patrols.filter(p => p.company === company.name)
+function TabContent({ activeTab, company, employees, projects, patrols }) {
+  const navigate = useNavigate()
 
   switch (activeTab) {
     case 'general':
       return (
         <div className="space-y-6">
-          {/* Company Info Card */}
           <div className="bg-dark-700/50 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-dark-100 mb-4">Firma Bilgileri</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -58,91 +49,68 @@ function TabContent({ activeTab, company }) {
                 </div>
                 <div>
                   <label className="text-sm text-dark-400">Firma Kodu</label>
-                  <p className="text-dark-100 mt-1">{company.code}</p>
+                  <p className="text-dark-100 mt-1">{company.company_code}</p>
                 </div>
                 <div>
-                  <label className="text-sm text-dark-400">Vergi No</label>
-                  <p className="text-dark-100 mt-1">1234567890</p>
+                  <label className="text-sm text-dark-400">Zaman Dilimi</label>
+                  <p className="text-dark-100 mt-1">{company.timezone || 'Europe/Istanbul'}</p>
                 </div>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <Phone size={16} className="text-dark-400" />
-                  <span className="text-dark-200">+90 212 555 0000</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail size={16} className="text-dark-400" />
-                  <span className="text-dark-200">info@{company.code.toLowerCase()}.com</span>
-                </div>
-                <div className="flex items-center gap-3">
                   <MapPin size={16} className="text-dark-400" />
-                  <span className="text-dark-200">İstanbul, Türkiye</span>
+                  <span className="text-dark-200">{company.city || '-'}, {company.country || 'Türkiye'}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Calendar size={16} className="text-dark-400" />
-                  <span className="text-dark-200">Kayıt: 01.01.2023</span>
+                  <span className="text-dark-200">
+                    Kayıt: {company.created_at ? new Date(company.created_at).toLocaleDateString('tr-TR') : '-'}
+                  </span>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Authorized Persons */}
-          <div className="bg-dark-700/50 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-dark-100 mb-4">Yetkililer</h3>
-            <div className="space-y-3">
-              {[
-                { name: 'Ahmet Yıldırım', role: 'Genel Müdür', phone: '+90 532 111 2233' },
-                { name: 'Fatma Kaya', role: 'Operasyon Müdürü', phone: '+90 533 444 5566' },
-              ].map((person, i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-dark-600/50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-                      <User size={18} className="text-accent" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-dark-100">{person.name}</p>
-                      <p className="text-sm text-dark-400">{person.role}</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-dark-300">{person.phone}</p>
-                </div>
-              ))}
             </div>
           </div>
         </div>
       )
 
-    case 'personnel':
+    case 'employees':
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-dark-400">{companyPersonnel.length} personel</p>
-            <button className="px-4 py-2 bg-accent rounded-lg text-white text-sm">
-              Personel Ekle
+            <p className="text-dark-400">{employees.length} çalışan</p>
+            <button 
+              onClick={() => navigate('/employees')}
+              className="px-4 py-2 bg-accent rounded-lg text-white text-sm"
+            >
+              Tümünü Gör
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {companyPersonnel.map(person => (
-              <div key={person.id} className="bg-dark-700/50 rounded-xl p-4 flex items-center gap-4">
+            {employees.slice(0, 6).map(employee => (
+              <div 
+                key={employee.id} 
+                onClick={() => navigate(`/employees/${employee.id}`)}
+                className="bg-dark-700/50 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-dark-700 transition-colors"
+              >
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
-                  <span className="text-white font-semibold">{person.name[0]}</span>
+                  <span className="text-white font-semibold">{employee.name?.[0]}</span>
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-dark-100">{person.name}</p>
-                  <p className="text-sm text-dark-400">{person.role}</p>
+                  <p className="font-medium text-dark-100">{employee.name}</p>
+                  <p className="text-sm text-dark-400">{employee.role || 'Belirsiz'}</p>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs ${
-                  person.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+                  employee.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
                 }`}>
-                  {person.status === 'active' ? 'Aktif' : 'Pasif'}
+                  {employee.status === 'active' ? 'Aktif' : 'Pasif'}
                 </span>
               </div>
             ))}
           </div>
-          {companyPersonnel.length === 0 && (
+          {employees.length === 0 && (
             <div className="text-center py-12 bg-dark-700/50 rounded-xl">
               <Users size={48} className="text-dark-500 mx-auto mb-4" />
-              <p className="text-dark-300">Bu firmaya ait personel bulunmuyor.</p>
+              <p className="text-dark-300">Bu firmaya ait çalışan bulunmuyor.</p>
             </div>
           )}
         </div>
@@ -152,14 +120,21 @@ function TabContent({ activeTab, company }) {
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-dark-400">{companyProjects.length} proje</p>
-            <button className="px-4 py-2 bg-accent rounded-lg text-white text-sm">
-              Proje Ekle
+            <p className="text-dark-400">{projects.length} proje</p>
+            <button 
+              onClick={() => navigate('/projects')}
+              className="px-4 py-2 bg-accent rounded-lg text-white text-sm"
+            >
+              Tümünü Gör
             </button>
           </div>
           <div className="space-y-3">
-            {companyProjects.map(project => (
-              <div key={project.id} className="bg-dark-700/50 rounded-xl p-4">
+            {projects.map(project => (
+              <div 
+                key={project.id} 
+                onClick={() => navigate(`/projects/${project.id}`)}
+                className="bg-dark-700/50 rounded-xl p-4 cursor-pointer hover:bg-dark-700 transition-colors"
+              >
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-medium text-dark-100">{project.name}</h4>
                   <span className={`px-2 py-1 rounded-full text-xs ${
@@ -170,18 +145,15 @@ function TabContent({ activeTab, company }) {
                     {project.status === 'active' ? 'Aktif' : project.status === 'completed' ? 'Tamamlandı' : 'Bekliyor'}
                   </span>
                 </div>
-                <p className="text-sm text-dark-400 mb-3">{project.category}</p>
-                <div className="relative h-2 bg-dark-600 rounded-full overflow-hidden">
-                  <div 
-                    className="absolute left-0 top-0 h-full bg-accent rounded-full"
-                    style={{ width: `${project.progress}%` }}
-                  />
+                <p className="text-sm text-dark-400 mb-2">{project.description || 'Açıklama yok'}</p>
+                <div className="flex items-center gap-4 text-xs text-dark-500">
+                  <span>{project.employeeCount || 0} çalışan</span>
+                  <span>{project.patrolCount || 0} devriye</span>
                 </div>
-                <p className="text-xs text-dark-400 mt-2 text-right">{project.progress}% tamamlandı</p>
               </div>
             ))}
           </div>
-          {companyProjects.length === 0 && (
+          {projects.length === 0 && (
             <div className="text-center py-12 bg-dark-700/50 rounded-xl">
               <FolderKanban size={48} className="text-dark-500 mx-auto mb-4" />
               <p className="text-dark-300">Bu firmaya ait proje bulunmuyor.</p>
@@ -190,38 +162,45 @@ function TabContent({ activeTab, company }) {
         </div>
       )
 
-    case 'patrol':
+    case 'patrols':
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-dark-400">{companyPatrols.length} devriye</p>
-            <button className="px-4 py-2 bg-accent rounded-lg text-white text-sm">
-              Devriye Ekle
+            <p className="text-dark-400">{patrols.length} devriye</p>
+            <button 
+              onClick={() => navigate('/patrol')}
+              className="px-4 py-2 bg-accent rounded-lg text-white text-sm"
+            >
+              Tümünü Gör
             </button>
           </div>
           <div className="space-y-3">
-            {companyPatrols.map(patrol => {
+            {patrols.map(patrol => {
               const StatusIcon = patrol.status === 'active' ? Clock : 
                                patrol.status === 'completed' ? CheckCircle : AlertCircle
               const statusColor = patrol.status === 'active' ? 'text-green-400' :
                                  patrol.status === 'completed' ? 'text-blue-400' : 'text-amber-400'
               return (
-                <div key={patrol.id} className="bg-dark-700/50 rounded-xl p-4 flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-lg bg-dark-600 flex items-center justify-center`}>
+                <div 
+                  key={patrol.id} 
+                  onClick={() => navigate(`/patrol/${patrol.id}`)}
+                  className="bg-dark-700/50 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-dark-700 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-dark-600 flex items-center justify-center">
                     <StatusIcon size={20} className={statusColor} />
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-dark-100">{patrol.name}</p>
-                    <p className="text-sm text-dark-400">{patrol.assignee} • {patrol.location}</p>
+                    <p className="text-sm text-dark-400">{patrol.project?.name || '-'}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-dark-300">{patrol.time}</p>
+                    <p className="text-sm text-dark-300">{patrol.assignments?.length || 0} atama</p>
                   </div>
                 </div>
               )
             })}
           </div>
-          {companyPatrols.length === 0 && (
+          {patrols.length === 0 && (
             <div className="text-center py-12 bg-dark-700/50 rounded-xl">
               <Shield size={48} className="text-dark-500 mx-auto mb-4" />
               <p className="text-dark-300">Bu firmaya ait devriye bulunmuyor.</p>
@@ -242,10 +221,36 @@ function TabContent({ activeTab, company }) {
 export default function CompanyDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { companies, selectedCompany, setSelectedCompany } = useApp()
+  const { selectedCompany, setCompanyContext, companies, employees, projects, patrols } = useApp()
   const [activeTab, setActiveTab] = useState('general')
+  const [company, setCompany] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  const company = selectedCompany || companies.find(c => c.id === parseInt(id))
+  useEffect(() => {
+    loadCompany()
+  }, [id])
+
+  const loadCompany = async () => {
+    try {
+      const data = await api.getCompany(id)
+      setCompany(data)
+      // Set company context if not already set
+      if (!selectedCompany || selectedCompany.id !== parseInt(id)) {
+        setCompanyContext(data)
+      }
+    } catch (error) {
+      console.error('Load company error:', error)
+    }
+    setLoading(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+      </div>
+    )
+  }
 
   if (!company) {
     return (
@@ -287,7 +292,7 @@ export default function CompanyDetail() {
                 {company.status === 'active' ? 'Aktif' : company.status === 'passive' ? 'Pasif' : 'Arşiv'}
               </span>
             </div>
-            <p className="text-dark-400 mt-1">{company.code}</p>
+            <p className="text-dark-400 mt-1">{company.company_code}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -309,8 +314,8 @@ export default function CompanyDetail() {
               <Users size={18} className="text-blue-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-dark-50">{company.personnel}</p>
-              <p className="text-xs text-dark-400">Personel</p>
+              <p className="text-2xl font-bold text-dark-50">{employees.length}</p>
+              <p className="text-xs text-dark-400">Çalışan</p>
             </div>
           </div>
         </div>
@@ -320,7 +325,7 @@ export default function CompanyDetail() {
               <FolderKanban size={18} className="text-green-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-dark-50">{company.projects}</p>
+              <p className="text-2xl font-bold text-dark-50">{projects.length}</p>
               <p className="text-xs text-dark-400">Proje</p>
             </div>
           </div>
@@ -331,7 +336,7 @@ export default function CompanyDetail() {
               <Shield size={18} className="text-purple-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-dark-50">12</p>
+              <p className="text-2xl font-bold text-dark-50">{patrols.length}</p>
               <p className="text-xs text-dark-400">Devriye</p>
             </div>
           </div>
@@ -339,11 +344,11 @@ export default function CompanyDetail() {
         <div className="bg-dark-800 rounded-xl p-4 border border-dark-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-              <FileText size={18} className="text-amber-400" />
+              <MapPin size={18} className="text-amber-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-dark-50">24</p>
-              <p className="text-xs text-dark-400">Belge</p>
+              <p className="text-lg font-bold text-dark-50 truncate">{company.city || '-'}</p>
+              <p className="text-xs text-dark-400">Şehir</p>
             </div>
           </div>
         </div>
@@ -351,7 +356,6 @@ export default function CompanyDetail() {
 
       {/* Tabs */}
       <div className="bg-dark-800 rounded-2xl border border-dark-700 overflow-hidden">
-        {/* Tab Navigation */}
         <div className="flex overflow-x-auto border-b border-dark-700">
           {tabs.map(tab => {
             const Icon = tab.icon
@@ -372,9 +376,14 @@ export default function CompanyDetail() {
           })}
         </div>
 
-        {/* Tab Content */}
         <div className="p-6">
-          <TabContent activeTab={activeTab} company={company} />
+          <TabContent 
+            activeTab={activeTab} 
+            company={company}
+            employees={employees}
+            projects={projects}
+            patrols={patrols}
+          />
         </div>
       </div>
     </div>

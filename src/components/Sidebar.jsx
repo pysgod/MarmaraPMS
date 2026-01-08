@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useApp } from '../context/AppContext'
 import { 
   LayoutDashboard, 
@@ -15,78 +16,40 @@ import {
   ChevronDown,
   ChevronRight,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react'
 
-const menuItems = [
-  { 
-    name: 'Dashboard', 
-    path: '/dashboard', 
-    icon: LayoutDashboard 
-  },
-  { 
-    name: 'Firmalar', 
-    path: '/companies', 
-    icon: Building2,
-    children: [
-      { name: 'Firma Listesi', path: '/companies' },
-      { name: 'Yeni Firma', path: '/companies/new' },
-    ]
-  },
-  { 
-    name: 'Projeler', 
-    path: '/projects', 
-    icon: FolderKanban,
-    children: [
-      { name: 'Proje Listesi', path: '/projects' },
-      { name: 'Proje Durumları', path: '/projects/statuses' },
-      { name: 'Kategoriler', path: '/projects/categories' },
-    ]
-  },
-  { 
-    name: 'Personeller', 
-    path: '/personnel', 
-    icon: Users,
-    children: [
-      { name: 'Personel Listesi', path: '/personnel' },
-      { name: 'Rol Yönetimi', path: '/personnel/roles' },
-    ]
-  },
-  { 
-    name: 'Devriye', 
-    path: '/patrol', 
-    icon: Shield,
-    children: [
-      { name: 'Devriye Listesi', path: '/patrol' },
-      { name: 'Yeni Devriye', path: '/patrol/new' },
-    ]
-  },
-  { 
-    name: 'Raporlar', 
-    path: '/reports', 
-    icon: FileText 
-  },
-  { 
-    name: 'Belgeler', 
-    path: '/documents', 
-    icon: FolderOpen 
-  },
-  { 
-    name: 'Bildirimler', 
-    path: '/notifications', 
-    icon: Bell 
-  },
-  { 
-    name: 'Ayarlar', 
-    path: '/settings', 
-    icon: Settings 
-  },
-  { 
-    name: 'Destek', 
-    path: '/support', 
-    icon: HelpCircle 
-  },
-]
+function CompanyContextBanner() {
+  const navigate = useNavigate()
+  const { selectedCompany, exitCompanyContext } = useApp()
+  
+  if (!selectedCompany) return null
+  
+  return (
+    <div className="mx-4 mb-4 p-3 rounded-xl bg-accent/20 border border-accent/30">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+          <Building2 size={16} className="text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-accent-light truncate">{selectedCompany.name}</p>
+          <p className="text-xs text-dark-400">{selectedCompany.company_code}</p>
+        </div>
+      </div>
+      <button
+        onClick={() => {
+          exitCompanyContext()
+          navigate('/companies')
+        }}
+        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-dark-700/50 hover:bg-dark-700 text-dark-300 hover:text-dark-100 text-xs transition-colors"
+      >
+        <LogOut size={12} />
+        Firmadan Çık
+      </button>
+    </div>
+  )
+}
 
 function MenuItem({ item, isOpen, onToggle }) {
   const location = useLocation()
@@ -97,13 +60,15 @@ function MenuItem({ item, isOpen, onToggle }) {
   return (
     <div className="mb-1">
       <div
-        onClick={() => hasChildren && onToggle(item.name)}
+        onClick={() => hasChildren && onToggle(item.key)}
         className={`
           flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer
           transition-all duration-200 group
-          ${isActive 
+          ${isActive && !hasChildren
             ? 'bg-accent/20 text-accent-light border-l-4 border-accent' 
-            : 'text-dark-400 hover:bg-dark-700/50 hover:text-dark-100 border-l-4 border-transparent'
+            : isActive && hasChildren
+              ? 'bg-accent/20 text-accent-light'
+              : 'text-dark-400 hover:bg-dark-700/50 hover:text-dark-100'
           }
         `}
       >
@@ -129,6 +94,7 @@ function MenuItem({ item, isOpen, onToggle }) {
             <NavLink
               key={child.path}
               to={child.path}
+              end
               className={({ isActive }) => `
                 block px-4 py-2 rounded-md text-sm transition-all duration-200
                 ${isActive 
@@ -147,11 +113,78 @@ function MenuItem({ item, isOpen, onToggle }) {
 }
 
 export default function Sidebar() {
-  const { sidebarOpen, setSidebarOpen } = useApp()
+  const { t } = useTranslation()
+  const { sidebarOpen, setSidebarOpen, selectedCompany } = useApp()
   const [openMenus, setOpenMenus] = useState({})
 
-  const toggleMenu = (name) => {
-    setOpenMenus(prev => ({ ...prev, [name]: !prev[name] }))
+  const menuItems = [
+    { 
+      key: 'dashboard',
+      name: t('sidebar.dashboard'), 
+      path: '/dashboard', 
+      icon: LayoutDashboard 
+    },
+    { 
+      key: 'companies',
+      name: t('sidebar.companies'), 
+      path: '/companies', 
+      icon: Building2
+    },
+    { 
+      key: 'projects',
+      name: t('sidebar.projects'), 
+      path: '/projects', 
+      icon: FolderKanban,
+      requiresCompany: true
+    },
+    { 
+      key: 'employees',
+      name: 'Çalışanlar', 
+      path: '/employees', 
+      icon: Users,
+      requiresCompany: true
+    },
+    { 
+      key: 'patrol',
+      name: t('sidebar.patrol'), 
+      path: '/patrol', 
+      icon: Shield,
+      requiresCompany: true
+    },
+    { 
+      key: 'reports',
+      name: t('sidebar.reports'), 
+      path: '/reports', 
+      icon: FileText 
+    },
+    { 
+      key: 'documents',
+      name: t('sidebar.documents'), 
+      path: '/documents', 
+      icon: FolderOpen 
+    },
+    { 
+      key: 'notifications',
+      name: t('sidebar.notifications'), 
+      path: '/notifications', 
+      icon: Bell 
+    },
+    { 
+      key: 'settings',
+      name: t('sidebar.settings'), 
+      path: '/settings', 
+      icon: Settings 
+    },
+    { 
+      key: 'support',
+      name: t('sidebar.support'), 
+      path: '/support', 
+      icon: HelpCircle 
+    },
+  ]
+
+  const toggleMenu = (key) => {
+    setOpenMenus(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
   return (
@@ -194,12 +227,15 @@ export default function Sidebar() {
 
         {/* Navigation */}
         <nav className="p-4 overflow-y-auto h-[calc(100vh-4rem)]">
+          {/* Company Context Banner */}
+          <CompanyContextBanner />
+          
           <div className="space-y-1">
             {menuItems.map((item) => (
               <MenuItem
-                key={item.name}
+                key={item.key}
                 item={item}
-                isOpen={openMenus[item.name]}
+                isOpen={openMenus[item.key]}
                 onToggle={toggleMenu}
               />
             ))}

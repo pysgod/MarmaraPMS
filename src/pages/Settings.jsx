@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { 
   Settings as SettingsIcon, 
   User, 
@@ -14,35 +15,32 @@ import {
   ChevronRight
 } from 'lucide-react'
 
-const settingsSections = [
-  { id: 'profile', name: 'Profil Ayarları', icon: User },
-  { id: 'security', name: 'Güvenlik', icon: Shield },
-  { id: 'notifications', name: 'Bildirim Ayarları', icon: Bell },
-  { id: 'appearance', name: 'Görünüm', icon: Palette },
-  { id: 'language', name: 'Dil ve Bölge', icon: Globe },
-]
+function SettingsSection({ activeSection, t, i18n }) {
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng)
+    localStorage.setItem('i18nextLng', lng)
+  }
 
-function SettingsSection({ activeSection }) {
   switch (activeSection) {
     case 'profile':
       return (
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-dark-100 mb-4">Profil Bilgileri</h3>
+            <h3 className="text-lg font-semibold text-dark-100 mb-4">{t('settings.profile.info')}</h3>
             <div className="flex items-start gap-6 mb-6">
               <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
                 <span className="text-white font-bold text-2xl">A</span>
               </div>
               <div>
                 <button className="px-4 py-2 bg-accent rounded-lg text-white text-sm mb-2">
-                  Fotoğraf Değiştir
+                  {t('settings.profile.changePhoto')}
                 </button>
-                <p className="text-xs text-dark-400">JPG, GIF veya PNG. Maks 1MB.</p>
+                <p className="text-xs text-dark-400">{t('settings.profile.photoHint')}</p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-dark-400 mb-2">Ad</label>
+                <label className="block text-sm text-dark-400 mb-2">{t('settings.profile.firstName')}</label>
                 <input 
                   type="text" 
                   defaultValue="Admin"
@@ -50,7 +48,7 @@ function SettingsSection({ activeSection }) {
                 />
               </div>
               <div>
-                <label className="block text-sm text-dark-400 mb-2">Soyad</label>
+                <label className="block text-sm text-dark-400 mb-2">{t('settings.profile.lastName')}</label>
                 <input 
                   type="text" 
                   defaultValue="User"
@@ -58,7 +56,7 @@ function SettingsSection({ activeSection }) {
                 />
               </div>
               <div>
-                <label className="block text-sm text-dark-400 mb-2">E-posta</label>
+                <label className="block text-sm text-dark-400 mb-2">{t('settings.profile.email')}</label>
                 <input 
                   type="email" 
                   defaultValue="admin@marmara.com"
@@ -66,7 +64,7 @@ function SettingsSection({ activeSection }) {
                 />
               </div>
               <div>
-                <label className="block text-sm text-dark-400 mb-2">Telefon</label>
+                <label className="block text-sm text-dark-400 mb-2">{t('settings.profile.phone')}</label>
                 <input 
                   type="tel" 
                   defaultValue="+90 532 xxx xx xx"
@@ -81,24 +79,24 @@ function SettingsSection({ activeSection }) {
       return (
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-dark-100 mb-4">Şifre Değiştir</h3>
+            <h3 className="text-lg font-semibold text-dark-100 mb-4">{t('settings.security.changePassword')}</h3>
             <div className="space-y-4 max-w-md">
               <div>
-                <label className="block text-sm text-dark-400 mb-2">Mevcut Şifre</label>
+                <label className="block text-sm text-dark-400 mb-2">{t('settings.security.currentPassword')}</label>
                 <input 
                   type="password" 
                   className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50"
                 />
               </div>
               <div>
-                <label className="block text-sm text-dark-400 mb-2">Yeni Şifre</label>
+                <label className="block text-sm text-dark-400 mb-2">{t('settings.security.newPassword')}</label>
                 <input 
                   type="password" 
                   className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50"
                 />
               </div>
               <div>
-                <label className="block text-sm text-dark-400 mb-2">Yeni Şifre (Tekrar)</label>
+                <label className="block text-sm text-dark-400 mb-2">{t('settings.security.confirmPassword')}</label>
                 <input 
                   type="password" 
                   className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50"
@@ -107,19 +105,19 @@ function SettingsSection({ activeSection }) {
             </div>
           </div>
           <div className="border-t border-dark-700 pt-6">
-            <h3 className="text-lg font-semibold text-dark-100 mb-4">İki Faktörlü Kimlik Doğrulama</h3>
+            <h3 className="text-lg font-semibold text-dark-100 mb-4">{t('settings.security.twoFactor')}</h3>
             <div className="flex items-center justify-between p-4 bg-dark-700/50 rounded-lg">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
                   <Smartphone size={18} className="text-green-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-dark-100">Authenticator Uygulaması</p>
-                  <p className="text-sm text-dark-400">Google Authenticator veya benzeri</p>
+                  <p className="font-medium text-dark-100">{t('settings.security.authenticatorApp')}</p>
+                  <p className="text-sm text-dark-400">{t('settings.security.authenticatorHint')}</p>
                 </div>
               </div>
               <button className="px-4 py-2 bg-accent rounded-lg text-white text-sm">
-                Etkinleştir
+                {t('settings.security.enable')}
               </button>
             </div>
           </div>
@@ -128,13 +126,13 @@ function SettingsSection({ activeSection }) {
     case 'notifications':
       return (
         <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-dark-100 mb-4">Bildirim Tercihleri</h3>
+          <h3 className="text-lg font-semibold text-dark-100 mb-4">{t('settings.notifications.preferences')}</h3>
           {[
-            { title: 'E-posta Bildirimleri', desc: 'Önemli güncellemeler için e-posta al', enabled: true },
-            { title: 'Push Bildirimleri', desc: 'Tarayıcı bildirimleri', enabled: true },
-            { title: 'Devriye Hatırlatmaları', desc: 'Yaklaşan devriyeler için hatırlatma', enabled: true },
-            { title: 'Proje Güncellemeleri', desc: 'Proje durum değişikliklerinde bildirim', enabled: false },
-            { title: 'Haftalık Özet', desc: 'Her pazartesi haftalık rapor', enabled: true },
+            { title: t('settings.notifications.email'), desc: t('settings.notifications.emailDesc'), enabled: true },
+            { title: t('settings.notifications.push'), desc: t('settings.notifications.pushDesc'), enabled: true },
+            { title: t('settings.notifications.patrolReminders'), desc: t('settings.notifications.patrolRemindersDesc'), enabled: true },
+            { title: t('settings.notifications.projectUpdates'), desc: t('settings.notifications.projectUpdatesDesc'), enabled: false },
+            { title: t('settings.notifications.weeklySummary'), desc: t('settings.notifications.weeklySummaryDesc'), enabled: true },
           ].map((item, i) => (
             <div key={i} className="flex items-center justify-between p-4 bg-dark-700/50 rounded-lg">
               <div>
@@ -157,11 +155,15 @@ function SettingsSection({ activeSection }) {
     case 'appearance':
       return (
         <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-dark-100 mb-4">Tema</h3>
+          <h3 className="text-lg font-semibold text-dark-100 mb-4">{t('settings.appearance.theme')}</h3>
           <div className="grid grid-cols-3 gap-4">
-            {['Koyu', 'Açık', 'Sistem'].map((theme, i) => (
+            {[
+              { key: 'dark', label: t('settings.appearance.dark') },
+              { key: 'light', label: t('settings.appearance.light') },
+              { key: 'system', label: t('settings.appearance.system') }
+            ].map((theme, i) => (
               <button 
-                key={theme}
+                key={theme.key}
                 className={`p-4 rounded-xl border-2 transition-colors ${
                   i === 0 ? 'border-accent bg-accent/10' : 'border-dark-700 bg-dark-700/50 hover:border-dark-600'
                 }`}
@@ -169,7 +171,7 @@ function SettingsSection({ activeSection }) {
                 <div className={`w-full h-20 rounded-lg mb-3 ${
                   i === 0 ? 'bg-dark-900' : i === 1 ? 'bg-white' : 'bg-gradient-to-r from-dark-900 to-white'
                 }`} />
-                <p className="text-sm font-medium text-dark-100">{theme}</p>
+                <p className="text-sm font-medium text-dark-100">{theme.label}</p>
               </button>
             ))}
           </div>
@@ -178,18 +180,21 @@ function SettingsSection({ activeSection }) {
     case 'language':
       return (
         <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-dark-100 mb-4">Dil ve Bölge</h3>
+          <h3 className="text-lg font-semibold text-dark-100 mb-4">{t('settings.language.title')}</h3>
           <div className="space-y-4 max-w-md">
             <div>
-              <label className="block text-sm text-dark-400 mb-2">Dil</label>
-              <select className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50">
-                <option>Türkçe</option>
-                <option>English</option>
-                <option>Deutsch</option>
+              <label className="block text-sm text-dark-400 mb-2">{t('settings.language.language')}</label>
+              <select 
+                value={i18n.language}
+                onChange={(e) => changeLanguage(e.target.value)}
+                className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50"
+              >
+                <option value="tr">Türkçe</option>
+                <option value="en">English</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm text-dark-400 mb-2">Saat Dilimi</label>
+              <label className="block text-sm text-dark-400 mb-2">{t('settings.language.timezone')}</label>
               <select className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50">
                 <option>Europe/Istanbul (GMT+3)</option>
                 <option>Europe/London (GMT+0)</option>
@@ -197,7 +202,7 @@ function SettingsSection({ activeSection }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-dark-400 mb-2">Tarih Formatı</label>
+              <label className="block text-sm text-dark-400 mb-2">{t('settings.language.dateFormat')}</label>
               <select className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50">
                 <option>DD.MM.YYYY</option>
                 <option>MM/DD/YYYY</option>
@@ -213,19 +218,28 @@ function SettingsSection({ activeSection }) {
 }
 
 export default function Settings() {
+  const { t, i18n } = useTranslation()
   const [activeSection, setActiveSection] = useState('profile')
+
+  const settingsSections = [
+    { id: 'profile', name: t('settings.profile.title'), icon: User },
+    { id: 'security', name: t('settings.security.title'), icon: Shield },
+    { id: 'notifications', name: t('settings.notifications.title'), icon: Bell },
+    { id: 'appearance', name: t('settings.appearance.title'), icon: Palette },
+    { id: 'language', name: t('settings.language.title'), icon: Globe },
+  ]
 
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-dark-50">Ayarlar</h1>
-          <p className="text-dark-400 mt-1">Hesap ve sistem ayarlarını yönetin</p>
+          <h1 className="text-2xl font-bold text-dark-50">{t('settings.title')}</h1>
+          <p className="text-dark-400 mt-1">{t('settings.subtitle')}</p>
         </div>
         <button className="flex items-center gap-2 px-5 py-2.5 gradient-accent rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-lg shadow-accent/25">
           <Save size={18} />
-          Değişiklikleri Kaydet
+          {t('settings.saveChanges')}
         </button>
       </div>
 
@@ -259,7 +273,7 @@ export default function Settings() {
         {/* Content */}
         <div className="lg:col-span-3">
           <div className="bg-dark-800 rounded-2xl border border-dark-700 p-6">
-            <SettingsSection activeSection={activeSection} />
+            <SettingsSection activeSection={activeSection} t={t} i18n={i18n} />
           </div>
         </div>
       </div>

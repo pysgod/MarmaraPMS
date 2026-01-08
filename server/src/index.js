@@ -1,0 +1,74 @@
+require('dotenv').config()
+const express = require('express')
+const cors = require('cors')
+const { sequelize } = require('./models')
+
+// Routes
+const authRoutes = require('./routes/auth')
+const companyRoutes = require('./routes/companies')
+const projectRoutes = require('./routes/projects')
+const employeeRoutes = require('./routes/employees')
+const patrolRoutes = require('./routes/patrols')
+const notificationRoutes = require('./routes/notifications')
+const statsRoutes = require('./routes/stats')
+
+const app = express()
+
+// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}))
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+// API Routes
+app.use('/api/auth', authRoutes)
+app.use('/api/companies', companyRoutes)
+app.use('/api/projects', projectRoutes)
+app.use('/api/employees', employeeRoutes)
+app.use('/api/patrols', patrolRoutes)
+app.use('/api/notifications', notificationRoutes)
+app.use('/api/stats', statsRoutes)
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack)
+  res.status(500).json({ message: 'Sunucu hatası', error: err.message })
+})
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Endpoint bulunamadı' })
+})
+
+const PORT = process.env.PORT || 3001
+
+async function start() {
+  try {
+    await sequelize.authenticate()
+    console.log('✅ PostgreSQL bağlantısı başarılı')
+    
+    // Sync database - drop and recreate all tables (development only!)
+    await sequelize.sync({ force: true })
+    console.log('✅ Veritabanı tabloları yeniden oluşturuldu')
+    
+    // Run seed after sync
+    await require('./scripts/seedDb').seed()
+    console.log('✅ Test verileri oluşturuldu')
+    
+    app.listen(PORT, () => {
+      console.log(`🚀 Sunucu http://localhost:${PORT} adresinde çalışıyor`)
+    })
+  } catch (error) {
+    console.error('❌ Sunucu başlatma hatası:', error)
+    process.exit(1)
+  }
+}
+
+start()

@@ -1,75 +1,280 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import api from '../services/api'
 
 const AppContext = createContext()
 
-// Mock Data
-const mockCompanies = [
-  { id: 1, name: 'Marmara Güvenlik A.Ş.', code: 'MRG-001', personnel: 45, projects: 8, status: 'active' },
-  { id: 2, name: 'Boğaziçi Koruma Ltd.', code: 'BGK-002', personnel: 32, projects: 5, status: 'active' },
-  { id: 3, name: 'Anadolu Güvenlik Hiz.', code: 'AGH-003', personnel: 28, projects: 4, status: 'passive' },
-  { id: 4, name: 'İstanbul Security Inc.', code: 'ISI-004', personnel: 56, projects: 12, status: 'active' },
-  { id: 5, name: 'Ege Koruma Sistemleri', code: 'EKS-005', personnel: 18, projects: 3, status: 'active' },
-]
-
-const mockProjects = [
-  { id: 1, name: 'Plaza Güvenlik Projesi', company: 'Marmara Güvenlik A.Ş.', status: 'active', progress: 75, category: 'Bina Güvenliği' },
-  { id: 2, name: 'AVM Devriye Sistemi', company: 'Boğaziçi Koruma Ltd.', status: 'active', progress: 45, category: 'Devriye' },
-  { id: 3, name: 'Fabrika Koruma', company: 'Anadolu Güvenlik Hiz.', status: 'completed', progress: 100, category: 'Endüstriyel' },
-  { id: 4, name: 'Otel Güvenlik Hizmeti', company: 'İstanbul Security Inc.', status: 'active', progress: 60, category: 'Konaklama' },
-  { id: 5, name: 'Site Giriş Kontrolü', company: 'Ege Koruma Sistemleri', status: 'pending', progress: 20, category: 'Konut' },
-]
-
-const mockPersonnel = [
-  { id: 1, name: 'Ahmet Yılmaz', role: 'Güvenlik Şefi', company: 'Marmara Güvenlik A.Ş.', status: 'active', email: 'ahmet@marmara.com' },
-  { id: 2, name: 'Mehmet Demir', role: 'Devriye Sorumlusu', company: 'Boğaziçi Koruma Ltd.', status: 'active', email: 'mehmet@bogazici.com' },
-  { id: 3, name: 'Ayşe Kaya', role: 'Operasyon Müdürü', company: 'Anadolu Güvenlik Hiz.', status: 'active', email: 'ayse@anadolu.com' },
-  { id: 4, name: 'Fatma Özkan', role: 'Güvenlik Personeli', company: 'İstanbul Security Inc.', status: 'passive', email: 'fatma@istanbul.com' },
-  { id: 5, name: 'Ali Çelik', role: 'Saha Amiri', company: 'Ege Koruma Sistemleri', status: 'active', email: 'ali@ege.com' },
-]
-
-const mockPatrols = [
-  { id: 1, name: 'Gece Devriyesi A', assignee: 'Ahmet Yılmaz', company: 'Marmara Güvenlik A.Ş.', location: 'Plaza Katları', time: '22:00 - 06:00', status: 'active' },
-  { id: 2, name: 'AVM Tur 1', assignee: 'Mehmet Demir', company: 'Boğaziçi Koruma Ltd.', location: 'Zemin Kat', time: '10:00 - 14:00', status: 'completed' },
-  { id: 3, name: 'Fabrika Çevre Kontrolü', assignee: 'Ayşe Kaya', company: 'Anadolu Güvenlik Hiz.', location: 'Dış Alan', time: '08:00 - 16:00', status: 'pending' },
-  { id: 4, name: 'Otel Giriş Kontrolü', assignee: 'Ali Çelik', company: 'İstanbul Security Inc.', location: 'Lobi', time: '00:00 - 08:00', status: 'active' },
-]
-
-const mockNotifications = [
-  { id: 1, title: 'Yeni proje oluşturuldu', message: 'Plaza Güvenlik Projesi başarıyla oluşturuldu.', time: '5 dk önce', read: false, type: 'success' },
-  { id: 2, title: 'Devriye tamamlandı', message: 'AVM Tur 1 devriyesi başarıyla tamamlandı.', time: '1 saat önce', read: false, type: 'info' },
-  { id: 3, title: 'Personel güncellemesi', message: 'Fatma Özkan pasif duruma alındı.', time: '2 saat önce', read: true, type: 'warning' },
-  { id: 4, title: 'Sistem bakımı', message: 'Yarın 02:00-04:00 arası bakım yapılacak.', time: '1 gün önce', read: true, type: 'info' },
-]
+// Company context persistence key
+const COMPANY_CONTEXT_KEY = 'selectedCompanyContext'
 
 export function AppProvider({ children }) {
-  const [selectedCompany, setSelectedCompany] = useState(null)
+  const [user, setUser] = useState(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [loading, setLoading] = useState(true)
+  
+  // Company context - persisted in localStorage
+  const [selectedCompany, setSelectedCompanyState] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [companies] = useState(mockCompanies)
-  const [projects] = useState(mockProjects)
-  const [personnel] = useState(mockPersonnel)
-  const [patrols] = useState(mockPatrols)
-  const [notifications] = useState(mockNotifications)
+  
+  // Data stores
+  const [companies, setCompanies] = useState([])
+  const [employees, setEmployees] = useState([])
+  const [projects, setProjects] = useState([])
+  const [patrols, setPatrols] = useState([])
+  const [notifications, setNotifications] = useState([])
+  const [stats, setStats] = useState({
+    totalCompanies: 0,
+    activeProjects: 0,
+    activeEmployees: 0,
+    activePatrols: 0,
+    completedPatrols: 0,
+    pendingPatrols: 0,
+  })
 
-  const stats = {
-    totalCompanies: companies.length,
-    activeProjects: projects.filter(p => p.status === 'active').length,
-    activePersonnel: personnel.filter(p => p.status === 'active').length,
-    activePatrols: patrols.filter(p => p.status === 'active').length,
-    completedPatrols: patrols.filter(p => p.status === 'completed').length,
-    pendingPatrols: patrols.filter(p => p.status === 'pending').length,
+  // Restore company context from localStorage on mount
+  useEffect(() => {
+    const savedContext = localStorage.getItem(COMPANY_CONTEXT_KEY)
+    if (savedContext) {
+      try {
+        const parsed = JSON.parse(savedContext)
+        setSelectedCompanyState(parsed)
+      } catch (e) {
+        localStorage.removeItem(COMPANY_CONTEXT_KEY)
+      }
+    }
+  }, [])
+
+  // Check if user is logged in on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token')
+      if (token) {
+        try {
+          const { user } = await api.getCurrentUser()
+          setUser(user)
+          setIsAuthenticated(true)
+        } catch (error) {
+          console.error('Auth check failed:', error)
+          api.logout()
+        }
+      }
+      setLoading(false)
+    }
+    checkAuth()
+  }, [])
+
+  // Fetch all data when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchAllData()
+    }
+  }, [isAuthenticated])
+
+  // Refetch filtered data when company context changes
+  useEffect(() => {
+    if (isAuthenticated && selectedCompany) {
+      fetchCompanyData(selectedCompany.id)
+    }
+  }, [isAuthenticated, selectedCompany?.id])
+
+  const fetchAllData = async () => {
+    try {
+      const [companiesData, notificationsData, statsData] = await Promise.all([
+        api.getCompanies(),
+        api.getNotifications().catch(() => []),
+        api.getStats(),
+      ])
+      
+      setCompanies(companiesData)
+      setNotifications(notificationsData)
+      setStats(statsData)
+    } catch (error) {
+      console.error('Fetch data error:', error)
+    }
+  }
+
+  const fetchCompanyData = async (companyId) => {
+    try {
+      const [employeesData, projectsData, patrolsData] = await Promise.all([
+        api.getEmployees(companyId),
+        api.getProjects(companyId),
+        api.getPatrols(companyId),
+      ])
+      
+      setEmployees(employeesData)
+      setProjects(projectsData)
+      setPatrols(patrolsData)
+    } catch (error) {
+      console.error('Fetch company data error:', error)
+    }
+  }
+
+  // Company context functions
+  const setCompanyContext = (company) => {
+    setSelectedCompanyState(company)
+    localStorage.setItem(COMPANY_CONTEXT_KEY, JSON.stringify(company))
+  }
+
+  const exitCompanyContext = () => {
+    setSelectedCompanyState(null)
+    localStorage.removeItem(COMPANY_CONTEXT_KEY)
+    setEmployees([])
+    setProjects([])
+    setPatrols([])
+  }
+
+  const login = async (email, password) => {
+    const { user, token } = await api.login(email, password)
+    setUser(user)
+    setIsAuthenticated(true)
+    return { user, token }
+  }
+
+  const logout = () => {
+    api.logout()
+    setUser(null)
+    setIsAuthenticated(false)
+    setCompanies([])
+    setEmployees([])
+    setProjects([])
+    setPatrols([])
+    setNotifications([])
+    exitCompanyContext()
+  }
+
+  // Company operations
+  const addCompany = async (companyData) => {
+    const newCompany = await api.createCompany(companyData)
+    setCompanies(prev => [newCompany, ...prev])
+    return newCompany
+  }
+
+  const updateCompany = async (id, companyData) => {
+    const updated = await api.updateCompany(id, companyData)
+    setCompanies(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c))
+    if (selectedCompany?.id === id) {
+      setCompanyContext({ ...selectedCompany, ...updated })
+    }
+    return updated
+  }
+
+  const deleteCompany = async (id) => {
+    await api.deleteCompany(id)
+    setCompanies(prev => prev.filter(c => c.id !== id))
+    if (selectedCompany?.id === id) {
+      exitCompanyContext()
+    }
+  }
+
+  // Employee operations
+  const addEmployee = async (employeeData) => {
+    const newEmployee = await api.createEmployee(employeeData)
+    setEmployees(prev => [newEmployee, ...prev])
+    return newEmployee
+  }
+
+  const updateEmployee = async (id, employeeData) => {
+    const updated = await api.updateEmployee(id, employeeData)
+    setEmployees(prev => prev.map(e => e.id === id ? { ...e, ...updated } : e))
+    return updated
+  }
+
+  const deleteEmployee = async (id) => {
+    await api.deleteEmployee(id)
+    setEmployees(prev => prev.filter(e => e.id !== id))
+  }
+
+  // Project operations
+  const addProject = async (projectData) => {
+    const newProject = await api.createProject(projectData)
+    setProjects(prev => [newProject, ...prev])
+    return newProject
+  }
+
+  const updateProject = async (id, projectData) => {
+    const updated = await api.updateProject(id, projectData)
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p))
+    return updated
+  }
+
+  const deleteProject = async (id) => {
+    await api.deleteProject(id)
+    setProjects(prev => prev.filter(p => p.id !== id))
+  }
+
+  // Patrol operations
+  const addPatrol = async (patrolData) => {
+    const newPatrol = await api.createPatrol(patrolData)
+    setPatrols(prev => [newPatrol, ...prev])
+    return newPatrol
+  }
+
+  const updatePatrol = async (id, patrolData) => {
+    const updated = await api.updatePatrol(id, patrolData)
+    setPatrols(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p))
+    return updated
+  }
+
+  const deletePatrol = async (id) => {
+    await api.deletePatrol(id)
+    setPatrols(prev => prev.filter(p => p.id !== id))
+  }
+
+  // Notification operations
+  const markNotificationRead = async (id) => {
+    await api.markNotificationRead(id)
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  }
+
+  const markAllNotificationsRead = async () => {
+    await api.markAllNotificationsRead()
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
   }
 
   const value = {
+    // Auth
+    user,
+    isAuthenticated,
+    loading,
+    login,
+    logout,
+    
+    // Company Context
     selectedCompany,
-    setSelectedCompany,
+    setCompanyContext,
+    exitCompanyContext,
+    hasCompanyContext: !!selectedCompany,
+    
+    // UI State
     sidebarOpen,
     setSidebarOpen,
+    
+    // Data
     companies,
+    employees,
     projects,
-    personnel,
     patrols,
     notifications,
     stats,
+    
+    // Data refresh
+    fetchAllData,
+    fetchCompanyData,
+    
+    // Operations
+    addCompany,
+    updateCompany,
+    deleteCompany,
+    addEmployee,
+    updateEmployee,
+    deleteEmployee,
+    addProject,
+    updateProject,
+    deleteProject,
+    addPatrol,
+    updatePatrol,
+    deletePatrol,
+    markNotificationRead,
+    markAllNotificationsRead,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

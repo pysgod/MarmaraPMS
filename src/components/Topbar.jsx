@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useApp } from '../context/AppContext'
 import { 
   Search, 
@@ -13,8 +14,9 @@ import {
 } from 'lucide-react'
 
 export default function Topbar() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
-  const { companies, selectedCompany, setSelectedCompany, notifications } = useApp()
+  const { companies, selectedCompany, setSelectedCompany, notifications, logout } = useApp()
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
@@ -40,6 +42,11 @@ export default function Topbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   return (
     <header className="h-16 bg-dark-800/80 backdrop-blur-xl border-b border-dark-700 flex items-center justify-between px-6 sticky top-0 z-20">
       {/* Left Section - Search */}
@@ -49,7 +56,7 @@ export default function Topbar() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400" size={18} />
             <input
               type="text"
-              placeholder="Firma, proje veya personel ara..."
+              placeholder={t('topbar.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
@@ -66,7 +73,7 @@ export default function Topbar() {
           {showSearch && searchQuery && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-dark-800 border border-dark-700 rounded-xl shadow-xl overflow-hidden animate-fadeIn">
               <div className="p-2">
-                <p className="text-xs text-dark-400 px-3 py-2">Arama sonuçları</p>
+                <p className="text-xs text-dark-400 px-3 py-2">{t('topbar.searchResults')}</p>
                 <div className="space-y-1">
                   {companies
                     .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -104,7 +111,7 @@ export default function Topbar() {
           >
             <Building2 size={16} className="text-accent" />
             <span className="text-dark-200 max-w-[120px] truncate">
-              {selectedCompany ? selectedCompany.name : 'Firma Seç'}
+              {selectedCompany ? selectedCompany.name : t('topbar.selectCompany')}
             </span>
             <ChevronDown size={16} className={`text-dark-400 transition-transform ${showCompanyDropdown ? 'rotate-180' : ''}`} />
           </button>
@@ -119,7 +126,7 @@ export default function Topbar() {
                   }}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-dark-700/50 transition-colors"
                 >
-                  <span className="text-sm text-dark-300">Tüm Firmalar</span>
+                  <span className="text-sm text-dark-300">{t('topbar.allCompanies')}</span>
                   {!selectedCompany && <Check size={16} className="text-accent" />}
                 </button>
                 <div className="h-px bg-dark-700 my-2" />
@@ -161,7 +168,7 @@ export default function Topbar() {
           {showNotifications && (
             <div className="absolute top-full right-0 mt-2 w-80 bg-dark-800 border border-dark-700 rounded-xl shadow-xl overflow-hidden animate-fadeIn">
               <div className="p-4 border-b border-dark-700">
-                <h3 className="font-semibold text-dark-100">Bildirimler</h3>
+                <h3 className="font-semibold text-dark-100">{t('topbar.notifications')}</h3>
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {notifications.map(notif => (
@@ -191,7 +198,7 @@ export default function Topbar() {
                 }}
                 className="w-full p-3 text-sm text-accent hover:bg-dark-700/30 transition-colors"
               >
-                Tüm bildirimleri gör
+                {t('topbar.viewAllNotifications')}
               </button>
             </div>
           )}
@@ -218,7 +225,7 @@ export default function Topbar() {
               <div className="p-2">
                 <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-700/50 text-dark-300 hover:text-dark-100 transition-colors">
                   <User size={16} />
-                  <span className="text-sm">Profil</span>
+                  <span className="text-sm">{t('topbar.profile')}</span>
                 </button>
                 <button 
                   onClick={() => {
@@ -228,12 +235,15 @@ export default function Topbar() {
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-700/50 text-dark-300 hover:text-dark-100 transition-colors"
                 >
                   <Settings size={16} />
-                  <span className="text-sm">Ayarlar</span>
+                  <span className="text-sm">{t('sidebar.settings')}</span>
                 </button>
                 <div className="h-px bg-dark-700 my-2" />
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-400 hover:text-red-300 transition-colors">
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-400 hover:text-red-300 transition-colors"
+                >
                   <LogOut size={16} />
-                  <span className="text-sm">Çıkış Yap</span>
+                  <span className="text-sm">{t('topbar.logout')}</span>
                 </button>
               </div>
             </div>
