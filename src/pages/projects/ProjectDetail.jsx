@@ -21,8 +21,13 @@ import {
   Bell,
   Settings,
   Plus,
-  Trash2
+  Trash2,
+  UserCheck,
+  Play,
+  Pause,
+  StopCircle
 } from 'lucide-react'
+import AddProjectWizard from './AddProjectWizard'
 
 const tabs = [
   { id: 'general', name: 'Genel Bilgiler', icon: FolderKanban },
@@ -51,25 +56,76 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
 
   switch (activeTab) {
     case 'general':
+      const serviceTypeLabels = {
+        'security_armed': 'Güvenlik (Silahlı)',
+        'security_unarmed': 'Güvenlik (Silahsız)',
+        'cleaning': 'Temizlik',
+        'consulting': 'Danışmanlık',
+        'reception': 'Resepsiyon',
+        'technical': 'Teknik',
+        'landscaping': 'Peyzaj',
+        'other': 'Diğer'
+      }
+
+      const clothingLabels = {
+        'shirt': 'Gömlek',
+        'sweater': 'Kazak',
+        'pants': 'Pantolon',
+        'coat': 'Kaban',
+        'shoes': 'Ayakkabı',
+        'suit': 'Takım Elbise',
+        'beret': 'Bere',
+        'cap': 'Şapka',
+        'uniform': 'Üniforma'
+      }
+
       return (
         <div className="space-y-6">
+          {/* Temel Bilgiler */}
           <div className="bg-dark-700/50 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-dark-100 mb-4">Proje Bilgileri</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-dark-400">Proje Adı</label>
-                  <p className="text-dark-100 mt-1">{project.name}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-dark-400">Açıklama</label>
-                  <p className="text-dark-100 mt-1">{project.description || '-'}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-dark-400">Bağlı Firma</label>
-                  <p className="text-dark-100 mt-1">{project.company?.name || '-'}</p>
-                </div>
+            <h3 className="text-lg font-semibold text-dark-100 mb-4">Proje Detayları</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <label className="text-sm text-dark-400">Proje Adı</label>
+                <p className="text-dark-100 mt-1">{project.name}</p>
               </div>
+              <div>
+                <label className="text-sm text-dark-400">Bağlı Firma</label>
+                <p className="text-dark-100 mt-1">{project.company?.name || '-'}</p>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400">Durum</label>
+                <span className={`inline-block mt-1 px-2 py-0.5 rounded text-sm ${
+                  project.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                  project.status === 'pending' ? 'bg-amber-500/20 text-amber-400' :
+                  'bg-dark-500/20 text-dark-400'
+                }`}>
+                  {project.status === 'active' ? 'Aktif' :
+                   project.status === 'pending' ? 'Bekliyor' :
+                   project.status === 'completed' ? 'Tamamlandı' : 'İptal'}
+                </span>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400">Hizmet Türü</label>
+                <p className="text-dark-100 mt-1">
+                  {serviceTypeLabels[project.service_type] || project.service_type || '-'}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400">Segment</label>
+                <p className="text-dark-100 mt-1">{project.segment || '-'}</p>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400">Açıklama</label>
+                <p className="text-dark-100 mt-1">{project.description || '-'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tarih ve Yönetim */}
+          <div className="bg-dark-700/50 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-dark-100 mb-4">Tarih ve Yönetim</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Calendar size={16} className="text-dark-400" />
@@ -84,6 +140,76 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
                   </span>
                 </div>
               </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-dark-400">Birincil Yönetici</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <User size={16} className="text-accent" />
+                    <span className="text-dark-100">{project.primaryManager?.name || '-'}</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-dark-400">İkincil Yönetici</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <User size={16} className="text-dark-400" />
+                    <span className="text-dark-100">{project.secondaryManager?.name || '-'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Müşteri Yetkilisi ve Kıyafetler */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Müşteri Yetkilisi */}
+            <div className="bg-dark-700/50 rounded-xl p-6 h-full">
+              <h3 className="text-lg font-semibold text-dark-100 mb-4">Müşteri Yetkilisi</h3>
+              {project.customerReps && project.customerReps.length > 0 ? (
+                project.customerReps.map(rep => (
+                  <div key={rep.id} className="space-y-3">
+                     <div className="flex items-center gap-3">
+                      <UserCheck size={18} className="text-accent" />
+                      <div>
+                        <p className="font-medium text-dark-100">{rep.first_name} {rep.last_name}</p>
+                        <p className="text-xs text-dark-400">{rep.title}</p>
+                      </div>
+                    </div>
+                    {rep.phone && (
+                      <div className="flex items-center gap-3 text-sm text-dark-300">
+                        <span>Tel:</span>
+                        <span className="text-dark-200">{rep.phone}</span>
+                      </div>
+                    )}
+                    {rep.email && (
+                      <div className="flex items-center gap-3 text-sm text-dark-300">
+                        <span>E-posta:</span>
+                        <span className="text-dark-200">{rep.email}</span>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="text-dark-400 text-sm">Yetkili bilgisi bulunmuyor.</p>
+              )}
+            </div>
+
+            {/* Kıyafet Türleri */}
+            <div className="bg-dark-700/50 rounded-xl p-6 h-full">
+              <h3 className="text-lg font-semibold text-dark-100 mb-4">Kıyafet Türleri</h3>
+              {project.clothingTypes && project.clothingTypes.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {project.clothingTypes.map(type => (
+                    <span 
+                      key={type.id} 
+                      className="px-3 py-1 bg-dark-600 rounded-lg text-sm text-dark-200 border border-dark-500"
+                    >
+                      {clothingLabels[type.clothing_type] || type.clothing_type}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-dark-400 text-sm">Tanımlı kıyafet bulunmuyor.</p>
+              )}
             </div>
           </div>
         </div>
@@ -243,6 +369,8 @@ export default function ProjectDetail() {
   const [project, setProject] = useState(null)
   const [projectEmployees, setProjectEmployees] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
 
   useEffect(() => {
     loadProject()
@@ -282,26 +410,38 @@ export default function ProjectDetail() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!confirm('Bu projeyi silmek istediğinizden emin misiniz?')) return
+    try {
+      await api.deleteProject(id)
+      navigate('/projects')
+    } catch (error) {
+      alert('Silme hatası: ' + error.message)
+    }
+  }
+
+  const handleStatusUpdate = async (newStatus) => {
+    try {
+      await api.updateProject(id, { status: newStatus })
+      setProject(prev => ({ ...prev, status: newStatus }))
+      setShowMenu(false)
+    } catch (error) {
+      alert('Durum güncelleme hatası: ' + error.message)
+    }
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   if (!project) {
     return (
-      <div className="text-center py-16">
-        <FolderKanban size={64} className="text-dark-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-dark-200 mb-2">Proje bulunamadı</h2>
-        <p className="text-dark-400 mb-6">Lütfen geçerli bir proje seçin.</p>
-        <button 
-          onClick={() => navigate('/projects')}
-          className="px-5 py-2.5 bg-accent rounded-lg text-white"
-        >
-          Proje Listesine Dön
-        </button>
+      <div className="text-center py-20 text-dark-400">
+        Proje bulunamadı.
       </div>
     )
   }
@@ -344,13 +484,75 @@ export default function ProjectDetail() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-dark-700 hover:bg-dark-600 rounded-lg text-dark-200 text-sm transition-colors">
+          <button 
+            onClick={() => setShowEditModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-dark-700 hover:bg-dark-600 rounded-lg text-dark-200 text-sm transition-colors"
+          >
             <Edit size={16} />
             Düzenle
           </button>
-          <button className="p-2.5 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors">
-            <MoreVertical size={18} className="text-dark-300" />
-          </button>
+
+          
+          <div className="relative">
+            <button 
+              onClick={() => setShowMenu(!showMenu)}
+              className={`p-2.5 rounded-lg transition-colors ${showMenu ? 'bg-dark-600' : 'bg-dark-700 hover:bg-dark-600'}`}
+            >
+              <MoreVertical size={18} className="text-dark-300" />
+            </button>
+
+            {/* Menu Dropdown */}
+            {showMenu && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowMenu(false)}
+                />
+                <div className="absolute right-0 mt-2 w-56 bg-dark-700 rounded-xl shadow-lg border border-dark-600 py-1 z-20 overflow-hidden">
+                  <div className="px-4 py-2 text-xs font-medium text-dark-400 uppercase tracking-wider bg-dark-700/50 border-b border-dark-600">
+                    Durum Güncelle
+                  </div>
+                  
+                  <button
+                    onClick={() => handleStatusUpdate('active')}
+                    className="w-full text-left px-4 py-2.5 text-sm text-dark-200 hover:bg-dark-600 flex items-center gap-2"
+                  >
+                    <Play size={16} className="text-green-400" />
+                    Aktif
+                  </button>
+                  <button
+                    onClick={() => handleStatusUpdate('pending')}
+                    className="w-full text-left px-4 py-2.5 text-sm text-dark-200 hover:bg-dark-600 flex items-center gap-2"
+                  >
+                    <Pause size={16} className="text-amber-400" />
+                    Bekliyor
+                  </button>
+                  <button
+                    onClick={() => handleStatusUpdate('completed')}
+                    className="w-full text-left px-4 py-2.5 text-sm text-dark-200 hover:bg-dark-600 flex items-center gap-2"
+                  >
+                    <CheckCircle size={16} className="text-blue-400" />
+                    Tamamlandı
+                  </button>
+                  <button
+                    onClick={() => handleStatusUpdate('cancelled')}
+                    className="w-full text-left px-4 py-2.5 text-sm text-dark-200 hover:bg-dark-600 flex items-center gap-2 border-b border-dark-600"
+                  >
+                    <StopCircle size={16} className="text-red-400" />
+                    İptal
+                  </button>
+
+                  <button
+                    onClick={handleDelete}
+                    className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors mt-1"
+                  >
+                    <Trash2 size={16} />
+                    Projeyi Sil
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -440,6 +642,20 @@ export default function ProjectDetail() {
           />
         </div>
       </div>
+
+      {/* Edit Wizard */}
+      {project && (
+        <AddProjectWizard
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false)
+            loadProject() // Reload after edit
+          }}
+          company={project.company}
+          project={project}
+        />
+      )}
     </div>
   )
 }
+

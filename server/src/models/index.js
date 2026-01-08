@@ -4,6 +4,8 @@ const Company = require('./Company')
 const Employee = require('./Employee')
 const Project = require('./Project')
 const ProjectEmployee = require('./ProjectEmployee')
+const ProjectClothingType = require('./ProjectClothingType')
+const ProjectCustomerRep = require('./ProjectCustomerRep')
 const Patrol = require('./Patrol')
 const PatrolAssignment = require('./PatrolAssignment')
 const PatrolLog = require('./PatrolLog')
@@ -51,6 +53,19 @@ ProjectEmployee.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' 
 Project.hasMany(ProjectEmployee, { foreignKey: 'project_id', as: 'projectEmployees' })
 Employee.hasMany(ProjectEmployee, { foreignKey: 'employee_id', as: 'projectAssignments' })
 
+// Project has many ClothingTypes
+Project.hasMany(ProjectClothingType, { foreignKey: 'project_id', as: 'clothingTypes' })
+ProjectClothingType.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
+
+// Project has many CustomerReps
+Project.hasMany(ProjectCustomerRep, { foreignKey: 'project_id', as: 'customerReps' })
+ProjectCustomerRep.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
+ProjectCustomerRep.belongsTo(Company, { foreignKey: 'company_id', as: 'company' })
+
+// Project Manager associations
+Project.belongsTo(User, { foreignKey: 'primary_manager_id', as: 'primaryManager' })
+Project.belongsTo(User, { foreignKey: 'secondary_manager_id', as: 'secondaryManager' })
+
 // ==========================================
 // Patrol Associations
 // ==========================================
@@ -83,8 +98,11 @@ module.exports = {
   Employee,
   Project,
   ProjectEmployee,
+  ProjectClothingType,
+  ProjectCustomerRep,
   Patrol,
   PatrolAssignment,
   PatrolLog,
   Notification
 }
+

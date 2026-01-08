@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import { useApp } from '../../context/AppContext'
 import { 
   Building2, 
@@ -23,6 +24,13 @@ export default function CompanyList() {
     company_code: '', 
     country: 'Türkiye', 
     city: '', 
+    district: '',
+    phone: '',
+    fax: '',
+    tax_office: '',
+    tax_number: '',
+    sgk_number: '',
+    registration_date: new Date().toISOString().split('T')[0],
     status: 'active' 
   })
   const [saving, setSaving] = useState(false)
@@ -40,12 +48,25 @@ export default function CompanyList() {
   }
 
   const handleAddCompany = async () => {
-    if (!newCompany.name || !newCompany.company_code) return
+    if (!newCompany.name || !newCompany.company_code || !newCompany.phone || !newCompany.city) return
     setSaving(true)
     try {
       await addCompany(newCompany)
       setShowAddModal(false)
-      setNewCompany({ name: '', company_code: '', country: 'Türkiye', city: '', status: 'active' })
+      setNewCompany({ 
+        name: '', 
+        company_code: '', 
+        country: 'Türkiye', 
+        city: '', 
+        district: '',
+        phone: '',
+        fax: '',
+        tax_office: '',
+        tax_number: '',
+        sgk_number: '',
+        registration_date: new Date().toISOString().split('T')[0],
+        status: 'active' 
+      })
     } catch (error) {
       alert('Hata: ' + error.message)
     }
@@ -164,23 +185,27 @@ export default function CompanyList() {
       )}
 
       {/* Add Company Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 rounded-2xl w-full max-w-md border border-dark-700">
+      {showAddModal && createPortal(
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
+          <div className="bg-dark-800 rounded-2xl w-full max-w-3xl border border-dark-700 h-[80vh] flex flex-col relative animate-fadeIn">
             <div className="p-6 border-b border-dark-700">
-              <h2 className="text-xl font-semibold text-dark-100">Yeni Firma Ekle</h2>
+              <h2 className="text-xl font-semibold text-dark-100">Genel Bilgiler</h2>
+              <p className="text-sm text-dark-400 mt-1">Yeni Firma Ekle</p>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto">
+              {/* Firma Adı / Ünvanı */}
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Firma Adı *</label>
+                <label className="block text-sm text-dark-300 mb-2">Firma Adı / Ünvanı *</label>
                 <input
                   type="text"
                   value={newCompany.name}
                   onChange={e => setNewCompany({ ...newCompany, name: e.target.value })}
                   className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
-                  placeholder="Firma adı"
+                  placeholder="Firma adı veya ünvanı"
                 />
               </div>
+              
+              {/* Firma Kodu */}
               <div>
                 <label className="block text-sm text-dark-300 mb-2">Firma Kodu *</label>
                 <input
@@ -191,9 +216,11 @@ export default function CompanyList() {
                   placeholder="MRM001"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Ülke / İl / İlçe */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Ülke</label>
+                  <label className="block text-sm text-dark-300 mb-2">Ülke *</label>
                   <input
                     type="text"
                     value={newCompany.country}
@@ -202,13 +229,94 @@ export default function CompanyList() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Şehir</label>
+                  <label className="block text-sm text-dark-300 mb-2">İl *</label>
                   <input
                     type="text"
                     value={newCompany.city}
                     onChange={e => setNewCompany({ ...newCompany, city: e.target.value })}
                     className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
                     placeholder="İstanbul"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">İlçe *</label>
+                  <input
+                    type="text"
+                    value={newCompany.district}
+                    onChange={e => setNewCompany({ ...newCompany, district: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    placeholder="Kadıköy"
+                  />
+                </div>
+              </div>
+
+              {/* Telefon / Fax */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Telefon Numarası *</label>
+                  <input
+                    type="tel"
+                    value={newCompany.phone}
+                    onChange={e => setNewCompany({ ...newCompany, phone: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    placeholder="0212 123 4567"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Fax Numarası</label>
+                  <input
+                    type="tel"
+                    value={newCompany.fax}
+                    onChange={e => setNewCompany({ ...newCompany, fax: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    placeholder="0212 123 4568"
+                  />
+                </div>
+              </div>
+
+              {/* Vergi Dairesi / Vergi No */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Vergi Dairesi</label>
+                  <input
+                    type="text"
+                    value={newCompany.tax_office}
+                    onChange={e => setNewCompany({ ...newCompany, tax_office: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    placeholder="Kadıköy V.D."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Vergi No</label>
+                  <input
+                    type="text"
+                    value={newCompany.tax_number}
+                    onChange={e => setNewCompany({ ...newCompany, tax_number: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    placeholder="1234567890"
+                  />
+                </div>
+              </div>
+
+              {/* SGK Sicil No / Kayıt Tarihi */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">SGK Sicil No</label>
+                  <input
+                    type="text"
+                    value={newCompany.sgk_number}
+                    onChange={e => setNewCompany({ ...newCompany, sgk_number: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    placeholder="12345678901234567890"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Kayıt Tarihi *</label>
+                  <input
+                    type="date"
+                    value={newCompany.registration_date}
+                    onChange={e => setNewCompany({ ...newCompany, registration_date: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
@@ -222,14 +330,15 @@ export default function CompanyList() {
               </button>
               <button
                 onClick={handleAddCompany}
-                disabled={!newCompany.name || !newCompany.company_code || saving}
+                disabled={!newCompany.name || !newCompany.company_code || !newCompany.phone || !newCompany.city || saving}
                 className="px-4 py-2 bg-accent hover:bg-accent-dark rounded-lg text-white transition-colors disabled:opacity-50"
               >
                 {saving ? 'Kaydediliyor...' : 'Kaydet'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

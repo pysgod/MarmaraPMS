@@ -27,7 +27,7 @@ function CompanyContextBanner() {
   if (!selectedCompany) return null
   
   return (
-    <div className="mx-4 mb-4 p-3 rounded-xl bg-accent/20 border border-accent/30">
+    <div className="mx-4 mb-4 p-3 rounded-xl bg-accent/20 border border-accent/30 ">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
           <Building2 size={16} className="text-white" />

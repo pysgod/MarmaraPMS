@@ -3,7 +3,7 @@ import Topbar from '../components/Topbar'
 
 export default function MainLayout({ children }) {
   return (
-    <div className="flex min-h-screen bg-dark-900">
+    <div className="flex h-screen bg-dark-900">
       <Sidebar />
       <div className="flex-1 flex flex-col lg:ml-0">
         <Topbar />

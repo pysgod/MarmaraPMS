@@ -16,7 +16,7 @@ import {
 export default function Topbar() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { companies, selectedCompany, setSelectedCompany, notifications, logout } = useApp()
+  const { companies, selectedCompany, setCompanyContext, exitCompanyContext, notifications, logout } = useApp()
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
@@ -121,7 +121,7 @@ export default function Topbar() {
               <div className="p-2">
                 <button
                   onClick={() => {
-                    setSelectedCompany(null)
+                    exitCompanyContext()
                     setShowCompanyDropdown(false)
                   }}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-dark-700/50 transition-colors"
@@ -134,14 +134,14 @@ export default function Topbar() {
                   <button
                     key={company.id}
                     onClick={() => {
-                      setSelectedCompany(company)
+                      setCompanyContext(company)
                       setShowCompanyDropdown(false)
                     }}
                     className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-dark-700/50 transition-colors"
                   >
                     <div>
                       <p className="text-sm text-dark-200 text-left">{company.name}</p>
-                      <p className="text-xs text-dark-400">{company.code}</p>
+                      <p className="text-xs text-dark-400">{company.company_code}</p>
                     </div>
                     {selectedCompany?.id === company.id && <Check size={16} className="text-accent" />}
                   </button>

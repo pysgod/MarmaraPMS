@@ -16,11 +16,10 @@ async function seed() {
     console.log('🌱 Seed verileri oluşturuluyor...')
 
     // Create admin user
-    const hashedPassword = await bcrypt.hash('admin123', 10)
     await User.create({
       name: 'Admin',
       email: 'admin@marmara.com',
-      password: hashedPassword,
+      password: 'admin123',
       role: 'admin'
     })
     console.log('  ✓ Admin kullanıcısı oluşturuldu')

@@ -22,10 +22,39 @@ const Company = sequelize.define('Company', {
   },
   country: {
     type: DataTypes.STRING(100),
-    allowNull: true
+    allowNull: true,
+    defaultValue: 'Türkiye'
   },
   city: {
     type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  district: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  phone: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
+  fax: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
+  tax_office: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  tax_number: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
+  sgk_number: {
+    type: DataTypes.STRING(30),
+    allowNull: true
+  },
+  registration_date: {
+    type: DataTypes.DATEONLY,
     allowNull: true
   },
   timezone: {
@@ -40,3 +69,4 @@ const Company = sequelize.define('Company', {
 })
 
 module.exports = Company
+

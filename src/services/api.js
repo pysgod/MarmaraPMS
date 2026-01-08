@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 class ApiService {
   constructor() {
@@ -263,6 +263,58 @@ class ApiService {
   }
 
   // ==========================================
+  // Status Updates
+  // ==========================================
+  async updateCompanyStatus(id, status) {
+    return this.request(`/companies/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    })
+  }
+
+  async updateProjectStatus(id, status) {
+    return this.request(`/projects/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    })
+  }
+
+  // ==========================================
+  // Project Clothing Types
+  // ==========================================
+  async getProjectClothingTypes(projectId) {
+    return this.request(`/projects/${projectId}/clothing-types`)
+  }
+
+  async updateProjectClothingTypes(projectId, clothingTypes) {
+    return this.request(`/projects/${projectId}/clothing-types`, {
+      method: 'PUT',
+      body: JSON.stringify({ clothing_types: clothingTypes }),
+    })
+  }
+
+  // ==========================================
+  // Project Customer Rep
+  // ==========================================
+  async getProjectCustomerRep(projectId) {
+    return this.request(`/projects/${projectId}/customer-rep`)
+  }
+
+  async updateProjectCustomerRep(projectId, data) {
+    return this.request(`/projects/${projectId}/customer-rep`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // ==========================================
+  // Admin Users
+  // ==========================================
+  async getAdminUsers() {
+    return this.request('/projects/managers/list')
+  }
+
+  // ==========================================
   // Notifications
   // ==========================================
   async getNotifications() {
@@ -292,3 +344,4 @@ class ApiService {
 
 export const api = new ApiService()
 export default api
+

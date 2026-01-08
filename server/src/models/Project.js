@@ -23,6 +23,14 @@ const Project = sequelize.define('Project', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  service_type: {
+    type: DataTypes.ENUM('security_armed', 'security_unarmed', 'cleaning', 'consulting', 'reception', 'technical', 'landscaping', 'other'),
+    allowNull: true
+  },
+  segment: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
   status: {
     type: DataTypes.ENUM('active', 'pending', 'completed', 'cancelled'),
     defaultValue: 'pending'
@@ -34,6 +42,22 @@ const Project = sequelize.define('Project', {
   end_date: {
     type: DataTypes.DATEONLY,
     allowNull: true
+  },
+  primary_manager_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  secondary_manager_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   }
 }, {
   tableName: 'projects',
@@ -42,3 +66,4 @@ const Project = sequelize.define('Project', {
 })
 
 module.exports = Project
+

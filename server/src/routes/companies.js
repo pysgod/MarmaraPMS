@@ -69,7 +69,10 @@ router.get('/:id', async (req, res) => {
 // Create company
 router.post('/', async (req, res) => {
   try {
-    const { name, company_code, status, country, city, timezone } = req.body
+    const { 
+      name, company_code, status, country, city, district, timezone,
+      phone, fax, tax_office, tax_number, sgk_number, registration_date 
+    } = req.body
     
     if (!name || !company_code) {
       return res.status(400).json({ message: 'Firma adı ve kodu zorunludur' })
@@ -85,9 +88,16 @@ router.post('/', async (req, res) => {
       name,
       company_code,
       status: status || 'active',
-      country,
+      country: country || 'Türkiye',
       city,
-      timezone: timezone || 'Europe/Istanbul'
+      district,
+      timezone: timezone || 'Europe/Istanbul',
+      phone,
+      fax,
+      tax_office,
+      tax_number,
+      sgk_number,
+      registration_date
     })
     
     res.status(201).json({
@@ -111,7 +121,10 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Firma bulunamadı' })
     }
     
-    const { name, company_code, status, country, city, timezone } = req.body
+    const { 
+      name, company_code, status, country, city, district, timezone,
+      phone, fax, tax_office, tax_number, sgk_number, registration_date 
+    } = req.body
     
     // Check if new company code conflicts with another company
     if (company_code && company_code !== company.company_code) {
@@ -121,12 +134,37 @@ router.put('/:id', async (req, res) => {
       }
     }
     
-    await company.update({ name, company_code, status, country, city, timezone })
+    await company.update({ 
+      name, company_code, status, country, city, district, timezone,
+      phone, fax, tax_office, tax_number, sgk_number, registration_date 
+    })
     
     res.json(company)
   } catch (error) {
     console.error('Update company error:', error)
     res.status(500).json({ message: 'Firma güncellenirken hata oluştu', error: error.message })
+  }
+})
+
+// Update company status
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const company = await Company.findByPk(req.params.id)
+    
+    if (!company) {
+      return res.status(404).json({ message: 'Firma bulunamadı' })
+    }
+    
+    const { status } = req.body
+    if (!['active', 'passive', 'archived'].includes(status)) {
+      return res.status(400).json({ message: 'Geçersiz durum değeri' })
+    }
+    
+    await company.update({ status })
+    res.json(company)
+  } catch (error) {
+    console.error('Update company status error:', error)
+    res.status(500).json({ message: 'Firma durumu güncellenirken hata oluştu', error: error.message })
   }
 })
 

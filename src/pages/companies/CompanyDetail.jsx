@@ -22,8 +22,14 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Plus
+
+  Plus,
+  X,
+  Check,
+  Trash2,
+  Power
 } from 'lucide-react'
+import { createPortal } from 'react-dom'
 
 const tabs = [
   { id: 'general', name: 'Genel Bilgiler', icon: Building2 },
@@ -39,34 +45,80 @@ function TabContent({ activeTab, company, employees, projects, patrols }) {
     case 'general':
       return (
         <div className="space-y-6">
+          {/* Firma Bilgileri */}
           <div className="bg-dark-700/50 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-dark-100 mb-4">Firma Bilgileri</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-dark-400">Firma Adı</label>
-                  <p className="text-dark-100 mt-1">{company.name}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-dark-400">Firma Kodu</label>
-                  <p className="text-dark-100 mt-1">{company.company_code}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-dark-400">Zaman Dilimi</label>
-                  <p className="text-dark-100 mt-1">{company.timezone || 'Europe/Istanbul'}</p>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <label className="text-sm text-dark-400">Firma Adı / Ünvanı</label>
+                <p className="text-dark-100 mt-1">{company.name}</p>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <MapPin size={16} className="text-dark-400" />
-                  <span className="text-dark-200">{company.city || '-'}, {company.country || 'Türkiye'}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Calendar size={16} className="text-dark-400" />
-                  <span className="text-dark-200">
-                    Kayıt: {company.created_at ? new Date(company.created_at).toLocaleDateString('tr-TR') : '-'}
-                  </span>
-                </div>
+              <div>
+                <label className="text-sm text-dark-400">Firma Kodu</label>
+                <p className="text-dark-100 mt-1">{company.company_code}</p>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400">Kayıt Tarihi</label>
+                <p className="text-dark-100 mt-1">
+                  {company.registration_date 
+                    ? new Date(company.registration_date).toLocaleDateString('tr-TR') 
+                    : company.created_at 
+                      ? new Date(company.created_at).toLocaleDateString('tr-TR') 
+                      : '-'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Konum Bilgileri */}
+          <div className="bg-dark-700/50 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-dark-100 mb-4">Konum Bilgileri</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="text-sm text-dark-400">Ülke</label>
+                <p className="text-dark-100 mt-1">{company.country || 'Türkiye'}</p>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400">İl</label>
+                <p className="text-dark-100 mt-1">{company.city || '-'}</p>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400">İlçe</label>
+                <p className="text-dark-100 mt-1">{company.district || '-'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* İletişim Bilgileri */}
+          <div className="bg-dark-700/50 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-dark-100 mb-4">İletişim Bilgileri</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-sm text-dark-400">Telefon Numarası</label>
+                <p className="text-dark-100 mt-1">{company.phone || '-'}</p>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400">Fax Numarası</label>
+                <p className="text-dark-100 mt-1">{company.fax || '-'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Vergi ve SGK Bilgileri */}
+          <div className="bg-dark-700/50 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-dark-100 mb-4">Vergi ve SGK Bilgileri</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="text-sm text-dark-400">Vergi Dairesi</label>
+                <p className="text-dark-100 mt-1">{company.tax_office || '-'}</p>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400">Vergi No</label>
+                <p className="text-dark-100 mt-1">{company.tax_number || '-'}</p>
+              </div>
+              <div>
+                <label className="text-sm text-dark-400">SGK Sicil No</label>
+                <p className="text-dark-100 mt-1">{company.sgk_number || '-'}</p>
               </div>
             </div>
           </div>
@@ -221,10 +273,83 @@ function TabContent({ activeTab, company, employees, projects, patrols }) {
 export default function CompanyDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { selectedCompany, setCompanyContext, companies, employees, projects, patrols } = useApp()
+
+  const { selectedCompany, setCompanyContext, companies, employees, projects, patrols, updateCompany } = useApp()
   const [activeTab, setActiveTab] = useState('general')
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const [saving, setSaving] = useState(false)
+  
+  // Edit form state
+  const [editData, setEditData] = useState({
+    name: '',
+    company_code: '',
+    country: '',
+    city: '',
+    district: '',
+    phone: '',
+    fax: '',
+    tax_office: '',
+    tax_number: '', 
+    sgk_number: '',
+    registration_date: ''
+  })
+  
+  // Load initial data
+  useEffect(() => {
+    if (company) {
+      setEditData({
+        name: company.name || '',
+        company_code: company.company_code || '',
+        country: company.country || '',
+        city: company.city || '',
+        district: company.district || '',
+        phone: company.phone || '',
+        fax: company.fax || '',
+        tax_office: company.tax_office || '',
+        tax_number: company.tax_number || '',
+        sgk_number: company.sgk_number || '',
+        registration_date: company.registration_date ? company.registration_date.split('T')[0] : ''
+      })
+    }
+  }, [company])
+
+  const handleUpdate = async () => {
+    setSaving(true)
+    try {
+      await updateCompany(company.id, editData)
+      setShowEditModal(false)
+    } catch (error) {
+      alert('Güncelleme hatası: ' + error.message)
+    }
+    setSaving(false)
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Bu firmayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return
+    
+    try {
+      await api.deleteCompany(id)
+      navigate('/companies')
+    } catch (error) {
+      alert('Silme hatası: ' + error.message)
+    }
+  }
+
+  const handleToggleStatus = async () => {
+    const newStatus = company.status === 'active' ? 'passive' : 'active'
+    try {
+      await updateCompany(company.id, { status: newStatus })
+      setCompany(prev => ({ ...prev, status: newStatus }))
+      setShowMenu(false)
+    } catch (error) {
+      alert('Durum güncelleme hatası: ' + error.message)
+    }
+  }
+
 
   useEffect(() => {
     loadCompany()
@@ -296,13 +421,48 @@ export default function CompanyDetail() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-dark-700 hover:bg-dark-600 rounded-lg text-dark-200 text-sm transition-colors">
+          <button 
+            onClick={() => setShowEditModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-dark-700 hover:bg-dark-600 rounded-lg text-dark-200 text-sm transition-colors"
+          >
             <Edit size={16} />
             Düzenle
           </button>
-          <button className="p-2.5 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors">
-            <MoreVertical size={18} className="text-dark-300" />
-          </button>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setShowMenu(!showMenu)}
+              className={`p-2.5 rounded-lg transition-colors ${showMenu ? 'bg-dark-600' : 'bg-dark-700 hover:bg-dark-600'}`}
+            >
+              <MoreVertical size={18} className="text-dark-300" />
+            </button>
+
+            {/* Menu Dropdown */}
+            {showMenu && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowMenu(false)}
+                />
+                <div className="absolute right-0 mt-2 w-48 bg-dark-700 rounded-xl shadow-lg border border-dark-600 py-1 z-20 overflow-hidden">
+                  <button
+                    onClick={handleToggleStatus}
+                    className="w-full text-left px-4 py-3 text-sm text-dark-200 hover:bg-dark-600 flex items-center gap-2 transition-colors"
+                  >
+                    <Power size={16} className={company.status === 'active' ? 'text-amber-400' : 'text-green-400'} />
+                    {company.status === 'active' ? 'Pasife Al' : 'Aktif Yap'}
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-dark-600"
+                  >
+                    <Trash2 size={16} />
+                    Firmayı Sil
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -386,6 +546,165 @@ export default function CompanyDetail() {
           />
         </div>
       </div>
+      {/* Edit Company Modal - Portal */}
+      {showEditModal && createPortal(
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
+          <div className="bg-dark-800 rounded-2xl w-full max-w-3xl border border-dark-700 h-[80vh] flex flex-col relative animate-fadeIn">
+            <div className="p-6 border-b border-dark-700 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold text-dark-100">Firma Düzenle</h2>
+                <p className="text-sm text-dark-400 mt-1">{company.name}</p>
+              </div>
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-dark-400" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4 overflow-y-auto">
+              {/* Firma Adı / Ünvanı */}
+              <div>
+                <label className="block text-sm text-dark-300 mb-2">Firma Adı / Ünvanı *</label>
+                <input
+                  type="text"
+                  value={editData.name}
+                  onChange={e => setEditData({ ...editData, name: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                />
+              </div>
+              
+              {/* Firma Kodu */}
+              <div>
+                <label className="block text-sm text-dark-300 mb-2">Firma Kodu *</label>
+                <input
+                  type="text"
+                  value={editData.company_code}
+                  onChange={e => setEditData({ ...editData, company_code: e.target.value.toUpperCase() })}
+                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              {/* Ülke / İl / İlçe */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Ülke *</label>
+                  <input
+                    type="text"
+                    value={editData.country}
+                    onChange={e => setEditData({ ...editData, country: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">İl *</label>
+                  <input
+                    type="text"
+                    value={editData.city}
+                    onChange={e => setEditData({ ...editData, city: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">İlçe *</label>
+                  <input
+                    type="text"
+                    value={editData.district}
+                    onChange={e => setEditData({ ...editData, district: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+
+              {/* Telefon / Fax */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Telefon Numarası *</label>
+                  <input
+                    type="tel"
+                    value={editData.phone}
+                    onChange={e => setEditData({ ...editData, phone: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Fax Numarası</label>
+                  <input
+                    type="tel"
+                    value={editData.fax}
+                    onChange={e => setEditData({ ...editData, fax: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+
+              {/* Vergi Dairesi / Vergi No */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Vergi Dairesi</label>
+                  <input
+                    type="text"
+                    value={editData.tax_office}
+                    onChange={e => setEditData({ ...editData, tax_office: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Vergi No</label>
+                  <input
+                    type="text"
+                    value={editData.tax_number}
+                    onChange={e => setEditData({ ...editData, tax_number: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+
+              {/* SGK / Tarih */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">SGK Sicil No</label>
+                  <input
+                    type="text"
+                    value={editData.sgk_number}
+                    onChange={e => setEditData({ ...editData, sgk_number: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-dark-300 mb-2">Kuruluş Tarihi</label>
+                  <input
+                    type="date"
+                    value={editData.registration_date}
+                    onChange={e => setEditData({ ...editData, registration_date: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-dark-700 flex justify-end gap-3">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 text-dark-300 hover:text-dark-100 transition-colors"
+                disabled={saving}
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleUpdate}
+                disabled={saving}
+                className="flex items-center gap-2 px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors disabled:opacity-50"
+              >
+                {saving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+                <Check size={18} />
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
+import AddProjectWizard from './AddProjectWizard'
 import { 
   FolderKanban, 
   Plus, 
@@ -15,18 +16,11 @@ import {
 
 export default function ProjectList() {
   const navigate = useNavigate()
-  const { projects, selectedCompany, hasCompanyContext, addProject, employees } = useApp()
+  const { projects, selectedCompany, hasCompanyContext } = useApp()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newProject, setNewProject] = useState({ 
-    name: '', 
-    description: '', 
-    status: 'pending',
-    start_date: '',
-    end_date: ''
-  })
-  const [saving, setSaving] = useState(false)
+
 
   // Require company context
   if (!hasCompanyContext) {
@@ -54,21 +48,7 @@ export default function ProjectList() {
     return matchesSearch && matchesStatus
   })
 
-  const handleAddProject = async () => {
-    if (!newProject.name) return
-    setSaving(true)
-    try {
-      await addProject({
-        ...newProject,
-        company_id: selectedCompany.id
-      })
-      setShowAddModal(false)
-      setNewProject({ name: '', description: '', status: 'pending', start_date: '', end_date: '' })
-    } catch (error) {
-      alert('Hata: ' + error.message)
-    }
-    setSaving(false)
-  }
+
 
   const statusConfig = {
     active: { label: 'Aktif', color: 'bg-green-500/20 text-green-400' },
@@ -80,7 +60,7 @@ export default function ProjectList() {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ">
         <div>
           <h1 className="text-2xl font-bold text-dark-50">Projeler</h1>
           <p className="text-dark-400 mt-1">
@@ -125,12 +105,12 @@ export default function ProjectList() {
       </div>
 
       {/* Project Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ">
         {filteredProjects.map(project => (
           <div 
             key={project.id}
             onClick={() => navigate(`/projects/${project.id}`)}
-            className="bg-dark-800 rounded-xl p-5 border border-dark-700 hover:border-accent/50 transition-all cursor-pointer group"
+            className="bg-dark-800 h-min rounded-xl p-5 border border-dark-700 hover:border-accent/50 transition-all cursor-pointer group "
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
@@ -186,86 +166,13 @@ export default function ProjectList() {
         </div>
       )}
 
-      {/* Add Project Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 rounded-2xl w-full max-w-md border border-dark-700">
-            <div className="p-6 border-b border-dark-700">
-              <h2 className="text-xl font-semibold text-dark-100">Yeni Proje Ekle</h2>
-              <p className="text-sm text-dark-400 mt-1">{selectedCompany.name}</p>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm text-dark-300 mb-2">Proje Adı *</label>
-                <input
-                  type="text"
-                  value={newProject.name}
-                  onChange={e => setNewProject({ ...newProject, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
-                  placeholder="Proje adı"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-dark-300 mb-2">Açıklama</label>
-                <textarea
-                  value={newProject.description}
-                  onChange={e => setNewProject({ ...newProject, description: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent resize-none"
-                  rows={3}
-                  placeholder="Proje açıklaması"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-dark-300 mb-2">Başlangıç</label>
-                  <input
-                    type="date"
-                    value={newProject.start_date}
-                    onChange={e => setNewProject({ ...newProject, start_date: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-dark-300 mb-2">Bitiş</label>
-                  <input
-                    type="date"
-                    value={newProject.end_date}
-                    onChange={e => setNewProject({ ...newProject, end_date: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm text-dark-300 mb-2">Durum</label>
-                <select
-                  value={newProject.status}
-                  onChange={e => setNewProject({ ...newProject, status: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
-                >
-                  <option value="pending">Bekliyor</option>
-                  <option value="active">Aktif</option>
-                  <option value="completed">Tamamlandı</option>
-                </select>
-              </div>
-            </div>
-            <div className="p-6 border-t border-dark-700 flex justify-end gap-3">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-dark-300 hover:text-dark-100 transition-colors"
-              >
-                İptal
-              </button>
-              <button
-                onClick={handleAddProject}
-                disabled={!newProject.name || saving}
-                className="px-4 py-2 bg-accent hover:bg-accent-dark rounded-lg text-white transition-colors disabled:opacity-50"
-              >
-                {saving ? 'Kaydediliyor...' : 'Kaydet'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Add Project Wizard */}
+      <AddProjectWizard 
+        isOpen={showAddModal} 
+        onClose={() => setShowAddModal(false)}
+        company={selectedCompany}
+      />
     </div>
   )
 }
+
