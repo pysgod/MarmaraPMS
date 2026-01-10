@@ -43,4 +43,13 @@ const adminMiddleware = (req, res, next) => {
   next()
 }
 
-module.exports = { authMiddleware, adminMiddleware }
+const checkRole = (roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'Bu işlem için yetkiniz yok' })
+    }
+    next()
+  }
+}
+
+module.exports = { authMiddleware, adminMiddleware, checkRole }

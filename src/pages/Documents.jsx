@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   FolderOpen, 
   Upload, 
@@ -16,17 +16,6 @@ import {
   List,
   Folder
 } from 'lucide-react'
-
-const documents = [
-  { id: 1, name: 'Firma Sözleşmesi.pdf', type: 'pdf', size: '2.4 MB', date: '01.01.2024', category: 'Sözleşmeler' },
-  { id: 2, name: 'Personel Listesi.xlsx', type: 'excel', size: '1.2 MB', date: '28.12.2023', category: 'Raporlar' },
-  { id: 3, name: 'Proje Planı.docx', type: 'word', size: '856 KB', date: '25.12.2023', category: 'Planlar' },
-  { id: 4, name: 'Site Fotoğrafları.zip', type: 'archive', size: '15.6 MB', date: '20.12.2023', category: 'Medya' },
-  { id: 5, name: 'Güvenlik Protokolü.pdf', type: 'pdf', size: '3.1 MB', date: '18.12.2023', category: 'Protokoller' },
-  { id: 6, name: 'Eğitim Materyali.pptx', type: 'ppt', size: '8.2 MB', date: '15.12.2023', category: 'Eğitim' },
-]
-
-const categories = ['Tümü', 'Sözleşmeler', 'Raporlar', 'Planlar', 'Medya', 'Protokoller', 'Eğitim']
 
 function getFileIcon(type) {
   switch (type) {
@@ -90,12 +79,53 @@ export default function Documents() {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState('grid')
   const [selectedCategory, setSelectedCategory] = useState('Tümü')
+  const [documents, setDocuments] = useState([])
+  const [categories, setCategories] = useState(['Tümü'])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [viewRes, docRes] = await Promise.all([
+          fetch('http://localhost:3001/api/data-view'),
+          fetch('http://localhost:3001/api/documents')
+        ])
+        
+        const viewData = await viewRes.json()
+        const docData = await docRes.json()
+
+        setCategories(['Tümü', ...viewData.docCategories.map(c => c.name)])
+        setDocuments(docData.map(d => ({
+          ...d,
+          category: d.category ? d.category.name : 'Genel'
+        })))
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching documents:', error)
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
   const filteredDocs = documents.filter(doc => {
     const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === 'Tümü' || doc.category === selectedCategory
     return matchesSearch && matchesCategory
   })
+
+  // Calculations
+  const totalSizeVal = documents.reduce((acc, doc) => {
+    // Basic parse logic for demo "2.4 MB" -> 2.4 * 1024 * 1024
+    // Since this is becoming dynamic, we might store size in bytes in DB 
+    // but for now let's just count documents.
+    return acc
+  }, 0)
+  
+  // Just show count for now
+  const newThisWeek = 0 // Would need date math
+
+  if (loading) return <div className="p-6 text-center text-dark-300">Yükleniyor...</div>
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -118,11 +148,11 @@ export default function Documents() {
           <p className="text-xs text-dark-400">Toplam Belge</p>
         </div>
         <div className="bg-dark-800 rounded-xl p-4 border border-dark-700">
-          <p className="text-2xl font-bold text-blue-400">5</p>
+          <p className="text-2xl font-bold text-blue-400">{newThisWeek}</p>
           <p className="text-xs text-dark-400">Bu Hafta Eklenen</p>
         </div>
         <div className="bg-dark-800 rounded-xl p-4 border border-dark-700">
-          <p className="text-2xl font-bold text-green-400">31.1 MB</p>
+          <p className="text-2xl font-bold text-green-400">-</p>
           <p className="text-xs text-dark-400">Toplam Boyut</p>
         </div>
         <div className="bg-dark-800 rounded-xl p-4 border border-dark-700">

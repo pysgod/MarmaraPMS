@@ -85,6 +85,51 @@ class ApiService {
   }
 
   // ==========================================
+  // Shift Management
+  // ==========================================
+  async getCompanyShifts(companyId) {
+    return this.request(`/shifts/company/${companyId}`)
+  }
+
+  async createShiftDefinition(data) {
+    return this.request('/shifts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateShiftDefinition(id, data) {
+    return this.request(`/shifts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteShiftDefinition(id) {
+    return this.request(`/shifts/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async getProjectShiftAssignments(projectId) {
+    return this.request(`/shifts/project/${projectId}`)
+  }
+
+  async assignShift(data) {
+    return this.request('/shifts/assign', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async unassignShift(data) {
+    return this.request('/shifts/unassign', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // ==========================================
   // Companies
   // ==========================================
   async getCompanies() {

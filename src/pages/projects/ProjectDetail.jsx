@@ -28,11 +28,13 @@ import {
   StopCircle
 } from 'lucide-react'
 import AddProjectWizard from './AddProjectWizard'
+import ProjectShifts from './ProjectShifts'
 
 const tabs = [
   { id: 'general', name: 'Genel Bilgiler', icon: FolderKanban },
   { id: 'employees', name: 'Çalışanlar', icon: Users },
   { id: 'patrols', name: 'Devriyeler', icon: Shield },
+  { id: 'shifts', name: 'Vardiyalar', icon: Clock },
 ]
 
 function TabContent({ activeTab, project, projectEmployees, projectPatrols, allEmployees, onAssignEmployee, onRemoveEmployee }) {
@@ -236,7 +238,7 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-dark-100">{employee.name}</p>
-                  <p className="text-sm text-dark-400">{employee.assigned_role || employee.role || 'Belirsiz'}</p>
+                  <p className="text-sm text-dark-400">{employee.assigned_role || employee.title || 'Belirsiz'}</p>
                 </div>
                 <button
                   onClick={() => onRemoveEmployee(employee.id)}
@@ -272,7 +274,7 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
                     >
                       <option value="">Seçiniz...</option>
                       {availableEmployees.map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.name} - {emp.role}</option>
+                        <option key={emp.id} value={emp.id}>{emp.name} - {emp.title || 'Belirsiz'}</option>
                       ))}
                     </select>
                   </div>
@@ -351,6 +353,9 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
           )}
         </div>
       )
+
+    case 'shifts':
+      return <ProjectShifts projectId={project.id} />
 
     default:
       return (

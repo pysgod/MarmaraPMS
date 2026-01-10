@@ -30,12 +30,14 @@ import {
   Power
 } from 'lucide-react'
 import { createPortal } from 'react-dom'
+import CompanyShifts from './CompanyShifts'
 
 const tabs = [
   { id: 'general', name: 'Genel Bilgiler', icon: Building2 },
   { id: 'employees', name: 'Çalışanlar', icon: Users },
   { id: 'projects', name: 'Projeler', icon: FolderKanban },
   { id: 'patrols', name: 'Devriyeler', icon: Shield },
+  { id: 'shifts', name: 'Vardiyalar', icon: Clock },
 ]
 
 function TabContent({ activeTab, company, employees, projects, patrols }) {
@@ -149,7 +151,7 @@ function TabContent({ activeTab, company, employees, projects, patrols }) {
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-dark-100">{employee.name}</p>
-                  <p className="text-sm text-dark-400">{employee.role || 'Belirsiz'}</p>
+                  <p className="text-sm text-dark-400">{employee.title || 'Belirsiz'}</p>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs ${
                   employee.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
@@ -260,6 +262,9 @@ function TabContent({ activeTab, company, employees, projects, patrols }) {
           )}
         </div>
       )
+
+    case 'shifts':
+      return <CompanyShifts companyId={company.id} />
 
     default:
       return (

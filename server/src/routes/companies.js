@@ -43,7 +43,7 @@ router.get('/:id', async (req, res) => {
             { 
               model: ProjectEmployee, 
               as: 'projectEmployees',
-              include: [{ model: Employee, as: 'employee', attributes: ['id', 'name', 'role'] }]
+              include: [{ model: Employee, as: 'employee', attributes: ['id', 'name'] }]
             }
           ]
         },

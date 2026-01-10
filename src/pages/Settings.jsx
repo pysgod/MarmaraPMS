@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useApp } from '../context/AppContext'
 import { 
   Settings as SettingsIcon, 
   User, 
@@ -15,11 +16,23 @@ import {
   ChevronRight
 } from 'lucide-react'
 
-function SettingsSection({ activeSection, t, i18n }) {
+function SettingsSection({ activeSection, t, i18n, user }) {
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng)
     localStorage.setItem('i18nextLng', lng)
   }
+
+  // Helpers to get name parts safe
+  const getNameParts = (name) => {
+    if (!name) return { first: '', last: '' }
+    const parts = name.split(' ')
+    return {
+      first: parts[0] || '',
+      last: parts.slice(1).join(' ') || ''
+    }
+  }
+
+  const { first, last } = getNameParts(user?.name)
 
   switch (activeSection) {
     case 'profile':
@@ -29,7 +42,9 @@ function SettingsSection({ activeSection, t, i18n }) {
             <h3 className="text-lg font-semibold text-dark-100 mb-4">{t('settings.profile.info')}</h3>
             <div className="flex items-start gap-6 mb-6">
               <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
-                <span className="text-white font-bold text-2xl">A</span>
+                <span className="text-white font-bold text-2xl">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </span>
               </div>
               <div>
                 <button className="px-4 py-2 bg-accent rounded-lg text-white text-sm mb-2">
@@ -43,7 +58,7 @@ function SettingsSection({ activeSection, t, i18n }) {
                 <label className="block text-sm text-dark-400 mb-2">{t('settings.profile.firstName')}</label>
                 <input 
                   type="text" 
-                  defaultValue="Admin"
+                  defaultValue={first}
                   className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50"
                 />
               </div>
@@ -51,7 +66,7 @@ function SettingsSection({ activeSection, t, i18n }) {
                 <label className="block text-sm text-dark-400 mb-2">{t('settings.profile.lastName')}</label>
                 <input 
                   type="text" 
-                  defaultValue="User"
+                  defaultValue={last}
                   className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50"
                 />
               </div>
@@ -59,7 +74,7 @@ function SettingsSection({ activeSection, t, i18n }) {
                 <label className="block text-sm text-dark-400 mb-2">{t('settings.profile.email')}</label>
                 <input 
                   type="email" 
-                  defaultValue="admin@marmara.com"
+                  defaultValue={user?.email || ''}
                   className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50"
                 />
               </div>
@@ -67,7 +82,8 @@ function SettingsSection({ activeSection, t, i18n }) {
                 <label className="block text-sm text-dark-400 mb-2">{t('settings.profile.phone')}</label>
                 <input 
                   type="tel" 
-                  defaultValue="+90 532 xxx xx xx"
+                  defaultValue={user?.phone || ''}
+                  placeholder="+90 5xx xxx xx xx"
                   className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:ring-2 focus:ring-accent/50"
                 />
               </div>
@@ -219,6 +235,7 @@ function SettingsSection({ activeSection, t, i18n }) {
 
 export default function Settings() {
   const { t, i18n } = useTranslation()
+  const { user } = useApp()
   const [activeSection, setActiveSection] = useState('profile')
 
   const settingsSections = [
@@ -273,7 +290,7 @@ export default function Settings() {
         {/* Content */}
         <div className="lg:col-span-3">
           <div className="bg-dark-800 rounded-2xl border border-dark-700 p-6">
-            <SettingsSection activeSection={activeSection} t={t} i18n={i18n} />
+            <SettingsSection activeSection={activeSection} t={t} i18n={i18n} user={user} />
           </div>
         </div>
       </div>

@@ -10,7 +10,12 @@ const projectRoutes = require('./routes/projects')
 const employeeRoutes = require('./routes/employees')
 const patrolRoutes = require('./routes/patrols')
 const notificationRoutes = require('./routes/notifications')
+
 const statsRoutes = require('./routes/stats')
+const reportRoutes = require('./routes/reports')
+const documentRoutes = require('./routes/documents')
+const activityRoutes = require('./routes/activities')
+const shiftRoutes = require('./routes/shifts')
 
 const app = express()
 
@@ -42,6 +47,11 @@ app.use('/api/employees', employeeRoutes)
 app.use('/api/patrols', patrolRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/stats', statsRoutes)
+app.use('/api/reports', reportRoutes)
+app.use('/api/documents', documentRoutes)
+app.use('/api/activities', activityRoutes)
+app.use('/api/shifts', shiftRoutes)
+app.use('/api/data-view', require('./routes/dataView'))
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -61,13 +71,13 @@ async function start() {
     await sequelize.authenticate()
     console.log('✅ PostgreSQL bağlantısı başarılı')
     
-    // Sync database - drop and recreate all tables (development only!)
-    await sequelize.sync({ force: true })
-    console.log('✅ Veritabanı tabloları yeniden oluşturuldu')
+    // Sync database - alter tables to match models without dropping
+    await sequelize.sync({ alter: true })
+    console.log('✅ Veritabanı senkronize edildi (Veriler korundu)')
     
     // Run seed after sync
-    await require('./scripts/seedDb').seed()
-    console.log('✅ Test verileri oluşturuldu')
+    // await require('./scripts/seedDb').seed()
+    console.log('✅ Veritabanı hazır')
     
     app.listen(PORT, () => {
       console.log(`🚀 Sunucu http://localhost:${PORT} adresinde çalışıyor`)

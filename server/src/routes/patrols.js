@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
         { 
           model: PatrolAssignment, 
           as: 'assignments',
-          include: [{ model: Employee, as: 'employee', attributes: ['id', 'name', 'role'] }]
+          include: [{ model: Employee, as: 'employee', attributes: ['id', 'name'] }]
         }
       ],
       order: [['created_at', 'DESC']]

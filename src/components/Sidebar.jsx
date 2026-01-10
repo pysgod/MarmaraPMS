@@ -17,7 +17,8 @@ import {
   ChevronRight,
   Menu,
   X,
-  LogOut
+  LogOut,
+  Clock
 } from 'lucide-react'
 
 function CompanyContextBanner() {
@@ -42,7 +43,7 @@ function CompanyContextBanner() {
           exitCompanyContext()
           navigate('/companies')
         }}
-        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-dark-700/50 hover:bg-dark-700 text-dark-300 hover:text-dark-100 text-xs transition-colors"
+        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-red-900 text-dark-300 hover:text-dark-100 text-xs transition-colors"
       >
         <LogOut size={12} />
         Firmadan Çık
@@ -150,6 +151,12 @@ export default function Sidebar() {
       path: '/patrol', 
       icon: Shield,
       requiresCompany: true
+    },
+    { 
+      key: 'shifts',
+      name: 'Vardiyalar', 
+      path: '/shifts', 
+      icon: Clock 
     },
     { 
       key: 'reports',

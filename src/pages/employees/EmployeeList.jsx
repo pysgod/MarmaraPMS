@@ -1,24 +1,22 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
+import AddEmployeeWizard from './AddEmployeeWizard'
 import { 
   Users, 
   Plus, 
   Search, 
   Filter, 
   Phone, 
-  Building2,
   AlertCircle
 } from 'lucide-react'
 
 export default function EmployeeList() {
   const navigate = useNavigate()
-  const { employees, selectedCompany, hasCompanyContext, addEmployee } = useApp()
+  const { employees, selectedCompany, hasCompanyContext, getEmployees } = useApp()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newEmployee, setNewEmployee] = useState({ name: '', phone: '', role: '', status: 'active' })
-  const [saving, setSaving] = useState(false)
 
   // Require company context
   if (!hasCompanyContext) {
@@ -40,26 +38,27 @@ export default function EmployeeList() {
   }
 
   const filteredEmployees = employees.filter(emp => {
-    const matchesSearch = emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         emp.role?.toLowerCase().includes(searchTerm.toLowerCase())
+    // Search in name, surname, or deprecated name field
+    const nameMatch = emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                      emp.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                      emp.last_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const roleMatch = emp.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                      emp.role?.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesSearch = nameMatch || roleMatch
     const matchesStatus = statusFilter === 'all' || emp.status === statusFilter
     return matchesSearch && matchesStatus
   })
 
-  const handleAddEmployee = async () => {
-    if (!newEmployee.name) return
-    setSaving(true)
-    try {
-      await addEmployee({
-        ...newEmployee,
-        company_id: selectedCompany.id
-      })
-      setShowAddModal(false)
-      setNewEmployee({ name: '', phone: '', role: '', status: 'active' })
-    } catch (error) {
-      console.error('Add employee error:', error)
+  const handleWizardComplete = () => {
+    // Refresh list logic
+    if (getEmployees && selectedCompany) {
+      getEmployees(selectedCompany.id)
+    } else {
+       window.location.reload()
     }
-    setSaving(false)
+    setShowAddModal(false)
   }
 
   return (
@@ -103,6 +102,7 @@ export default function EmployeeList() {
             <option value="all">Tümü</option>
             <option value="active">Aktif</option>
             <option value="passive">Pasif</option>
+            <option value="archived">Arşivlenmiş</option>
           </select>
         </div>
       </div>
@@ -118,14 +118,14 @@ export default function EmployeeList() {
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center flex-shrink-0">
                 <span className="text-white font-bold text-lg">
-                  {employee.name?.[0]?.toUpperCase()}
+                  {employee.first_name ? employee.first_name[0] : (employee.name ? employee.name[0] : '?')}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-dark-100 group-hover:text-accent transition-colors truncate">
-                  {employee.name}
+                  {employee.first_name ? `${employee.first_name} ${employee.last_name}` : employee.name}
                 </h3>
-                <p className="text-sm text-dark-400 mt-0.5">{employee.role || 'Belirsiz'}</p>
+                <p className="text-sm text-dark-400 mt-0.5">{employee.title || employee.role || 'Unvan Belirtilmemiş'}</p>
                 {employee.phone && (
                   <div className="flex items-center gap-1.5 mt-2 text-xs text-dark-400">
                     <Phone size={12} />
@@ -136,9 +136,11 @@ export default function EmployeeList() {
               <span className={`px-2 py-1 rounded-full text-xs ${
                 employee.status === 'active' 
                   ? 'bg-green-500/20 text-green-400' 
-                  : 'bg-amber-500/20 text-amber-400'
+                  : employee.status === 'passive'
+                    ? 'bg-amber-500/20 text-amber-400'
+                    : 'bg-gray-500/20 text-gray-400'
               }`}>
-                {employee.status === 'active' ? 'Aktif' : 'Pasif'}
+                {employee.status === 'active' ? 'Aktif' : (employee.status === 'passive' ? 'Pasif' : 'Arşiv')}
               </span>
             </div>
           </div>
@@ -156,75 +158,13 @@ export default function EmployeeList() {
         </div>
       )}
 
-      {/* Add Employee Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 rounded-2xl w-full max-w-md border border-dark-700">
-            <div className="p-6 border-b border-dark-700">
-              <h2 className="text-xl font-semibold text-dark-100">Yeni Çalışan Ekle</h2>
-              <p className="text-sm text-dark-400 mt-1">{selectedCompany.name}</p>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm text-dark-300 mb-2">Ad Soyad *</label>
-                <input
-                  type="text"
-                  value={newEmployee.name}
-                  onChange={e => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
-                  placeholder="Çalışan adı"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-dark-300 mb-2">Telefon</label>
-                <input
-                  type="text"
-                  value={newEmployee.phone}
-                  onChange={e => setNewEmployee({ ...newEmployee, phone: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
-                  placeholder="+90 5XX XXX XXXX"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-dark-300 mb-2">Görev</label>
-                <input
-                  type="text"
-                  value={newEmployee.role}
-                  onChange={e => setNewEmployee({ ...newEmployee, role: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
-                  placeholder="Güvenlik Görevlisi"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-dark-300 mb-2">Durum</label>
-                <select
-                  value={newEmployee.status}
-                  onChange={e => setNewEmployee({ ...newEmployee, status: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
-                >
-                  <option value="active">Aktif</option>
-                  <option value="passive">Pasif</option>
-                </select>
-              </div>
-            </div>
-            <div className="p-6 border-t border-dark-700 flex justify-end gap-3">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-dark-300 hover:text-dark-100 transition-colors"
-              >
-                İptal
-              </button>
-              <button
-                onClick={handleAddEmployee}
-                disabled={!newEmployee.name || saving}
-                className="px-4 py-2 bg-accent hover:bg-accent-dark rounded-lg text-white transition-colors disabled:opacity-50"
-              >
-                {saving ? 'Kaydediliyor...' : 'Kaydet'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Add Employee Wizard */}
+      <AddEmployeeWizard 
+        isOpen={showAddModal} 
+        onClose={() => setShowAddModal(false)}
+        company={selectedCompany}
+        onComplete={handleWizardComplete}
+      />
     </div>
   )
 }

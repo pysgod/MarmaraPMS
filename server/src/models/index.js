@@ -10,6 +10,13 @@ const Patrol = require('./Patrol')
 const PatrolAssignment = require('./PatrolAssignment')
 const PatrolLog = require('./PatrolLog')
 const Notification = require('./Notification')
+const ReportType = require('./ReportType')
+const DocumentCategory = require('./DocumentCategory')
+const FaqItem = require('./FaqItem')
+const HelpCategory = require('./HelpCategory')
+const Report = require('./Report')
+const Document = require('./Document')
+const Activity = require('./Activity')
 
 // ==========================================
 // Company Associations (Grand Mother)
@@ -91,6 +98,37 @@ Employee.hasMany(PatrolLog, { foreignKey: 'employee_id', as: 'patrolLogs' })
 Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' })
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' })
 
+// ==========================================
+// Report / Document Associations
+// ==========================================
+Report.belongsTo(ReportType, { foreignKey: 'type_id', as: 'reportType' })
+ReportType.hasMany(Report, { foreignKey: 'type_id', as: 'reports' })
+
+Document.belongsTo(DocumentCategory, { foreignKey: 'category_id', as: 'category' })
+DocumentCategory.hasMany(Document, { foreignKey: 'category_id', as: 'documents' })
+
+// ==========================================
+// Shift Associations
+// ==========================================
+// Company has many ShiftDefinitions
+const ShiftDefinition = require('./ShiftDefinition')
+const ShiftAssignment = require('./ShiftAssignment')
+
+Company.hasMany(ShiftDefinition, { foreignKey: 'company_id', as: 'shiftDefinitions' })
+ShiftDefinition.belongsTo(Company, { foreignKey: 'company_id', as: 'company' })
+
+// ShiftDefinition has many Assignments
+ShiftDefinition.hasMany(ShiftAssignment, { foreignKey: 'shift_id', as: 'assignments' })
+ShiftAssignment.belongsTo(ShiftDefinition, { foreignKey: 'shift_id', as: 'shiftDefinition' })
+
+// Project has many Assignments
+Project.hasMany(ShiftAssignment, { foreignKey: 'project_id', as: 'shiftAssignments' })
+ShiftAssignment.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
+
+// Employee has many Assignments
+Employee.hasMany(ShiftAssignment, { foreignKey: 'employee_id', as: 'shiftAssignments' })
+ShiftAssignment.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' })
+
 module.exports = {
   sequelize,
   User,
@@ -103,6 +141,15 @@ module.exports = {
   Patrol,
   PatrolAssignment,
   PatrolLog,
-  Notification
+  Notification,
+  ReportType,
+  DocumentCategory,
+  FaqItem,
+  HelpCategory,
+  Report,
+  Document,
+  Activity,
+  ShiftDefinition,
+  ShiftAssignment
 }
 

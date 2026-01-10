@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApp } from '../context/AppContext'
 import { useNavigate } from 'react-router-dom'
@@ -133,6 +134,14 @@ export default function Dashboard() {
   const { t } = useTranslation()
   const { stats, projects, patrols } = useApp()
   const navigate = useNavigate()
+  const [recentActivities, setRecentActivities] = useState([])
+
+  useEffect(() => {
+    fetch('http://localhost:3001/api/activities')
+      .then(res => res.json())
+      .then(data => setRecentActivities(data))
+      .catch(err => console.error('Error fetching activities:', err))
+  }, [])
 
   const statusConfig = {
     active: { icon: Clock, color: 'text-green-400', bg: 'bg-green-500/10', label: t('common.active') || 'Aktif' },
@@ -140,14 +149,6 @@ export default function Dashboard() {
     completed: { icon: CheckCircle, color: 'text-blue-400', bg: 'bg-blue-500/10', label: t('common.completed') || 'Tamamlandı' },
     inactive: { icon: AlertCircle, color: 'text-amber-400', bg: 'bg-amber-500/10', label: 'Pasif' },
   }
-
-  // Mock activities since we don't have an activity log backend yet
-  const recentActivities = [
-    { id: 1, user: 'Ahmet Yılmaz', action: 'Plaza Güvenlik Projesi\'ni güncelledi', time: '5 dk önce' },
-    { id: 2, user: 'Mehmet Demir', action: 'AVM Tur 1 devriyesini tamamladı', time: '1 saat önce' },
-    { id: 3, user: 'Ayşe Kaya', action: 'yeni personel ekledi', time: '2 saat önce' },
-    { id: 4, user: 'Fatma Özkan', action: 'rapor oluşturdu', time: '3 saat önce' },
-  ]
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -236,9 +237,13 @@ export default function Dashboard() {
             <h2 className="text-lg font-semibold text-dark-50">{t('dashboard.recentActivities') || 'Son Aktiviteler'}</h2>
           </div>
           <div className="space-y-1">
-            {recentActivities.map(activity => (
-              <RecentActivityItem key={activity.id} activity={activity} />
-            ))}
+            {recentActivities.length === 0 ? (
+               <p className="text-dark-400 text-sm py-2">Henüz aktivite yok.</p>
+            ) : (
+              recentActivities.map(activity => (
+                <RecentActivityItem key={activity.id} activity={activity} />
+              ))
+            )}
           </div>
         </div>
       </div>

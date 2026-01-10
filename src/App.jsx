@@ -11,6 +11,7 @@ import EmployeeList from './pages/employees/EmployeeList'
 import EmployeeDetail from './pages/employees/EmployeeDetail'
 import PatrolList from './pages/patrol/PatrolList'
 import PatrolDetail from './pages/patrol/PatrolDetail'
+import Shifts from './pages/Shifts'
 import Reports from './pages/Reports'
 import Documents from './pages/Documents'
 import Notifications from './pages/Notifications'
@@ -61,6 +62,8 @@ function App() {
           <Route path="/patrol" element={<ProtectedRoute><PatrolList /></ProtectedRoute>} />
           <Route path="/patrol/:id" element={<ProtectedRoute><PatrolDetail /></ProtectedRoute>} />
           
+          <Route path="/shifts" element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
+
           {/* Diğer */}
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
