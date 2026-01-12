@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import AddProjectWizard from './AddProjectWizard'
@@ -16,10 +16,17 @@ import {
 
 export default function ProjectList() {
   const navigate = useNavigate()
-  const { projects, selectedCompany, hasCompanyContext } = useApp()
+  const { projects, selectedCompany, hasCompanyContext, fetchCompanyData } = useApp()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
+
+  // Refresh data on mount to ensure counts are up to date
+  useEffect(() => {
+    if (selectedCompany?.id) {
+      fetchCompanyData(selectedCompany.id)
+    }
+  }, [])
 
 
   // Require company context

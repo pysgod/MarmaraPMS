@@ -163,9 +163,16 @@ class ApiService {
   // ==========================================
   // Employees (was Personnel)
   // ==========================================
-  async getEmployees(companyId = null) {
-    const query = companyId ? `?companyId=${companyId}` : ''
-    return this.request(`/employees${query}`)
+  async getEmployees(companyId = null, status = null) {
+    const params = new URLSearchParams()
+    if (companyId) params.append('companyId', companyId)
+    if (status) params.append('status', status)
+    const query = params.toString()
+    return this.request(`/employees${query ? `?${query}` : ''}`)
+  }
+
+  async getIdleEmployees() {
+    return this.request('/employees/idle')
   }
 
   async getEmployee(id) {
@@ -190,6 +197,29 @@ class ApiService {
     return this.request(`/employees/${id}`, {
       method: 'DELETE',
     })
+  }
+
+  async assignEmployeeToCompany(employeeId, companyId, notes = null) {
+    return this.request(`/employees/${employeeId}/assign-company`, {
+      method: 'PUT',
+      body: JSON.stringify({ company_id: companyId, notes }),
+    })
+  }
+
+  async unassignEmployeeFromCompany(employeeId, notes = null) {
+    return this.request(`/employees/${employeeId}/unassign-company`, {
+      method: 'PUT',
+      body: JSON.stringify({ notes }),
+    })
+  }
+
+  async getHistory(params = {}) {
+    const queryString = new URLSearchParams(params).toString()
+    return this.request(`/employees/history?${queryString}`)
+  }
+
+  async getEmployeeHistory(employeeId) {
+    return this.request(`/employees/${employeeId}/history`)
   }
 
   // ==========================================

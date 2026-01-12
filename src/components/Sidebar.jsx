@@ -18,7 +18,8 @@ import {
   Menu,
   X,
   LogOut,
-  Clock
+  Clock,
+  History
 } from 'lucide-react'
 
 function CompanyContextBanner() {
@@ -146,6 +147,12 @@ export default function Sidebar() {
       requiresCompany: true
     },
     { 
+      key: 'shifts',
+      name: 'Vardiyalar', 
+      path: '/shifts', 
+      icon: Clock 
+    },
+    { 
       key: 'patrol',
       name: t('sidebar.patrol'), 
       path: '/patrol', 
@@ -153,10 +160,10 @@ export default function Sidebar() {
       requiresCompany: true
     },
     { 
-      key: 'shifts',
-      name: 'Vardiyalar', 
-      path: '/shifts', 
-      icon: Clock 
+      key: 'documents',
+      name: t('sidebar.documents'), 
+      path: '/documents', 
+      icon: FolderOpen 
     },
     { 
       key: 'reports',
@@ -165,10 +172,10 @@ export default function Sidebar() {
       icon: FileText 
     },
     { 
-      key: 'documents',
-      name: t('sidebar.documents'), 
-      path: '/documents', 
-      icon: FolderOpen 
+      key: 'archive',
+      name: 'Arşiv', 
+      path: '/archive', 
+      icon: History
     },
     { 
       key: 'notifications',

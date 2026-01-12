@@ -13,7 +13,9 @@ import {
   Shirt,
   UserCheck,
   Users,
-  CheckCircle
+  CheckCircle,
+  UserPlus,
+  UserX
 } from 'lucide-react'
 
 const SERVICE_TYPES = [
@@ -44,7 +46,8 @@ const TABS = [
   { id: 2, name: 'Kıyafet Türleri', icon: Shirt },
   { id: 3, name: 'Proje Müşteri Yetkilisi', icon: UserCheck },
   { id: 4, name: 'Proje Yöneticisi', icon: Users },
-  { id: 5, name: 'Onay', icon: CheckCircle },
+  { id: 5, name: 'Personel Ekle', icon: UserPlus },
+  { id: 6, name: 'Onay', icon: CheckCircle },
 ]
 
 export default function AddProjectWizard({ isOpen, onClose, company, project }) {
@@ -77,6 +80,10 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
     primary_manager_id: '',
     secondary_manager_id: '',
   })
+  
+  // Personel seçimi için
+  const [idleEmployees, setIdleEmployees] = useState([])
+  const [selectedEmployees, setSelectedEmployees] = useState([])
 
   useEffect(() => {
     if (isOpen) {
@@ -115,6 +122,9 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
           secondary_manager_id: project.secondary_manager_id || '',
         })
       }
+      
+      // Boşta personelleri yükle
+      loadIdleEmployees()
     } else {
         // Reset form on close is handled by parent or manual reset, but we should reset internal state if opening fresh
     }
@@ -127,6 +137,23 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
     } catch (error) {
       console.error('Failed to load admin users:', error)
     }
+  }
+  
+  const loadIdleEmployees = async () => {
+    try {
+      const employees = await api.getIdleEmployees()
+      setIdleEmployees(employees)
+    } catch (error) {
+      console.error('Failed to load idle employees:', error)
+    }
+  }
+  
+  const toggleEmployeeSelection = (employeeId) => {
+    setSelectedEmployees(prev => 
+      prev.includes(employeeId) 
+        ? prev.filter(id => id !== employeeId)
+        : [...prev, employeeId]
+    )
   }
 
   const handleClothingSelect = (item) => {
@@ -150,6 +177,8 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
       case 4:
         return managers.primary_manager_id // Primary manager is required
       case 5:
+        return true // Employee selection is optional
+      case 6:
         return true
       default:
         return true
@@ -157,7 +186,7 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
   }
 
   const handleNext = () => {
-    if (currentTab < 5 && canProceed()) {
+    if (currentTab < 6 && canProceed()) {
       setCurrentTab(currentTab + 1)
     }
   }
@@ -210,6 +239,21 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
           company_id: company?.id || project?.company_id, // Ensure company_id is available
         })
       }
+      
+      // Handle Selected Employees - assign to company and project
+      if (selectedEmployees.length > 0) {
+        const companyId = company?.id || project?.company_id
+        for (const employeeId of selectedEmployees) {
+          try {
+            // Önce firmaya ata
+            await api.assignEmployeeToCompany(employeeId, companyId)
+            // Sonra projeye ata
+            await api.assignEmployeeToProject(resultProject.id, employeeId)
+          } catch (err) {
+            console.error(`Employee ${employeeId} assignment failed:`, err)
+          }
+        }
+      }
 
       onClose()
       // If creating, navigate. If editing, we are already on detail page usually, but refresh might be needed or handled by context
@@ -229,6 +273,7 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
     setAvailableClothing([...CLOTHING_TYPES])
     setCustomerRep({ first_name: '', last_name: '', title: '', phone: '', email: '' })
     setManagers({ primary_manager_id: '', secondary_manager_id: '' })
+    setSelectedEmployees([])
   }
 
   if (!isOpen) return null
@@ -497,8 +542,68 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
             </div>
           )}
 
-          {/* Tab 5: Onay */}
+          {/* Tab 5: Personel Ekle */}
           {currentTab === 5 && (
+            <div className="space-y-4">
+              <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-blue-400 mb-1">Boşta Personel Ataması (Opsiyonel)</h4>
+                <p className="text-xs text-dark-400">
+                  Aşağıdan boşta olan personelleri seçerek hem bu firmaya hem de projeye otomatik atayabilirsiniz.
+                </p>
+              </div>
+              
+              {idleEmployees.length === 0 ? (
+                <div className="text-center py-12 bg-dark-700/50 rounded-xl border border-dark-700">
+                  <UserX size={48} className="text-dark-500 mx-auto mb-4" />
+                  <p className="text-dark-300">Sistemde boşta personel bulunmuyor.</p>
+                  <p className="text-xs text-dark-500 mt-2">Tüm personeller bir firmaya atanmış durumda.</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {idleEmployees.map(emp => (
+                    <div 
+                      key={emp.id} 
+                      onClick={() => toggleEmployeeSelection(emp.id)}
+                      className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors ${
+                        selectedEmployees.includes(emp.id)
+                          ? 'bg-accent/20 border-accent/50'
+                          : 'bg-dark-700/50 border-dark-600 hover:border-dark-500'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedEmployees.includes(emp.id)}
+                        onChange={() => toggleEmployeeSelection(emp.id)}
+                        className="w-5 h-5 rounded border-dark-600 bg-dark-700 text-accent focus:ring-accent"
+                      />
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold">
+                          {emp.first_name ? emp.first_name[0] : '?'}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-dark-100">
+                          {emp.first_name} {emp.last_name}
+                        </p>
+                        <p className="text-sm text-dark-400">{emp.title || 'Unvan belirtilmemiş'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {selectedEmployees.length > 0 && (
+                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <p className="text-green-400 text-sm">
+                    <strong>{selectedEmployees.length}</strong> personel seçildi. Bu personeller firmaya ve projeye atanacak.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab 6: Onay */}
+          {currentTab === 6 && (
             <div className="space-y-6">
               <div className="text-center py-4">
                 <CheckCircle size={48} className="text-accent mx-auto mb-4" />
@@ -549,6 +654,12 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
                     {adminUsers.find(u => u.id === parseInt(managers.primary_manager_id))?.name || '-'}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-dark-400">Atanacak Personel:</span>
+                  <span className={`${selectedEmployees.length > 0 ? 'text-green-400' : 'text-dark-100'}`}>
+                    {selectedEmployees.length > 0 ? `${selectedEmployees.length} kişi` : '-'}
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -565,7 +676,7 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
             Geri
           </button>
           
-          {currentTab < 5 ? (
+          {currentTab < 6 ? (
             <button
               onClick={handleNext}
               disabled={!canProceed()}

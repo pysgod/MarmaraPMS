@@ -12,6 +12,7 @@ import EmployeeDetail from './pages/employees/EmployeeDetail'
 import PatrolList from './pages/patrol/PatrolList'
 import PatrolDetail from './pages/patrol/PatrolDetail'
 import Shifts from './pages/Shifts'
+import Archive from './pages/Archive'
 import Reports from './pages/Reports'
 import Documents from './pages/Documents'
 import Notifications from './pages/Notifications'
@@ -61,6 +62,8 @@ function App() {
           {/* Devriye */}
           <Route path="/patrol" element={<ProtectedRoute><PatrolList /></ProtectedRoute>} />
           <Route path="/patrol/:id" element={<ProtectedRoute><PatrolDetail /></ProtectedRoute>} />
+
+          <Route path="/archive" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
           
           <Route path="/shifts" element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
 

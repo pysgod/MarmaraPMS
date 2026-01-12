@@ -9,18 +9,22 @@ const Employee = sequelize.define('Employee', {
   },
   company_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,  // Personel firma seçmeden eklenebilir (Boşta)
     references: {
       model: 'companies',
       key: 'id'
-    },
-    unique: 'company_tc'
+    }
+  },
+  // Personel atama durumu
+  assignment_status: {
+    type: DataTypes.ENUM('idle', 'assigned_to_company', 'assigned_to_project'),
+    defaultValue: 'idle'
   },
   // --- Genel Bilgiler ---
   tc_no: {
     type: DataTypes.STRING(11),
     allowNull: true, 
-    unique: 'company_tc'
+    unique: true  // TC sisteme özel unique
   },
   type: {
     type: DataTypes.ENUM('white_collar', 'blue_collar'),

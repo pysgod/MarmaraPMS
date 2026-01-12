@@ -25,7 +25,8 @@ import {
   UserCheck,
   Play,
   Pause,
-  StopCircle
+  StopCircle,
+  AlertTriangle
 } from 'lucide-react'
 import AddProjectWizard from './AddProjectWizard'
 import ProjectShifts from './ProjectShifts'
@@ -40,6 +41,8 @@ const tabs = [
 function TabContent({ activeTab, project, projectEmployees, projectPatrols, allEmployees, onAssignEmployee, onRemoveEmployee }) {
   const navigate = useNavigate()
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showRemoveModal, setShowRemoveModal] = useState(false)
+  const [employeeToRemove, setEmployeeToRemove] = useState(null)
   const [selectedEmployee, setSelectedEmployee] = useState('')
   const [assignedRole, setAssignedRole] = useState('')
 
@@ -49,6 +52,14 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
     setShowAssignModal(false)
     setSelectedEmployee('')
     setAssignedRole('')
+  }
+
+  const confirmRemove = () => {
+    if (employeeToRemove) {
+      onRemoveEmployee(employeeToRemove.id)
+      setShowRemoveModal(false)
+      setEmployeeToRemove(null)
+    }
   }
 
   // Filter out already assigned employees
@@ -236,13 +247,14 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
                   <span className="text-white font-semibold">{employee.name?.[0]}</span>
                 </div>
-                <div className="flex-1">
+              <div className="flex-1">
                   <p className="font-medium text-dark-100">{employee.name}</p>
                   <p className="text-sm text-dark-400">{employee.assigned_role || employee.title || 'Belirsiz'}</p>
                 </div>
                 <button
-                  onClick={() => onRemoveEmployee(employee.id)}
+                  onClick={() => { setEmployeeToRemove(employee); setShowRemoveModal(true); }}
                   className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                  title="Projeden Çıkar"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -302,6 +314,47 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
                     className="px-4 py-2 bg-accent hover:bg-accent-dark rounded-lg text-white transition-colors disabled:opacity-50"
                   >
                     Ata
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Remove Employee Confirmation Modal */}
+          {showRemoveModal && employeeToRemove && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+              <div className="bg-dark-800 rounded-2xl w-full max-w-md border border-dark-700 animate-fadeIn">
+                <div className="p-6 border-b border-dark-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                      <AlertTriangle size={20} className="text-amber-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-dark-100">Projeden Çıkar</h3>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <p className="text-dark-300 mb-4">
+                    <strong>{employeeToRemove.name}</strong> personelini
+                    <strong className="text-accent"> {project.name}</strong> projesinden çıkarmak istediğinizden emin misiniz?
+                  </p>
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <p className="text-blue-400 text-sm">
+                      ℹ️ Personel firmaya atanmaya devam edecektir, sadece bu projeden çıkarılacaktır.
+                    </p>
+                  </div>
+                </div>
+                <div className="p-6 border-t border-dark-700 flex justify-end gap-3">
+                  <button 
+                    onClick={() => { setShowRemoveModal(false); setEmployeeToRemove(null); }}
+                    className="px-4 py-2 text-dark-300 hover:text-dark-100 transition-colors"
+                  >
+                    Vazgeç
+                  </button>
+                  <button 
+                    onClick={confirmRemove}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-white transition-colors"
+                  >
+                    Projeden Çıkar
                   </button>
                 </div>
               </div>
@@ -373,6 +426,7 @@ export default function ProjectDetail() {
   const [activeTab, setActiveTab] = useState('general')
   const [project, setProject] = useState(null)
   const [projectEmployees, setProjectEmployees] = useState([])
+  const [companyEmployees, setCompanyEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
@@ -389,6 +443,12 @@ export default function ProjectDetail() {
       // Load project employees
       const empData = await api.getProjectEmployees(id)
       setProjectEmployees(empData)
+
+      // Load company employees for assignment
+      if (data.company_id) {
+        const compEmps = await api.getEmployees(data.company_id)
+        setCompanyEmployees(compEmps)
+      }
     } catch (error) {
       console.error('Load project error:', error)
     }
@@ -406,7 +466,6 @@ export default function ProjectDetail() {
   }
 
   const handleRemoveEmployee = async (employeeId) => {
-    if (!confirm('Bu çalışanı projeden çıkarmak istiyor musunuz?')) return
     try {
       await api.removeEmployeeFromProject(id, employeeId)
       setProjectEmployees(prev => prev.filter(e => e.id !== employeeId))
@@ -641,7 +700,7 @@ export default function ProjectDetail() {
             project={project} 
             projectEmployees={projectEmployees}
             projectPatrols={projectPatrols}
-            allEmployees={employees}
+            allEmployees={companyEmployees}
             onAssignEmployee={handleAssignEmployee}
             onRemoveEmployee={handleRemoveEmployee}
           />

@@ -18,7 +18,16 @@ router.get('/', async (req, res) => {
     
     // Add employee count to each project
     const projectsWithCounts = await Promise.all(projects.map(async (project) => {
-      const employeeCount = await ProjectEmployee.count({ where: { project_id: project.id, status: 'active' } })
+      // Status 'active' or NULL (for legacy)
+      const employeeCount = await ProjectEmployee.count({ 
+        where: { 
+          project_id: project.id,
+          [require('sequelize').Op.or]: [
+            { status: 'active' },
+            { status: null }
+          ]
+        } 
+      })
       const patrolCount = await Patrol.count({ where: { project_id: project.id } })
       return {
         ...project.toJSON(),

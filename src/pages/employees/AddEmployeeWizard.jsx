@@ -128,10 +128,18 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
 
   const [formData, setFormData] = useState(initialData)
 
-  // Load Projects on mount
+  // Firma ve projeler için state
+  const [allCompanies, setAllCompanies] = useState([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null)
+
+  // Load data on mount
   useEffect(() => {
     if (isOpen) {
-       if (company?.id) loadProjects()
+       loadCompanies()
+       if (company?.id) {
+         setSelectedCompanyId(company.id)
+         loadProjects(company.id)
+       }
        
        if (employee) {
          // Populate form for editing
@@ -157,13 +165,31 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
     }
   }, [isOpen, company, employee])
 
-  const loadProjects = async () => {
+  const loadCompanies = async () => {
     try {
-      const data = await api.getProjects(company.id)
+      const data = await api.getCompanies()
+      setAllCompanies(data)
+    } catch (error) {
+      console.error('Firmalar yüklenemedi', error)
+    }
+  }
+
+  const loadProjects = async (companyId) => {
+    if (!companyId) {
+      setProjects([])
+      return
+    }
+    try {
+      const data = await api.getProjects(companyId)
       setProjects(data)
     } catch (error) {
       console.error('Projeler yüklenemedi', error)
     }
+  }
+
+  const handleCompanySelect = (companyId) => {
+    setSelectedCompanyId(companyId)
+    loadProjects(companyId)
   }
 
   // TC Validasyonu
@@ -229,8 +255,10 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
         if (!formData.card_type) return false
         if (formData.card_type !== 'Kart hakkı yoktur' && !formData.card_no) return false
         return true
-      case 7: // Görevlendir
+      case 7: // Görevlendir - Her zaman opsiyonel
         if (!formData.assign_task) return true
+        // Firma bağlamı yoksa görevlendirme yapılamaz
+        if (!selectedCompanyId && !company?.id) return true
         return formData.assign_project_id && formData.assign_start_date
       default:
         return true
@@ -268,20 +296,27 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
   const handleSubmit = async () => {
     setSaving(true)
     try {
+      // Seçilen firma ID'sini belirle (varsa)
+      const targetCompanyId = selectedCompanyId || company?.id || null
+      
       if (employee) {
         // Update
         await api.updateEmployee(employee.id, {
             ...formData,
-            company_id: employee.company_id || company.id
+            company_id: employee.company_id || targetCompanyId
         })
         alert('Personel bilgileri güncellendi!')
       } else {
-        // Create
+        // Create - firma opsiyonel
         await api.createEmployee({
-            company_id: company.id,
+            company_id: targetCompanyId,
             ...formData
         })
-        alert('Personel başarıyla eklendi!')
+        if (targetCompanyId) {
+          alert('Personel başarıyla eklendi ve firmaya atandı!')
+        } else {
+          alert('Personel başarıyla eklendi! (Boşta olarak kaydedildi)')
+        }
       }
       
       onClose()
@@ -307,13 +342,25 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
         {/* Header */}
         <div className="p-6 border-b border-dark-700 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-dark-100">{employee ? 'Personel Düzenle' : 'Personel Ekle'}</h2>
-            <p className="text-sm text-dark-400 mt-1">{company?.name || employee?.company?.name}</p>
+            <h2 className="text-xl font-semibold text-dark-100">{employee ? 'Personel Düzenle' : 'Yeni Personel Ekle'}</h2>
+            <p className="text-sm text-dark-400 mt-1">
+              {company?.name || employee?.company?.name || (selectedCompanyId ? allCompanies.find(c => c.id === selectedCompanyId)?.name : 'Firma seçilmedi - Boşta olarak kaydedilecek')}
+            </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-dark-700 rounded-lg transition-colors">
             <X size={20} className="text-dark-400" />
           </button>
         </div>
+
+        {/* Info Banner - Show when no company context */}
+        {!company && !employee && currentTab === 1 && (
+          <div className="mx-6 mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <p className="text-blue-400 text-sm">
+              <strong>💡 Bilgi:</strong> Bu personeli daha sonra istediğiniz firmaya ve projelere atayabilirsiniz. 
+              Şimdilik firma seçmeden devam ederseniz, personel "Boşta" olarak kaydedilecektir.
+            </p>
+          </div>
+        )}
 
         {/* Error Alert */}
         {error && (
@@ -680,41 +727,104 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
               </div>
            )}
 
-           {/* TAB 7: GÖREVLENDİR (If edit, hide or show different msg) */}
+           {/* TAB 7: GÖREVLENDİR - Firma seçimi → Proje seçimi (opsiyonel) */}
            {currentTab === 7 && (
             <div className="space-y-6 max-w-2xl">
-               <div className="bg-purple-500/10 border border-purple-500/30 p-4 rounded-lg flex items-start gap-3">
-                 <div className="p-1 bg-purple-500 rounded text-white flex-shrink-0"><Briefcase size={20} /></div>
-                 <div>
-                   <h4 className="text-sm font-medium text-purple-400">Proje Görevlendirmesi</h4>
-                   {employee ? (
-                      <p className="text-xs text-dark-400 mt-1">Personelin proje atamasını değiştirmek için lütfen Projeler sekmesini veya Proje Detay sayfasını kullanın. Buradan sadece yeni atama kaydı oluşturabilirsiniz.</p>
-                   ): (
-                      <p className="text-xs text-dark-400 mt-1">Personeli hemen bir projeye atamak isterseniz buradan yapabilirsiniz.</p>
-                   )}
-                 </div>
+              <div className="bg-purple-500/10 border border-purple-500/30 p-4 rounded-lg flex items-start gap-3">
+                <div className="p-1 bg-purple-500 rounded text-white flex-shrink-0"><Briefcase size={20} /></div>
+                <div>
+                  <h4 className="text-sm font-medium text-purple-400">Firma ve Proje Ataması</h4>
+                  <p className="text-xs text-dark-400 mt-1">
+                    {employee 
+                      ? 'Mevcut personelin firma/proje atamasını değiştirmek için detay sayfasını kullanın.'
+                      : 'Personeli bir firmaya ve opsiyonel olarak projeye atayabilirsiniz. Bu adım zorunlu değildir.'}
+                  </p>
+                </div>
               </div>
 
-               <div className="flex items-center gap-3">
-                <input type="checkbox" id="assign_task" checked={formData.assign_task} onChange={e => handleChange('assign_task', e.target.checked)} className="w-5 h-5 rounded border-dark-600 bg-dark-700 text-accent focus:ring-accent" />
-                <label htmlFor="assign_task" className="text-dark-200 select-none cursor-pointer">Sistem üzerinden görevlendirme yapmak istiyorum</label>
-              </div>
+              {/* Firma daha önce belirlenmiş mi kontrolü */}
+              {(company?.id || employee?.company_id) ? (
+                <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                  <p className="text-blue-400 text-sm flex items-center gap-2">
+                    <Building2 size={16} />
+                    Personel <strong className="mx-1">{company?.name || employee?.company?.name}</strong> firmasına atanacak.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="checkbox" 
+                      id="assign_task" 
+                      checked={formData.assign_task} 
+                      onChange={e => handleChange('assign_task', e.target.checked)} 
+                      className="w-5 h-5 rounded border-dark-600 bg-dark-700 text-accent focus:ring-accent" 
+                    />
+                    <label htmlFor="assign_task" className="text-dark-200 select-none cursor-pointer">
+                      Bu personeli bir firmaya atamak istiyorum
+                    </label>
+                  </div>
 
-               {formData.assign_task && (
-                 <div className="space-y-4 p-4 bg-dark-700/30 rounded-xl border border-dark-700 animate-fadeIn">
+                  {!formData.assign_task && (
+                    <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                      <p className="text-amber-400 text-sm">
+                        Firma seçmezseniz personel "Boşta" olarak kaydedilecek ve sonradan atama yapabilirsiniz.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Firma ve Proje Seçimi */}
+              {(formData.assign_task || company?.id || employee?.company_id) && (
+                <div className="space-y-4 p-4 bg-dark-700/30 rounded-xl border border-dark-700 animate-fadeIn">
+                  {/* Firma Seçimi - sadece context yoksa göster */}
+                  {!company?.id && !employee?.company_id && (
                     <div>
-                      <label className="block text-xs text-dark-300 mb-1">Proje *</label>
-                      <select value={formData.assign_project_id} onChange={e => handleChange('assign_project_id', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100">
-                        <option value="">Seçiniz...</option>
-                        {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      <label className="block text-xs text-dark-300 mb-1">Firma *</label>
+                      <select 
+                        value={selectedCompanyId || ''} 
+                        onChange={e => handleCompanySelect(Number(e.target.value))} 
+                        className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100"
+                      >
+                        <option value="">Firma seçiniz...</option>
+                        {allCompanies.map(c => <option key={c.id} value={c.id}>{c.name} ({c.company_code})</option>)}
                       </select>
                     </div>
-                     <div>
-                      <label className="block text-xs text-dark-300 mb-1">Başlangıç Tarihi *</label>
-                      <input type="date" value={formData.assign_start_date} onChange={e => handleChange('assign_start_date', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                  )}
+
+                  {/* Proje Seçimi - Opsiyonel */}
+                  {(selectedCompanyId || company?.id || employee?.company_id) && (
+                    <div>
+                      <label className="block text-xs text-dark-300 mb-1">Proje (Opsiyonel)</label>
+                      <select 
+                        value={formData.assign_project_id} 
+                        onChange={e => handleChange('assign_project_id', e.target.value)} 
+                        className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100"
+                      >
+                        <option value="">Proje seçmeden devam et...</option>
+                        {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                      {projects.length === 0 && (
+                        <p className="text-xs text-dark-500 mt-1">Bu firmaya ait proje bulunmuyor.</p>
+                      )}
                     </div>
-                 </div>
-               )}
+                  )}
+
+                  {/* Başlangıç Tarihi - proje seçilmişse */}
+                  {formData.assign_project_id && (
+                    <div>
+                      <label className="block text-xs text-dark-300 mb-1">Proje Başlangıç Tarihi</label>
+                      <input 
+                        type="date" 
+                        value={formData.assign_start_date} 
+                        onChange={e => handleChange('assign_start_date', e.target.value)} 
+                        className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" 
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
            )}
 

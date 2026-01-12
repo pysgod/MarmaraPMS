@@ -27,7 +27,9 @@ import {
   X,
   Check,
   Trash2,
-  Power
+  Power,
+  Unlink,
+  AlertTriangle
 } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import CompanyShifts from './CompanyShifts'
@@ -40,8 +42,18 @@ const tabs = [
   { id: 'shifts', name: 'Vardiyalar', icon: Clock },
 ]
 
-function TabContent({ activeTab, company, employees, projects, patrols }) {
+function TabContent({ activeTab, company, employees, projects, patrols, onRemoveEmployee, onOpenAssignModal }) {
   const navigate = useNavigate()
+  const [employeeToRemove, setEmployeeToRemove] = useState(null)
+  const [showRemoveModal, setShowRemoveModal] = useState(false)
+
+  const confirmRemove = () => {
+    if (employeeToRemove) {
+      onRemoveEmployee(employeeToRemove.id)
+      setShowRemoveModal(false)
+      setEmployeeToRemove(null)
+    }
+  }
 
   switch (activeTab) {
     case 'general':
@@ -132,32 +144,52 @@ function TabContent({ activeTab, company, employees, projects, patrols }) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-dark-400">{employees.length} çalışan</p>
-            <button 
-              onClick={() => navigate('/employees')}
-              className="px-4 py-2 bg-accent rounded-lg text-white text-sm"
-            >
-              Tümünü Gör
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={onOpenAssignModal}
+                className="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg text-dark-200 text-sm flex items-center gap-2 transition-colors"
+              >
+                <Plus size={16} />
+                Çalışan Ekle
+              </button>
+              <button 
+                onClick={() => navigate('/employees')}
+                className="px-4 py-2 bg-accent rounded-lg text-white text-sm"
+              >
+                Tümünü Gör
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {employees.slice(0, 6).map(employee => (
+            {employees.slice(0, 10).map(employee => (
               <div 
                 key={employee.id} 
-                onClick={() => navigate(`/employees/${employee.id}`)}
-                className="bg-dark-700/50 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-dark-700 transition-colors"
+                className="bg-dark-700/50 rounded-xl p-4 flex items-center gap-4 hover:bg-dark-700 transition-colors"
               >
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
-                  <span className="text-white font-semibold">{employee.name?.[0]}</span>
+                <div 
+                  onClick={() => navigate(`/employees/${employee.id}`)}
+                  className="flex items-center gap-4 flex-1 cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
+                    <span className="text-white font-semibold">{employee.name?.[0]}</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-dark-100">{employee.name}</p>
+                    <p className="text-sm text-dark-400">{employee.title || 'Belirsiz'}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    employee.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+                  }`}>
+                    {employee.status === 'active' ? 'Aktif' : 'Pasif'}
+                  </span>
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-dark-100">{employee.name}</p>
-                  <p className="text-sm text-dark-400">{employee.title || 'Belirsiz'}</p>
-                </div>
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  employee.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
-                }`}>
-                  {employee.status === 'active' ? 'Aktif' : 'Pasif'}
-                </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setEmployeeToRemove(employee); setShowRemoveModal(true); }}
+                  className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                  title="Firmadan Çıkar"
+                >
+                  <Unlink size={16} />
+                </button>
               </div>
             ))}
           </div>
@@ -165,6 +197,48 @@ function TabContent({ activeTab, company, employees, projects, patrols }) {
             <div className="text-center py-12 bg-dark-700/50 rounded-xl">
               <Users size={48} className="text-dark-500 mx-auto mb-4" />
               <p className="text-dark-300">Bu firmaya ait çalışan bulunmuyor.</p>
+            </div>
+          )}
+
+          {/* Remove from Company Modal */}
+          {showRemoveModal && employeeToRemove && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+              <div className="bg-dark-800 rounded-2xl w-full max-w-md border border-dark-700 animate-fadeIn">
+                <div className="p-6 border-b border-dark-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                      <AlertTriangle size={20} className="text-red-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-dark-100">Firmadan Çıkar</h3>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <p className="text-dark-300 mb-4">
+                    <strong>{employeeToRemove.name}</strong> personelini
+                    <strong className="text-blue-400"> {company.name}</strong> firmasından çıkarmak istediğinizden emin misiniz?
+                  </p>
+                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                    <p className="text-red-400 text-sm flex items-start gap-2">
+                      <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
+                      Bu işlem personeli tüm projelerden de otomatik olarak çıkaracaktır. Personel "Boşta" durumuna düşecektir.
+                    </p>
+                  </div>
+                </div>
+                <div className="p-6 border-t border-dark-700 flex justify-end gap-3">
+                  <button 
+                    onClick={() => { setShowRemoveModal(false); setEmployeeToRemove(null); }}
+                    className="px-4 py-2 text-dark-300 hover:text-dark-100 transition-colors"
+                  >
+                    Vazgeç
+                  </button>
+                  <button 
+                    onClick={confirmRemove}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors"
+                  >
+                    Firmadan Çıkar
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -285,6 +359,8 @@ export default function CompanyDetail() {
   const [loading, setLoading] = useState(true)
 
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [idleEmployees, setIdleEmployees] = useState([])
   const [showMenu, setShowMenu] = useState(false)
   const [saving, setSaving] = useState(false)
   
@@ -352,6 +428,40 @@ export default function CompanyDetail() {
       setShowMenu(false)
     } catch (error) {
       alert('Durum güncelleme hatası: ' + error.message)
+    }
+  }
+
+  const handleRemoveEmployee = async (employeeId) => {
+    try {
+      await api.unassignEmployeeFromCompany(employeeId)
+      loadCompany()
+    } catch (error) {
+      alert('Personeli çıkarma hatası: ' + error.message)
+    }
+  }
+
+  const fetchIdleEmployees = async () => {
+    try {
+      const data = await api.getIdleEmployees()
+      setIdleEmployees(data)
+    } catch (error) {
+      console.error('Boşta personel getirme hatası:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (showAssignModal) {
+      fetchIdleEmployees()
+    }
+  }, [showAssignModal])
+
+  const handleAssignEmployee = async (employeeId) => {
+    try {
+      await api.assignEmployeeToCompany(employeeId, company.id)
+      setShowAssignModal(false)
+      loadCompany()
+    } catch (error) {
+      alert('Atama hatası: ' + error.message)
     }
   }
 
@@ -548,6 +658,8 @@ export default function CompanyDetail() {
             employees={employees}
             projects={projects}
             patrols={patrols}
+            onRemoveEmployee={handleRemoveEmployee}
+            onOpenAssignModal={() => setShowAssignModal(true)}
           />
         </div>
       </div>
@@ -705,6 +817,60 @@ export default function CompanyDetail() {
                 {saving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
                 <Check size={18} />
               </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Assign Employee Modal */}
+      {showAssignModal && createPortal(
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-dark-800 rounded-2xl w-full max-w-md border border-dark-700 animate-fadeIn flex flex-col max-h-[80vh]">
+            <div className="p-6 border-b border-dark-700 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-dark-100">Firmaya Personel Ekle</h3>
+              <button 
+                onClick={() => setShowAssignModal(false)}
+                className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-dark-400" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1">
+              {idleEmployees.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-dark-400">Boşta personel bulunamadı.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {idleEmployees.map(emp => (
+                    <div key={emp.id} className="flex items-center justify-between p-3 bg-dark-700/30 rounded-xl hover:bg-dark-700/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
+                          <span className="text-white font-medium">{emp.name?.[0]}</span>
+                        </div>
+                        <div>
+                          <p className="text-dark-100 font-medium">{emp.name}</p>
+                          <p className="text-xs text-dark-400">{emp.title || 'Belirsiz'}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAssignEmployee(emp.id)}
+                        className="p-2 bg-accent/10 hover:bg-accent text-accent hover:text-white rounded-lg transition-colors"
+                        title="Ata"
+                      >
+                        <Plus size={18} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-dark-700 bg-dark-800/50 rounded-b-2xl">
+              <p className="text-xs text-dark-400 flex items-center gap-2">
+                <AlertCircle size={14} />
+                 Sadece herhangi bir firmaya atanmamış personeller listelenir.
+              </p>
             </div>
           </div>
         </div>,

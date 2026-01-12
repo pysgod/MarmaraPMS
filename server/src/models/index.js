@@ -17,6 +17,7 @@ const HelpCategory = require('./HelpCategory')
 const Report = require('./Report')
 const Document = require('./Document')
 const Activity = require('./Activity')
+const EmployeeHistory = require('./EmployeeHistory')
 
 // ==========================================
 // Company Associations (Grand Mother)
@@ -129,6 +130,15 @@ ShiftAssignment.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
 Employee.hasMany(ShiftAssignment, { foreignKey: 'employee_id', as: 'shiftAssignments' })
 ShiftAssignment.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' })
 
+// ==========================================
+// Employee History Associations
+// ==========================================
+Employee.hasMany(EmployeeHistory, { foreignKey: 'employee_id', as: 'history' })
+EmployeeHistory.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' })
+EmployeeHistory.belongsTo(Company, { foreignKey: 'company_id', as: 'company' })
+EmployeeHistory.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
+EmployeeHistory.belongsTo(User, { foreignKey: 'performed_by', as: 'performedBy' })
+
 module.exports = {
   sequelize,
   User,
@@ -150,6 +160,7 @@ module.exports = {
   Document,
   Activity,
   ShiftDefinition,
-  ShiftAssignment
+  ShiftAssignment,
+  EmployeeHistory
 }
 
