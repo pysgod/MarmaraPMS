@@ -338,17 +338,17 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
 
   return createPortal(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
-      <div className="bg-dark-800 rounded-2xl w-full max-w-5xl border border-dark-700 h-[90vh] flex flex-col relative animate-fadeIn">
+      <div className="bg-theme-bg-secondary rounded-2xl w-full max-w-5xl border border-theme-border-primary h-[90vh] flex flex-col relative animate-fadeIn">
         {/* Header */}
-        <div className="p-6 border-b border-dark-700 flex items-center justify-between">
+        <div className="p-6 border-b border-theme-border-primary flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-dark-100">{employee ? 'Personel Düzenle' : 'Yeni Personel Ekle'}</h2>
-            <p className="text-sm text-dark-400 mt-1">
+            <h2 className="text-xl font-semibold text-theme-text-primary">{employee ? 'Personel Düzenle' : 'Yeni Personel Ekle'}</h2>
+            <p className="text-sm text-theme-text-muted mt-1">
               {company?.name || employee?.company?.name || (selectedCompanyId ? allCompanies.find(c => c.id === selectedCompanyId)?.name : 'Firma seçilmedi - Boşta olarak kaydedilecek')}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-dark-700 rounded-lg transition-colors">
-            <X size={20} className="text-dark-400" />
+          <button onClick={onClose} className="p-2 hover:bg-theme-bg-tertiary rounded-lg transition-colors">
+            <X size={20} className="text-theme-text-muted" />
           </button>
         </div>
 
@@ -374,7 +374,7 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
         )}
 
         {/* Tabs */}
-        <div className="px-6 py-3 border-b border-dark-700 flex gap-2 overflow-x-auto no-scrollbar">
+        <div className="px-6 py-3 border-b border-theme-border-primary flex gap-2 overflow-x-auto no-scrollbar">
           {TABS.map((tab) => {
             const Icon = tab.icon
             const isActive = currentTab === tab.id
@@ -389,7 +389,7 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
                     ? 'bg-accent text-white' 
                     : isCompleted
                       ? 'bg-green-500/20 text-green-400'
-                      : 'bg-dark-700/50 text-dark-400'
+                      : 'bg-theme-bg-hover text-theme-text-muted'
                 }`}
               >
                 {isCompleted ? <Check size={14} /> : <Icon size={14} />}
@@ -405,75 +405,75 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
            {/* TAB 1: GENEL BİLGİLER */}
            {currentTab === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="col-span-1 lg:col-span-3 pb-2 border-b border-dark-700 mb-2">
+              <div className="col-span-1 lg:col-span-3 pb-2 border-b border-theme-border-primary mb-2">
                 <h3 className="text-accent font-medium">Kimlik Bilgileri</h3>
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">TC Kimlik No *</label>
+                <label className="block text-xs text-theme-text-tertiary mb-1">TC Kimlik No *</label>
                 <input type="text" maxLength={11} value={formData.tc_no} onChange={e => handleChange('tc_no', e.target.value)} 
-                       className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 focus:outline-none focus:border-accent ${
+                       className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary focus:outline-none focus:border-accent ${
                           (showValidation && (!formData.tc_no || !validateTC(formData.tc_no))) || (!validateTC(formData.tc_no) && formData.tc_no.length === 11)
                           ? 'border-red-500' 
-                          : 'border-dark-600'
+                          : 'border-theme-border-secondary'
                        }`}/>
               </div>
               
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Tür *</label>
-                <select value={formData.type} onChange={e => handleChange('type', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100">
+                <label className="block text-xs text-theme-text-tertiary mb-1">Tür *</label>
+                <select value={formData.type} onChange={e => handleChange('type', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary">
                   <option value="blue_collar">Mavi Yaka</option>
                   <option value="white_collar">Beyaz Yaka</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Unvan *</label>
+                <label className="block text-xs text-theme-text-tertiary mb-1">Unvan *</label>
                 <select value={formData.title} onChange={e => handleChange('title', e.target.value)} 
-                  className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 focus:outline-none focus:border-accent ${showValidation && !formData.title ? 'border-red-500' : 'border-dark-600'}`}>
+                  className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary focus:outline-none focus:border-accent ${showValidation && !formData.title ? 'border-red-500' : 'border-theme-border-secondary'}`}>
                   <option value="">Seçiniz...</option>
                   {titles.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Adı *</label>
+                <label className="block text-xs text-theme-text-tertiary mb-1">Adı *</label>
                 <input type="text" value={formData.first_name} onChange={e => handleChange('first_name', e.target.value)} 
-                  className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 focus:outline-none focus:border-accent ${showValidation && !formData.first_name ? 'border-red-500' : 'border-dark-600'}`} />
+                  className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary focus:outline-none focus:border-accent ${showValidation && !formData.first_name ? 'border-red-500' : 'border-theme-border-secondary'}`} />
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Soyadı *</label>
+                <label className="block text-xs text-theme-text-tertiary mb-1">Soyadı *</label>
                 <input type="text" value={formData.last_name} onChange={e => handleChange('last_name', e.target.value)} 
-                  className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 focus:outline-none focus:border-accent ${showValidation && !formData.last_name ? 'border-red-500' : 'border-dark-600'}`} />
+                  className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary focus:outline-none focus:border-accent ${showValidation && !formData.last_name ? 'border-red-500' : 'border-theme-border-secondary'}`} />
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Baba Adı</label>
-                <input type="text" value={formData.father_name} onChange={e => handleChange('father_name', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                <label className="block text-xs text-theme-text-tertiary mb-1">Baba Adı</label>
+                <input type="text" value={formData.father_name} onChange={e => handleChange('father_name', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Anne Adı</label>
-                <input type="text" value={formData.mother_name} onChange={e => handleChange('mother_name', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                <label className="block text-xs text-theme-text-tertiary mb-1">Anne Adı</label>
+                <input type="text" value={formData.mother_name} onChange={e => handleChange('mother_name', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Doğum Yeri *</label>
+                <label className="block text-xs text-theme-text-tertiary mb-1">Doğum Yeri *</label>
                 <input type="text" value={formData.birth_place} onChange={e => handleChange('birth_place', e.target.value)} 
-                  className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 focus:outline-none focus:border-accent ${showValidation && !formData.birth_place ? 'border-red-500' : 'border-dark-600'}`} />
+                  className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary focus:outline-none focus:border-accent ${showValidation && !formData.birth_place ? 'border-red-500' : 'border-theme-border-secondary'}`} />
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Doğum Tarihi *</label>
+                <label className="block text-xs text-theme-text-tertiary mb-1">Doğum Tarihi *</label>
                 <input type="date" value={formData.birth_date} onChange={e => handleChange('birth_date', e.target.value)} 
-                   className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 focus:outline-none focus:border-accent ${showValidation && !formData.birth_date ? 'border-red-500' : 'border-dark-600'}`} />
+                   className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary focus:outline-none focus:border-accent ${showValidation && !formData.birth_date ? 'border-red-500' : 'border-theme-border-secondary'}`} />
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Medeni Durumu *</label>
+                <label className="block text-xs text-theme-text-tertiary mb-1">Medeni Durumu *</label>
                 <select value={formData.marital_status} onChange={e => handleChange('marital_status', e.target.value)} 
-                  className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 focus:outline-none focus:border-accent ${showValidation && !formData.marital_status ? 'border-red-500' : 'border-dark-600'}`}>
+                  className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary focus:outline-none focus:border-accent ${showValidation && !formData.marital_status ? 'border-red-500' : 'border-theme-border-secondary'}`}>
                   <option value="">Seçiniz</option>
                   <option value="Bekar">Bekar</option>
                   <option value="Evli">Evli</option>
@@ -481,9 +481,9 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Cinsiyet *</label>
+                <label className="block text-xs text-theme-text-tertiary mb-1">Cinsiyet *</label>
                 <select value={formData.gender} onChange={e => handleChange('gender', e.target.value)} 
-                   className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 focus:outline-none focus:border-accent ${showValidation && !formData.gender ? 'border-red-500' : 'border-dark-600'}`}>
+                   className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary focus:outline-none focus:border-accent ${showValidation && !formData.gender ? 'border-red-500' : 'border-theme-border-secondary'}`}>
                   <option value="">Seçiniz</option>
                   <option value="male">Erkek</option>
                   <option value="female">Kadın</option>
@@ -491,16 +491,16 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Kan Grubu</label>
-                <select value={formData.blood_type} onChange={e => handleChange('blood_type', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100">
+                <label className="block text-xs text-theme-text-tertiary mb-1">Kan Grubu</label>
+                <select value={formData.blood_type} onChange={e => handleChange('blood_type', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary">
                   <option value="">Seçiniz</option>
                   {BLOOD_TYPES.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
               </div>
               
               <div>
-                <label className="block text-xs text-dark-300 mb-1">Askerlik Durumu</label>
-                <select value={formData.military_status} onChange={e => handleChange('military_status', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100">
+                <label className="block text-xs text-theme-text-tertiary mb-1">Askerlik Durumu</label>
+                <select value={formData.military_status} onChange={e => handleChange('military_status', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary">
                   <option value="">Seçiniz</option>
                   <option value="Yapıldı">Yapıldı</option>
                   <option value="Muaf">Muaf</option>
@@ -508,46 +508,46 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
                 </select>
               </div>
 
-              <div className="col-span-1 lg:col-span-3 pb-2 border-b border-dark-700 mt-4 mb-2">
+              <div className="col-span-1 lg:col-span-3 pb-2 border-b border-theme-border-primary mt-4 mb-2">
                 <h3 className="text-accent font-medium">İş ve Eğitim</h3>
               </div>
 
                <div>
-                <label className="block text-xs text-dark-300 mb-1">Eğitim *</label>
+                <label className="block text-xs text-theme-text-tertiary mb-1">Eğitim *</label>
                 <select value={formData.education_level} onChange={e => handleChange('education_level', e.target.value)} 
-                   className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 focus:outline-none focus:border-accent ${showValidation && !formData.education_level ? 'border-red-500' : 'border-dark-600'}`}>
+                   className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary focus:outline-none focus:border-accent ${showValidation && !formData.education_level ? 'border-red-500' : 'border-theme-border-secondary'}`}>
                   <option value="">Seçiniz...</option>
                   {EDUCATION_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs text-dark-300 mb-1">İşe Giriş Tarihi *</label>
+                <label className="block text-xs text-theme-text-tertiary mb-1">İşe Giriş Tarihi *</label>
                 <input type="date" value={formData.start_date} onChange={e => handleChange('start_date', e.target.value)} 
-                  className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 focus:outline-none focus:border-accent ${showValidation && !formData.start_date ? 'border-red-500' : 'border-dark-600'}`} />
+                  className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary focus:outline-none focus:border-accent ${showValidation && !formData.start_date ? 'border-red-500' : 'border-theme-border-secondary'}`} />
               </div>
               
                <div>
-                <label className="block text-xs text-dark-300 mb-1">Çalışma Durumu *</label>
-                <select value={formData.status} onChange={e => handleChange('status', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100">
+                <label className="block text-xs text-theme-text-tertiary mb-1">Çalışma Durumu *</label>
+                <select value={formData.status} onChange={e => handleChange('status', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary">
                   <option value="active">Aktif</option>
                   <option value="passive">Pasif</option>
                 </select>
               </div>
 
                <div>
-                <label className="block text-xs text-dark-300 mb-1">Boy</label>
-                <input type="text" value={formData.height} onChange={e => handleChange('height', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" placeholder="cm" />
+                <label className="block text-xs text-theme-text-tertiary mb-1">Boy</label>
+                <input type="text" value={formData.height} onChange={e => handleChange('height', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" placeholder="cm" />
               </div>
 
                <div>
-                <label className="block text-xs text-dark-300 mb-1">Kilo</label>
-                <input type="text" value={formData.weight} onChange={e => handleChange('weight', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" placeholder="kg" />
+                <label className="block text-xs text-theme-text-tertiary mb-1">Kilo</label>
+                <input type="text" value={formData.weight} onChange={e => handleChange('weight', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" placeholder="kg" />
               </div>
 
                <div>
-                <label className="block text-xs text-dark-300 mb-1">Çocuk Sayısı</label>
-                <input type="number" min="0" value={formData.children_count} onChange={e => handleChange('children_count', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                <label className="block text-xs text-theme-text-tertiary mb-1">Çocuk Sayısı</label>
+                <input type="number" min="0" value={formData.children_count} onChange={e => handleChange('children_count', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
               </div>
             </div>
           )}
@@ -557,34 +557,34 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
              <div className="space-y-4 max-w-2xl">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-dark-300 mb-1">Cep Telefonu *</label>
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Cep Telefonu *</label>
                     <input type="tel" value={formData.phone} onChange={e => handleChange('phone', e.target.value)} 
-                      className={`w-full px-3 py-2 bg-dark-700 border rounded-lg text-dark-100 placeholder-dark-500 focus:outline-none focus:border-accent ${showValidation && !formData.phone ? 'border-red-500' : 'border-dark-600'}`} placeholder="05XX XXX XX XX"/>
+                      className={`w-full px-3 py-2 bg-theme-bg-tertiary border rounded-lg text-theme-text-primary placeholder-dark-500 focus:outline-none focus:border-accent ${showValidation && !formData.phone ? 'border-red-500' : 'border-theme-border-secondary'}`} placeholder="05XX XXX XX XX"/>
                   </div>
                   <div>
-                    <label className="block text-xs text-dark-300 mb-1">Ev Telefonu</label>
-                    <input type="tel" value={formData.home_phone} onChange={e => handleChange('home_phone', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Ev Telefonu</label>
+                    <input type="tel" value={formData.home_phone} onChange={e => handleChange('home_phone', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                   </div>
                 </div>
                  <div>
-                    <label className="block text-xs text-dark-300 mb-1">E-Posta</label>
-                    <input type="email" value={formData.email} onChange={e => handleChange('email', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                    <label className="block text-xs text-theme-text-tertiary mb-1">E-Posta</label>
+                    <input type="email" value={formData.email} onChange={e => handleChange('email', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                 </div>
                 <div>
-                    <label className="block text-xs text-dark-300 mb-1">Adres</label>
-                    <textarea rows="3" value={formData.address} onChange={e => handleChange('address', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Adres</label>
+                    <textarea rows="3" value={formData.address} onChange={e => handleChange('address', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                 </div>
                 
-                <div className="pt-4 border-t border-dark-700">
-                  <h4 className="text-sm font-medium text-dark-200 mb-2">Acil Durum</h4>
+                <div className="pt-4 border-t border-theme-border-primary">
+                  <h4 className="text-sm font-medium text-theme-text-secondary mb-2">Acil Durum</h4>
                   <div className="grid grid-cols-2 gap-4">
                      <div>
-                      <label className="block text-xs text-dark-300 mb-1">Acil Durum Kişisi</label>
-                      <input type="text" value={formData.emergency_contact_name} onChange={e => handleChange('emergency_contact_name', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                      <label className="block text-xs text-theme-text-tertiary mb-1">Acil Durum Kişisi</label>
+                      <input type="text" value={formData.emergency_contact_name} onChange={e => handleChange('emergency_contact_name', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                     </div>
                      <div>
-                      <label className="block text-xs text-dark-300 mb-1">Acil Durum No</label>
-                      <input type="tel" value={formData.emergency_contact_phone} onChange={e => handleChange('emergency_contact_phone', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                      <label className="block text-xs text-theme-text-tertiary mb-1">Acil Durum No</label>
+                      <input type="tel" value={formData.emergency_contact_phone} onChange={e => handleChange('emergency_contact_phone', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                     </div>
                   </div>
                 </div>
@@ -598,36 +598,36 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
                  <div className="p-1 bg-blue-500 rounded text-white flex-shrink-0"><Award size={20} /></div>
                  <div>
                    <h4 className="text-sm font-medium text-blue-400">5188 Sayılı Kanun Sertifika Bilgileri</h4>
-                   <p className="text-xs text-dark-400 mt-1">Özel güvenlik kimlik kartı bilgilerini buradan girebilirsiniz.</p>
+                   <p className="text-xs text-theme-text-muted mt-1">Özel güvenlik kimlik kartı bilgilerini buradan girebilirsiniz.</p>
                  </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <input type="checkbox" id="add_cert" checked={formData.add_certificate || (formData.has_certificate && employee != null)} onChange={e => handleChange('add_certificate', e.target.checked)} className="w-5 h-5 rounded border-dark-600 bg-dark-700 text-accent focus:ring-accent" />
-                <label htmlFor="add_cert" className="text-dark-200 select-none cursor-pointer">Sertifika bilgilerini eklemek istiyorum</label>
+                <input type="checkbox" id="add_cert" checked={formData.add_certificate || (formData.has_certificate && employee != null)} onChange={e => handleChange('add_certificate', e.target.checked)} className="w-5 h-5 rounded border-theme-border-secondary bg-theme-bg-tertiary text-accent focus:ring-accent" />
+                <label htmlFor="add_cert" className="text-theme-text-secondary select-none cursor-pointer">Sertifika bilgilerini eklemek istiyorum</label>
               </div>
 
               {(formData.add_certificate || (employee && employee.has_certificate)) && (
-                <div className="grid grid-cols-2 gap-4 p-4 bg-dark-700/30 rounded-xl border border-dark-700 animate-fadeIn">
+                <div className="grid grid-cols-2 gap-4 p-4 bg-theme-bg-tertiary/30 rounded-xl border border-theme-border-primary animate-fadeIn">
                    <div>
-                    <label className="block text-xs text-dark-300 mb-1">Şehir *</label>
-                    <input type="text" value={formData.certificate_city} onChange={e => handleChange('certificate_city', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Şehir *</label>
+                    <input type="text" value={formData.certificate_city} onChange={e => handleChange('certificate_city', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                   </div>
                    <div>
-                    <label className="block text-xs text-dark-300 mb-1">Kimlik Kartı Seri No *</label>
-                    <input type="text" value={formData.certificate_no} onChange={e => handleChange('certificate_no', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Kimlik Kartı Seri No *</label>
+                    <input type="text" value={formData.certificate_no} onChange={e => handleChange('certificate_no', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                   </div>
                    <div>
-                    <label className="block text-xs text-dark-300 mb-1">Düzenlendiği Tarih *</label>
-                    <input type="date" value={formData.certificate_date} onChange={e => handleChange('certificate_date', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Düzenlendiği Tarih *</label>
+                    <input type="date" value={formData.certificate_date} onChange={e => handleChange('certificate_date', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                   </div>
                    <div>
-                    <label className="block text-xs text-dark-300 mb-1">Geçerlilik Tarihi *</label>
-                    <input type="date" value={formData.certificate_expiry} onChange={e => handleChange('certificate_expiry', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Geçerlilik Tarihi *</label>
+                    <input type="date" value={formData.certificate_expiry} onChange={e => handleChange('certificate_expiry', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-xs text-dark-300 mb-1">Silah Durumu *</label>
-                    <select value={formData.weapon_status} onChange={e => handleChange('weapon_status', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100">
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Silah Durumu *</label>
+                    <select value={formData.weapon_status} onChange={e => handleChange('weapon_status', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary">
                       <option value="">Seçiniz</option>
                       <option value="Silahlı">Silahlı</option>
                       <option value="Silahsız">Silahsız</option>
@@ -641,17 +641,17 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
           {/* TAB 4: KIYAFET */}
           {currentTab === 4 && (
              <div className="space-y-4 max-w-2xl">
-               <p className="text-sm text-dark-400 mb-2">Personelin kıyafet bedenlerini aşağıdan seçebilirsiniz (Zorunlu değildir).</p>
+               <p className="text-sm text-theme-text-muted mb-2">Personelin kıyafet bedenlerini aşağıdan seçebilirsiniz (Zorunlu değildir).</p>
                {Object.entries(CLOTHING_CONFIG).map(([key, config]) => (
-                 <div key={key} className="flex items-center justify-between p-3 bg-dark-700/50 rounded-lg border border-dark-700">
-                    <span className="text-sm font-medium text-dark-200 w-1/3">{config.label}</span>
+                 <div key={key} className="flex items-center justify-between p-3 bg-theme-bg-hover rounded-lg border border-theme-border-primary">
+                    <span className="text-sm font-medium text-theme-text-secondary w-1/3">{config.label}</span>
                     <div className="w-2/3">
                        {/* Dropdown Logic */}
                        {(config.type === 'select' || config.type === 'range' || config.type === 'mixed') && (
                          <select 
                             value={formData.clothing_sizes[key] || ''} 
                             onChange={e => handleClothingChange(key, e.target.value)}
-                            className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 text-sm"
+                            className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary text-sm"
                           >
                             <option value="">Seçiniz</option>
                             {config.type === 'select' && config.options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -669,7 +669,7 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
                           </select>
                        )}
                        {config.type === 'fixed' && (
-                          <div className="text-dark-400 text-sm px-3 py-2 bg-dark-800 rounded">{config.options[0]}</div>
+                          <div className="text-theme-text-muted text-sm px-3 py-2 bg-theme-bg-secondary rounded">{config.options[0]}</div>
                        )}
                     </div>
                  </div>
@@ -681,29 +681,29 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
            {currentTab === 5 && (
             <div className="space-y-4 max-w-2xl">
                <div>
-                  <label className="block text-xs text-dark-300 mb-1">Banka *</label>
-                  <select value={formData.bank_name} onChange={e => handleChange('bank_name', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100">
+                  <label className="block text-xs text-theme-text-tertiary mb-1">Banka *</label>
+                  <select value={formData.bank_name} onChange={e => handleChange('bank_name', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary">
                     <option value="">Seçiniz...</option>
                     {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
                </div>
                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-dark-300 mb-1">Şube Adı</label>
-                    <input type="text" value={formData.bank_branch_name} onChange={e => handleChange('bank_branch_name', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Şube Adı</label>
+                    <input type="text" value={formData.bank_branch_name} onChange={e => handleChange('bank_branch_name', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                   </div>
                    <div>
-                    <label className="block text-xs text-dark-300 mb-1">Şube Kodu</label>
-                    <input type="text" value={formData.bank_branch_code} onChange={e => handleChange('bank_branch_code', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Şube Kodu</label>
+                    <input type="text" value={formData.bank_branch_code} onChange={e => handleChange('bank_branch_code', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                   </div>
                </div>
                 <div>
-                  <label className="block text-xs text-dark-300 mb-1">Hesap No</label>
-                  <input type="text" value={formData.bank_account_no} onChange={e => handleChange('bank_account_no', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                  <label className="block text-xs text-theme-text-tertiary mb-1">Hesap No</label>
+                  <input type="text" value={formData.bank_account_no} onChange={e => handleChange('bank_account_no', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                </div>
                 <div>
-                  <label className="block text-xs text-dark-300 mb-1">IBAN *</label>
-                  <input type="text" value={formData.iban} onChange={e => handleChange('iban', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" placeholder="TR..." />
+                  <label className="block text-xs text-theme-text-tertiary mb-1">IBAN *</label>
+                  <input type="text" value={formData.iban} onChange={e => handleChange('iban', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" placeholder="TR..." />
                </div>
             </div>
            )}
@@ -712,16 +712,16 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
            {currentTab === 6 && (
               <div className="space-y-4 max-w-2xl">
                  <div>
-                    <label className="block text-xs text-dark-300 mb-1">Yemek Kartı *</label>
-                    <select value={formData.card_type} onChange={e => handleChange('card_type', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100">
+                    <label className="block text-xs text-theme-text-tertiary mb-1">Yemek Kartı *</label>
+                    <select value={formData.card_type} onChange={e => handleChange('card_type', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary">
                       <option value="">Seçiniz...</option>
                       {CARD_TYPES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                  </div>
                  {formData.card_type && formData.card_type !== 'Kart hakkı yoktur' && (
                    <div className="animate-fadeIn">
-                      <label className="block text-xs text-dark-300 mb-1">Kart Numarası *</label>
-                      <input type="text" value={formData.card_no} onChange={e => handleChange('card_no', e.target.value)} className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" />
+                      <label className="block text-xs text-theme-text-tertiary mb-1">Kart Numarası *</label>
+                      <input type="text" value={formData.card_no} onChange={e => handleChange('card_no', e.target.value)} className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" />
                    </div>
                  )}
               </div>
@@ -734,7 +734,7 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
                 <div className="p-1 bg-purple-500 rounded text-white flex-shrink-0"><Briefcase size={20} /></div>
                 <div>
                   <h4 className="text-sm font-medium text-purple-400">Firma ve Proje Ataması</h4>
-                  <p className="text-xs text-dark-400 mt-1">
+                  <p className="text-xs text-theme-text-muted mt-1">
                     {employee 
                       ? 'Mevcut personelin firma/proje atamasını değiştirmek için detay sayfasını kullanın.'
                       : 'Personeli bir firmaya ve opsiyonel olarak projeye atayabilirsiniz. Bu adım zorunlu değildir.'}
@@ -758,9 +758,9 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
                       id="assign_task" 
                       checked={formData.assign_task} 
                       onChange={e => handleChange('assign_task', e.target.checked)} 
-                      className="w-5 h-5 rounded border-dark-600 bg-dark-700 text-accent focus:ring-accent" 
+                      className="w-5 h-5 rounded border-theme-border-secondary bg-theme-bg-tertiary text-accent focus:ring-accent" 
                     />
-                    <label htmlFor="assign_task" className="text-dark-200 select-none cursor-pointer">
+                    <label htmlFor="assign_task" className="text-theme-text-secondary select-none cursor-pointer">
                       Bu personeli bir firmaya atamak istiyorum
                     </label>
                   </div>
@@ -777,15 +777,15 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
 
               {/* Firma ve Proje Seçimi */}
               {(formData.assign_task || company?.id || employee?.company_id) && (
-                <div className="space-y-4 p-4 bg-dark-700/30 rounded-xl border border-dark-700 animate-fadeIn">
+                <div className="space-y-4 p-4 bg-theme-bg-tertiary/30 rounded-xl border border-theme-border-primary animate-fadeIn">
                   {/* Firma Seçimi - sadece context yoksa göster */}
                   {!company?.id && !employee?.company_id && (
                     <div>
-                      <label className="block text-xs text-dark-300 mb-1">Firma *</label>
+                      <label className="block text-xs text-theme-text-tertiary mb-1">Firma *</label>
                       <select 
                         value={selectedCompanyId || ''} 
                         onChange={e => handleCompanySelect(Number(e.target.value))} 
-                        className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100"
+                        className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary"
                       >
                         <option value="">Firma seçiniz...</option>
                         {allCompanies.map(c => <option key={c.id} value={c.id}>{c.name} ({c.company_code})</option>)}
@@ -796,17 +796,17 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
                   {/* Proje Seçimi - Opsiyonel */}
                   {(selectedCompanyId || company?.id || employee?.company_id) && (
                     <div>
-                      <label className="block text-xs text-dark-300 mb-1">Proje (Opsiyonel)</label>
+                      <label className="block text-xs text-theme-text-tertiary mb-1">Proje (Opsiyonel)</label>
                       <select 
                         value={formData.assign_project_id} 
                         onChange={e => handleChange('assign_project_id', e.target.value)} 
-                        className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100"
+                        className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary"
                       >
                         <option value="">Proje seçmeden devam et...</option>
                         {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
                       {projects.length === 0 && (
-                        <p className="text-xs text-dark-500 mt-1">Bu firmaya ait proje bulunmuyor.</p>
+                        <p className="text-xs text-theme-text-placeholder mt-1">Bu firmaya ait proje bulunmuyor.</p>
                       )}
                     </div>
                   )}
@@ -814,12 +814,12 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
                   {/* Başlangıç Tarihi - proje seçilmişse */}
                   {formData.assign_project_id && (
                     <div>
-                      <label className="block text-xs text-dark-300 mb-1">Proje Başlangıç Tarihi</label>
+                      <label className="block text-xs text-theme-text-tertiary mb-1">Proje Başlangıç Tarihi</label>
                       <input 
                         type="date" 
                         value={formData.assign_start_date} 
                         onChange={e => handleChange('assign_start_date', e.target.value)} 
-                        className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-dark-100" 
+                        className="w-full px-3 py-2 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary" 
                       />
                     </div>
                   )}
@@ -833,25 +833,25 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
              <div className="space-y-6">
                 <div className="text-center py-4">
                   <CheckCircle size={48} className="text-accent mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-dark-100">{employee ? 'Güncellemeyi Onaylayın' : 'Bilgileri Onaylayın'}</h3>
-                  <p className="text-dark-400 text-sm mt-2">{employee ? 'Personel bilgilerini güncellemek üzeresiniz.' : 'Personel kaydı oluşturulmadan önce lütfen bilgileri kontrol edin.'}</p>
+                  <h3 className="text-lg font-semibold text-theme-text-primary">{employee ? 'Güncellemeyi Onaylayın' : 'Bilgileri Onaylayın'}</h3>
+                  <p className="text-theme-text-muted text-sm mt-2">{employee ? 'Personel bilgilerini güncellemek üzeresiniz.' : 'Personel kaydı oluşturulmadan önce lütfen bilgileri kontrol edin.'}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                   <div className="bg-dark-700/50 p-4 rounded-lg space-y-2">
+                   <div className="bg-theme-bg-hover p-4 rounded-lg space-y-2">
                       <h4 className="text-accent font-medium mb-3">Genel Bilgiler</h4>
-                      <div className="flex justify-between"><span className="text-dark-400">Ad Soyad:</span> <span className="text-dark-200">{formData.first_name} {formData.last_name}</span></div>
-                      <div className="flex justify-between"><span className="text-dark-400">TC:</span> <span className="text-dark-200">{formData.tc_no}</span></div>
-                      <div className="flex justify-between"><span className="text-dark-400">Unvan:</span> <span className="text-dark-200">{formData.title}</span></div>
-                      <div className="flex justify-between"><span className="text-dark-400">GSM:</span> <span className="text-dark-200">{formData.phone}</span></div>
+                      <div className="flex justify-between"><span className="text-theme-text-muted">Ad Soyad:</span> <span className="text-theme-text-secondary">{formData.first_name} {formData.last_name}</span></div>
+                      <div className="flex justify-between"><span className="text-theme-text-muted">TC:</span> <span className="text-theme-text-secondary">{formData.tc_no}</span></div>
+                      <div className="flex justify-between"><span className="text-theme-text-muted">Unvan:</span> <span className="text-theme-text-secondary">{formData.title}</span></div>
+                      <div className="flex justify-between"><span className="text-theme-text-muted">GSM:</span> <span className="text-theme-text-secondary">{formData.phone}</span></div>
                    </div>
                    
-                   <div className="bg-dark-700/50 p-4 rounded-lg space-y-2">
+                   <div className="bg-theme-bg-hover p-4 rounded-lg space-y-2">
                        <h4 className="text-accent font-medium mb-3">Diğer Bilgiler</h4>
-                       <div className="flex justify-between"><span className="text-dark-400">Sertifika:</span> <span className="text-dark-200">{formData.add_certificate || (employee?.has_certificate) ? 'Var' : 'Yok'}</span></div>
-                        <div className="flex justify-between"><span className="text-dark-400">Banka:</span> <span className="text-dark-200">{formData.bank_name || '-'}</span></div>
-                        <div className="flex justify-between"><span className="text-dark-400">Kart:</span> <span className="text-dark-200">{formData.card_type || '-'}</span></div>
-                        <div className="flex justify-between"><span className="text-dark-400">Görev:</span> <span className="text-dark-200">{formData.assign_task ? projects.find(p=>p.id == formData.assign_project_id)?.name : (employee ? 'Mevcut Durum Korunacak' : '-')}</span></div>
+                       <div className="flex justify-between"><span className="text-theme-text-muted">Sertifika:</span> <span className="text-theme-text-secondary">{formData.add_certificate || (employee?.has_certificate) ? 'Var' : 'Yok'}</span></div>
+                        <div className="flex justify-between"><span className="text-theme-text-muted">Banka:</span> <span className="text-theme-text-secondary">{formData.bank_name || '-'}</span></div>
+                        <div className="flex justify-between"><span className="text-theme-text-muted">Kart:</span> <span className="text-theme-text-secondary">{formData.card_type || '-'}</span></div>
+                        <div className="flex justify-between"><span className="text-theme-text-muted">Görev:</span> <span className="text-theme-text-secondary">{formData.assign_task ? projects.find(p=>p.id == formData.assign_project_id)?.name : (employee ? 'Mevcut Durum Korunacak' : '-')}</span></div>
                    </div>
                 </div>
              </div>
@@ -859,11 +859,11 @@ export default function AddEmployeeWizard({ isOpen, onClose, company, onComplete
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-dark-700 flex justify-between">
+        <div className="p-6 border-t border-theme-border-primary flex justify-between">
           <button
             onClick={handleBack}
             disabled={currentTab === 1}
-            className="flex items-center gap-2 px-4 py-2 text-dark-300 hover:text-dark-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-tertiary hover:text-theme-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft size={18} />
             Geri

@@ -36,7 +36,7 @@ function CompanyContextBanner() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-accent-light truncate">{selectedCompany.name}</p>
-          <p className="text-xs text-dark-400">{selectedCompany.company_code}</p>
+          <p className="text-xs text-theme-text-muted">{selectedCompany.company_code}</p>
         </div>
       </div>
       <button
@@ -44,7 +44,7 @@ function CompanyContextBanner() {
           exitCompanyContext()
           navigate('/companies')
         }}
-        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-red-900 text-dark-300 hover:text-dark-100 text-xs transition-colors"
+        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-theme-bg-tertiary hover:bg-red-900 text-theme-text-muted hover:text-theme-text-primary text-xs transition-colors"
       >
         <LogOut size={12} />
         Firmadan Çık
@@ -70,7 +70,7 @@ function MenuItem({ item, isOpen, onToggle }) {
             ? 'bg-accent/20 text-accent-light border-l-4 border-accent' 
             : isActive && hasChildren
               ? 'bg-accent/20 text-accent-light'
-              : 'text-dark-400 hover:bg-dark-700/50 hover:text-dark-100'
+              : 'text-theme-text-muted hover:bg-theme-bg-hover hover:text-theme-text-primary'
           }
         `}
       >
@@ -79,7 +79,7 @@ function MenuItem({ item, isOpen, onToggle }) {
           className="flex items-center gap-3 flex-1"
           onClick={(e) => hasChildren && e.preventDefault()}
         >
-          <Icon size={20} className={`transition-colors ${isActive ? 'text-accent' : 'text-dark-500 group-hover:text-dark-300'}`} />
+          <Icon size={20} className={`transition-colors ${isActive ? 'text-accent' : 'text-theme-text-placeholder group-hover:text-theme-text-tertiary'}`} />
           <span className="font-medium text-sm">{item.name}</span>
         </NavLink>
         {hasChildren && (
@@ -101,7 +101,7 @@ function MenuItem({ item, isOpen, onToggle }) {
                 block px-4 py-2 rounded-md text-sm transition-all duration-200
                 ${isActive 
                   ? 'text-accent-light bg-accent/10' 
-                  : 'text-dark-400 hover:text-dark-200 hover:bg-dark-700/30'
+                  : 'text-theme-text-muted hover:text-theme-text-secondary hover:bg-theme-bg-hover'
                 }
               `}
             >
@@ -206,7 +206,7 @@ export default function Sidebar() {
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-dark-800 text-dark-100 hover:bg-dark-700"
+        className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-theme-bg-secondary text-theme-text-primary hover:bg-theme-bg-tertiary"
       >
         {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
@@ -221,20 +221,20 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed left-0 top-0 h-full w-64 bg-dark-800 border-r border-dark-700
+        fixed left-0 top-0 h-full w-64 bg-theme-bg-secondary border-r border-theme-border-primary
         z-40 transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         lg:static lg:translate-x-0
       `}>
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-dark-700">
+        <div className="h-16 flex items-center px-6 border-b border-theme-border-primary">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center shadow-lg">
               <Shield size={24} className="text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-dark-50">Marmara</h1>
-              <p className="text-xs text-dark-400">PMS Admin</p>
+              <h1 className="text-lg font-bold text-theme-text-primary">Marmara</h1>
+              <p className="text-xs text-theme-text-muted">PMS Admin</p>
             </div>
           </div>
         </div>
@@ -256,14 +256,14 @@ export default function Sidebar() {
           </div>
 
           {/* User Section */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-dark-700 bg-dark-800">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-dark-700/50">
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-theme-border-primary bg-theme-bg-secondary">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-theme-bg-tertiary/50">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
                 <span className="text-white font-semibold text-sm">AY</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-dark-100 truncate">Admin User</p>
-                <p className="text-xs text-dark-400 truncate">admin@marmara.com</p>
+                <p className="text-sm font-medium text-theme-text-primary truncate">Admin User</p>
+                <p className="text-xs text-theme-text-muted truncate">admin@marmara.com</p>
               </div>
             </div>
           </div>

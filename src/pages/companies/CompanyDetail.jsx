@@ -60,20 +60,20 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
       return (
         <div className="space-y-6">
           {/* Firma Bilgileri */}
-          <div className="bg-dark-700/50 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-dark-100 mb-4">Firma Bilgileri</h3>
+          <div className="bg-theme-bg-hover rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-theme-text-primary mb-4">Firma Bilgileri</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
-                <label className="text-sm text-dark-400">Firma Adı / Ünvanı</label>
-                <p className="text-dark-100 mt-1">{company.name}</p>
+                <label className="text-sm text-theme-text-muted">Firma Adı / Ünvanı</label>
+                <p className="text-theme-text-primary mt-1">{company.name}</p>
               </div>
               <div>
-                <label className="text-sm text-dark-400">Firma Kodu</label>
-                <p className="text-dark-100 mt-1">{company.company_code}</p>
+                <label className="text-sm text-theme-text-muted">Firma Kodu</label>
+                <p className="text-theme-text-primary mt-1">{company.company_code}</p>
               </div>
               <div>
-                <label className="text-sm text-dark-400">Kayıt Tarihi</label>
-                <p className="text-dark-100 mt-1">
+                <label className="text-sm text-theme-text-muted">Kayıt Tarihi</label>
+                <p className="text-theme-text-primary mt-1">
                   {company.registration_date 
                     ? new Date(company.registration_date).toLocaleDateString('tr-TR') 
                     : company.created_at 
@@ -85,54 +85,54 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
           </div>
 
           {/* Konum Bilgileri */}
-          <div className="bg-dark-700/50 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-dark-100 mb-4">Konum Bilgileri</h3>
+          <div className="bg-theme-bg-hover rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-theme-text-primary mb-4">Konum Bilgileri</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="text-sm text-dark-400">Ülke</label>
-                <p className="text-dark-100 mt-1">{company.country || 'Türkiye'}</p>
+                <label className="text-sm text-theme-text-muted">Ülke</label>
+                <p className="text-theme-text-primary mt-1">{company.country || 'Türkiye'}</p>
               </div>
               <div>
-                <label className="text-sm text-dark-400">İl</label>
-                <p className="text-dark-100 mt-1">{company.city || '-'}</p>
+                <label className="text-sm text-theme-text-muted">İl</label>
+                <p className="text-theme-text-primary mt-1">{company.city || '-'}</p>
               </div>
               <div>
-                <label className="text-sm text-dark-400">İlçe</label>
-                <p className="text-dark-100 mt-1">{company.district || '-'}</p>
+                <label className="text-sm text-theme-text-muted">İlçe</label>
+                <p className="text-theme-text-primary mt-1">{company.district || '-'}</p>
               </div>
             </div>
           </div>
 
           {/* İletişim Bilgileri */}
-          <div className="bg-dark-700/50 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-dark-100 mb-4">İletişim Bilgileri</h3>
+          <div className="bg-theme-bg-hover rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-theme-text-primary mb-4">İletişim Bilgileri</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="text-sm text-dark-400">Telefon Numarası</label>
-                <p className="text-dark-100 mt-1">{company.phone || '-'}</p>
+                <label className="text-sm text-theme-text-muted">Telefon Numarası</label>
+                <p className="text-theme-text-primary mt-1">{company.phone || '-'}</p>
               </div>
               <div>
-                <label className="text-sm text-dark-400">Fax Numarası</label>
-                <p className="text-dark-100 mt-1">{company.fax || '-'}</p>
+                <label className="text-sm text-theme-text-muted">Fax Numarası</label>
+                <p className="text-theme-text-primary mt-1">{company.fax || '-'}</p>
               </div>
             </div>
           </div>
 
           {/* Vergi ve SGK Bilgileri */}
-          <div className="bg-dark-700/50 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-dark-100 mb-4">Vergi ve SGK Bilgileri</h3>
+          <div className="bg-theme-bg-hover rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-theme-text-primary mb-4">Vergi ve SGK Bilgileri</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="text-sm text-dark-400">Vergi Dairesi</label>
-                <p className="text-dark-100 mt-1">{company.tax_office || '-'}</p>
+                <label className="text-sm text-theme-text-muted">Vergi Dairesi</label>
+                <p className="text-theme-text-primary mt-1">{company.tax_office || '-'}</p>
               </div>
               <div>
-                <label className="text-sm text-dark-400">Vergi No</label>
-                <p className="text-dark-100 mt-1">{company.tax_number || '-'}</p>
+                <label className="text-sm text-theme-text-muted">Vergi No</label>
+                <p className="text-theme-text-primary mt-1">{company.tax_number || '-'}</p>
               </div>
               <div>
-                <label className="text-sm text-dark-400">SGK Sicil No</label>
-                <p className="text-dark-100 mt-1">{company.sgk_number || '-'}</p>
+                <label className="text-sm text-theme-text-muted">SGK Sicil No</label>
+                <p className="text-theme-text-primary mt-1">{company.sgk_number || '-'}</p>
               </div>
             </div>
           </div>
@@ -143,11 +143,11 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-dark-400">{employees.length} çalışan</p>
+            <p className="text-theme-text-muted">{employees.length} çalışan</p>
             <div className="flex gap-2">
               <button 
                 onClick={onOpenAssignModal}
-                className="px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg text-dark-200 text-sm flex items-center gap-2 transition-colors"
+                className="px-4 py-2 bg-theme-bg-tertiary hover:bg-theme-bg-elevated rounded-lg text-theme-text-secondary text-sm flex items-center gap-2 transition-colors"
               >
                 <Plus size={16} />
                 Çalışan Ekle
@@ -164,7 +164,7 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
             {employees.slice(0, 10).map(employee => (
               <div 
                 key={employee.id} 
-                className="bg-dark-700/50 rounded-xl p-4 flex items-center gap-4 hover:bg-dark-700 transition-colors"
+                className="bg-theme-bg-hover rounded-xl p-4 flex items-center gap-4 hover:bg-theme-bg-tertiary transition-colors"
               >
                 <div 
                   onClick={() => navigate(`/employees/${employee.id}`)}
@@ -174,8 +174,8 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
                     <span className="text-white font-semibold">{employee.name?.[0]}</span>
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-dark-100">{employee.name}</p>
-                    <p className="text-sm text-dark-400">{employee.title || 'Belirsiz'}</p>
+                    <p className="font-medium text-theme-text-primary">{employee.name}</p>
+                    <p className="text-sm text-theme-text-muted">{employee.title || 'Belirsiz'}</p>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     employee.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
@@ -194,26 +194,26 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
             ))}
           </div>
           {employees.length === 0 && (
-            <div className="text-center py-12 bg-dark-700/50 rounded-xl">
-              <Users size={48} className="text-dark-500 mx-auto mb-4" />
-              <p className="text-dark-300">Bu firmaya ait çalışan bulunmuyor.</p>
+            <div className="text-center py-12 bg-theme-bg-hover rounded-xl">
+              <Users size={48} className="text-theme-text-placeholder mx-auto mb-4" />
+              <p className="text-theme-text-tertiary">Bu firmaya ait çalışan bulunmuyor.</p>
             </div>
           )}
 
           {/* Remove from Company Modal */}
           {showRemoveModal && employeeToRemove && (
             <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-              <div className="bg-dark-800 rounded-2xl w-full max-w-md border border-dark-700 animate-fadeIn">
-                <div className="p-6 border-b border-dark-700">
+              <div className="bg-theme-bg-secondary rounded-2xl w-full max-w-md border border-theme-border-primary animate-fadeIn">
+                <div className="p-6 border-b border-theme-border-primary">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
                       <AlertTriangle size={20} className="text-red-400" />
                     </div>
-                    <h3 className="text-lg font-semibold text-dark-100">Firmadan Çıkar</h3>
+                    <h3 className="text-lg font-semibold text-theme-text-primary">Firmadan Çıkar</h3>
                   </div>
                 </div>
                 <div className="p-6">
-                  <p className="text-dark-300 mb-4">
+                  <p className="text-theme-text-tertiary mb-4">
                     <strong>{employeeToRemove.name}</strong> personelini
                     <strong className="text-blue-400"> {company.name}</strong> firmasından çıkarmak istediğinizden emin misiniz?
                   </p>
@@ -224,10 +224,10 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
                     </p>
                   </div>
                 </div>
-                <div className="p-6 border-t border-dark-700 flex justify-end gap-3">
+                <div className="p-6 border-t border-theme-border-primary flex justify-end gap-3">
                   <button 
                     onClick={() => { setShowRemoveModal(false); setEmployeeToRemove(null); }}
-                    className="px-4 py-2 text-dark-300 hover:text-dark-100 transition-colors"
+                    className="px-4 py-2 text-theme-text-tertiary hover:text-theme-text-primary transition-colors"
                   >
                     Vazgeç
                   </button>
@@ -248,7 +248,7 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-dark-400">{projects.length} proje</p>
+            <p className="text-theme-text-muted">{projects.length} proje</p>
             <button 
               onClick={() => navigate('/projects')}
               className="px-4 py-2 bg-accent rounded-lg text-white text-sm"
@@ -261,10 +261,10 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
               <div 
                 key={project.id} 
                 onClick={() => navigate(`/projects/${project.id}`)}
-                className="bg-dark-700/50 rounded-xl p-4 cursor-pointer hover:bg-dark-700 transition-colors"
+                className="bg-theme-bg-hover rounded-xl p-4 cursor-pointer hover:bg-theme-bg-tertiary transition-colors"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-dark-100">{project.name}</h4>
+                  <h4 className="font-medium text-theme-text-primary">{project.name}</h4>
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     project.status === 'active' ? 'bg-green-500/20 text-green-400' :
                     project.status === 'completed' ? 'bg-blue-500/20 text-blue-400' : 
@@ -273,8 +273,8 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
                     {project.status === 'active' ? 'Aktif' : project.status === 'completed' ? 'Tamamlandı' : 'Bekliyor'}
                   </span>
                 </div>
-                <p className="text-sm text-dark-400 mb-2">{project.description || 'Açıklama yok'}</p>
-                <div className="flex items-center gap-4 text-xs text-dark-500">
+                <p className="text-sm text-theme-text-muted mb-2">{project.description || 'Açıklama yok'}</p>
+                <div className="flex items-center gap-4 text-xs text-theme-text-placeholder">
                   <span>{project.employeeCount || 0} çalışan</span>
                   <span>{project.patrolCount || 0} devriye</span>
                 </div>
@@ -282,9 +282,9 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
             ))}
           </div>
           {projects.length === 0 && (
-            <div className="text-center py-12 bg-dark-700/50 rounded-xl">
-              <FolderKanban size={48} className="text-dark-500 mx-auto mb-4" />
-              <p className="text-dark-300">Bu firmaya ait proje bulunmuyor.</p>
+            <div className="text-center py-12 bg-theme-bg-hover rounded-xl">
+              <FolderKanban size={48} className="text-theme-text-placeholder mx-auto mb-4" />
+              <p className="text-theme-text-tertiary">Bu firmaya ait proje bulunmuyor.</p>
             </div>
           )}
         </div>
@@ -294,7 +294,7 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-dark-400">{patrols.length} devriye</p>
+            <p className="text-theme-text-muted">{patrols.length} devriye</p>
             <button 
               onClick={() => navigate('/patrol')}
               className="px-4 py-2 bg-accent rounded-lg text-white text-sm"
@@ -312,26 +312,26 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
                 <div 
                   key={patrol.id} 
                   onClick={() => navigate(`/patrol/${patrol.id}`)}
-                  className="bg-dark-700/50 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-dark-700 transition-colors"
+                  className="bg-theme-bg-hover rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-theme-bg-tertiary transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-dark-600 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-theme-bg-elevated flex items-center justify-center">
                     <StatusIcon size={20} className={statusColor} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-dark-100">{patrol.name}</p>
-                    <p className="text-sm text-dark-400">{patrol.project?.name || '-'}</p>
+                    <p className="font-medium text-theme-text-primary">{patrol.name}</p>
+                    <p className="text-sm text-theme-text-muted">{patrol.project?.name || '-'}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-dark-300">{patrol.assignments?.length || 0} atama</p>
+                    <p className="text-sm text-theme-text-tertiary">{patrol.assignments?.length || 0} atama</p>
                   </div>
                 </div>
               )
             })}
           </div>
           {patrols.length === 0 && (
-            <div className="text-center py-12 bg-dark-700/50 rounded-xl">
-              <Shield size={48} className="text-dark-500 mx-auto mb-4" />
-              <p className="text-dark-300">Bu firmaya ait devriye bulunmuyor.</p>
+            <div className="text-center py-12 bg-theme-bg-hover rounded-xl">
+              <Shield size={48} className="text-theme-text-placeholder mx-auto mb-4" />
+              <p className="text-theme-text-tertiary">Bu firmaya ait devriye bulunmuyor.</p>
             </div>
           )}
         </div>
@@ -342,8 +342,8 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
 
     default:
       return (
-        <div className="text-center py-16 bg-dark-700/50 rounded-xl">
-          <p className="text-dark-400">Bu bölüm yapım aşamasındadır.</p>
+        <div className="text-center py-16 bg-theme-bg-hover rounded-xl">
+          <p className="text-theme-text-muted">Bu bölüm yapım aşamasındadır.</p>
         </div>
       )
   }
@@ -495,9 +495,9 @@ export default function CompanyDetail() {
   if (!company) {
     return (
       <div className="text-center py-16">
-        <Building2 size={64} className="text-dark-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-dark-200 mb-2">Firma bulunamadı</h2>
-        <p className="text-dark-400 mb-6">Lütfen geçerli bir firma seçin.</p>
+        <Building2 size={64} className="text-theme-text-placeholder mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-theme-text-secondary mb-2">Firma bulunamadı</h2>
+        <p className="text-theme-text-muted mb-6">Lütfen geçerli bir firma seçin.</p>
         <button 
           onClick={() => navigate('/companies')}
           className="px-5 py-2.5 bg-accent rounded-lg text-white"
@@ -511,7 +511,7 @@ export default function CompanyDetail() {
   const statusColors = {
     active: 'bg-green-500/20 text-green-400 border-green-500/30',
     passive: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    archived: 'bg-dark-500/20 text-dark-400 border-dark-500/30',
+    archived: 'bg-dark-500/20 text-theme-text-muted border-dark-500/30',
   }
 
   return (
@@ -521,24 +521,24 @@ export default function CompanyDetail() {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate('/companies')}
-            className="p-2 rounded-lg bg-dark-700 hover:bg-dark-600 transition-colors"
+            className="p-2 rounded-lg bg-theme-bg-tertiary hover:bg-theme-bg-elevated transition-colors"
           >
-            <ArrowLeft size={20} className="text-dark-300" />
+            <ArrowLeft size={20} className="text-theme-text-tertiary" />
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-dark-50">{company.name}</h1>
+              <h1 className="text-2xl font-bold text-theme-text-primary">{company.name}</h1>
               <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColors[company.status]}`}>
                 {company.status === 'active' ? 'Aktif' : company.status === 'passive' ? 'Pasif' : 'Arşiv'}
               </span>
             </div>
-            <p className="text-dark-400 mt-1">{company.company_code}</p>
+            <p className="text-theme-text-muted mt-1">{company.company_code}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setShowEditModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-dark-700 hover:bg-dark-600 rounded-lg text-dark-200 text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-theme-bg-tertiary hover:bg-theme-bg-elevated rounded-lg text-theme-text-secondary text-sm transition-colors"
           >
             <Edit size={16} />
             Düzenle
@@ -547,9 +547,9 @@ export default function CompanyDetail() {
           <div className="relative">
             <button 
               onClick={() => setShowMenu(!showMenu)}
-              className={`p-2.5 rounded-lg transition-colors ${showMenu ? 'bg-dark-600' : 'bg-dark-700 hover:bg-dark-600'}`}
+              className={`p-2.5 rounded-lg transition-colors ${showMenu ? 'bg-theme-bg-elevated' : 'bg-theme-bg-tertiary hover:bg-theme-bg-elevated'}`}
             >
-              <MoreVertical size={18} className="text-dark-300" />
+              <MoreVertical size={18} className="text-theme-text-tertiary" />
             </button>
 
             {/* Menu Dropdown */}
@@ -559,17 +559,17 @@ export default function CompanyDetail() {
                   className="fixed inset-0 z-10"
                   onClick={() => setShowMenu(false)}
                 />
-                <div className="absolute right-0 mt-2 w-48 bg-dark-700 rounded-xl shadow-lg border border-dark-600 py-1 z-20 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-48 bg-theme-bg-tertiary rounded-xl shadow-lg border border-theme-border-secondary py-1 z-20 overflow-hidden">
                   <button
                     onClick={handleToggleStatus}
-                    className="w-full text-left px-4 py-3 text-sm text-dark-200 hover:bg-dark-600 flex items-center gap-2 transition-colors"
+                    className="w-full text-left px-4 py-3 text-sm text-theme-text-secondary hover:bg-theme-bg-elevated flex items-center gap-2 transition-colors"
                   >
                     <Power size={16} className={company.status === 'active' ? 'text-amber-400' : 'text-green-400'} />
                     {company.status === 'active' ? 'Pasife Al' : 'Aktif Yap'}
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-dark-600"
+                    className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors border-t border-theme-border-secondary"
                   >
                     <Trash2 size={16} />
                     Firmayı Sil
@@ -583,55 +583,55 @@ export default function CompanyDetail() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-dark-800 rounded-xl p-4 border border-dark-700">
+        <div className="bg-theme-bg-secondary rounded-xl p-4 border border-theme-border-primary">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
               <Users size={18} className="text-blue-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-dark-50">{employees.length}</p>
-              <p className="text-xs text-dark-400">Çalışan</p>
+              <p className="text-2xl font-bold text-theme-text-primary">{employees.length}</p>
+              <p className="text-xs text-theme-text-muted">Çalışan</p>
             </div>
           </div>
         </div>
-        <div className="bg-dark-800 rounded-xl p-4 border border-dark-700">
+        <div className="bg-theme-bg-secondary rounded-xl p-4 border border-theme-border-primary">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
               <FolderKanban size={18} className="text-green-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-dark-50">{projects.length}</p>
-              <p className="text-xs text-dark-400">Proje</p>
+              <p className="text-2xl font-bold text-theme-text-primary">{projects.length}</p>
+              <p className="text-xs text-theme-text-muted">Proje</p>
             </div>
           </div>
         </div>
-        <div className="bg-dark-800 rounded-xl p-4 border border-dark-700">
+        <div className="bg-theme-bg-secondary rounded-xl p-4 border border-theme-border-primary">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
               <Shield size={18} className="text-purple-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-dark-50">{patrols.length}</p>
-              <p className="text-xs text-dark-400">Devriye</p>
+              <p className="text-2xl font-bold text-theme-text-primary">{patrols.length}</p>
+              <p className="text-xs text-theme-text-muted">Devriye</p>
             </div>
           </div>
         </div>
-        <div className="bg-dark-800 rounded-xl p-4 border border-dark-700">
+        <div className="bg-theme-bg-secondary rounded-xl p-4 border border-theme-border-primary">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
               <MapPin size={18} className="text-amber-400" />
             </div>
             <div>
-              <p className="text-lg font-bold text-dark-50 truncate">{company.city || '-'}</p>
-              <p className="text-xs text-dark-400">Şehir</p>
+              <p className="text-lg font-bold text-theme-text-primary truncate">{company.city || '-'}</p>
+              <p className="text-xs text-theme-text-muted">Şehir</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-dark-800 rounded-2xl border border-dark-700 overflow-hidden">
-        <div className="flex overflow-x-auto border-b border-dark-700">
+      <div className="bg-theme-bg-secondary rounded-2xl border border-theme-border-primary overflow-hidden">
+        <div className="flex overflow-x-auto border-b border-theme-border-primary">
           {tabs.map(tab => {
             const Icon = tab.icon
             return (
@@ -640,8 +640,8 @@ export default function CompanyDetail() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
                   activeTab === tab.id 
-                    ? 'text-accent border-accent bg-dark-700/50' 
-                    : 'text-dark-400 border-transparent hover:text-dark-200 hover:bg-dark-700/30'
+                    ? 'text-accent border-accent bg-theme-bg-hover' 
+                    : 'text-theme-text-muted border-transparent hover:text-theme-text-secondary hover:bg-theme-bg-tertiary/30'
                 }`}
               >
                 <Icon size={16} />
@@ -666,70 +666,70 @@ export default function CompanyDetail() {
       {/* Edit Company Modal - Portal */}
       {showEditModal && createPortal(
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
-          <div className="bg-dark-800 rounded-2xl w-full max-w-3xl border border-dark-700 h-[80vh] flex flex-col relative animate-fadeIn">
-            <div className="p-6 border-b border-dark-700 flex justify-between items-center">
+          <div className="bg-theme-bg-secondary rounded-2xl w-full max-w-3xl border border-theme-border-primary h-[80vh] flex flex-col relative animate-fadeIn">
+            <div className="p-6 border-b border-theme-border-primary flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-semibold text-dark-100">Firma Düzenle</h2>
-                <p className="text-sm text-dark-400 mt-1">{company.name}</p>
+                <h2 className="text-xl font-semibold text-theme-text-primary">Firma Düzenle</h2>
+                <p className="text-sm text-theme-text-muted mt-1">{company.name}</p>
               </div>
               <button 
                 onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-theme-bg-tertiary rounded-lg transition-colors"
               >
-                <X size={20} className="text-dark-400" />
+                <X size={20} className="text-theme-text-muted" />
               </button>
             </div>
             
             <div className="p-6 space-y-4 overflow-y-auto">
               {/* Firma Adı / Ünvanı */}
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Firma Adı / Ünvanı *</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Firma Adı / Ünvanı *</label>
                 <input
                   type="text"
                   value={editData.name}
                   onChange={e => setEditData({ ...editData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                 />
               </div>
               
               {/* Firma Kodu */}
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Firma Kodu *</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Firma Kodu *</label>
                 <input
                   type="text"
                   value={editData.company_code}
                   onChange={e => setEditData({ ...editData, company_code: e.target.value.toUpperCase() })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                 />
               </div>
 
               {/* Ülke / İl / İlçe */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Ülke *</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Ülke *</label>
                   <input
                     type="text"
                     value={editData.country}
                     onChange={e => setEditData({ ...editData, country: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">İl *</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">İl *</label>
                   <input
                     type="text"
                     value={editData.city}
                     onChange={e => setEditData({ ...editData, city: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">İlçe *</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">İlçe *</label>
                   <input
                     type="text"
                     value={editData.district}
                     onChange={e => setEditData({ ...editData, district: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
@@ -737,21 +737,21 @@ export default function CompanyDetail() {
               {/* Telefon / Fax */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Telefon Numarası *</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Telefon Numarası *</label>
                   <input
                     type="tel"
                     value={editData.phone}
                     onChange={e => setEditData({ ...editData, phone: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Fax Numarası</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Fax Numarası</label>
                   <input
                     type="tel"
                     value={editData.fax}
                     onChange={e => setEditData({ ...editData, fax: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
@@ -759,21 +759,21 @@ export default function CompanyDetail() {
               {/* Vergi Dairesi / Vergi No */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Vergi Dairesi</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Vergi Dairesi</label>
                   <input
                     type="text"
                     value={editData.tax_office}
                     onChange={e => setEditData({ ...editData, tax_office: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Vergi No</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Vergi No</label>
                   <input
                     type="text"
                     value={editData.tax_number}
                     onChange={e => setEditData({ ...editData, tax_number: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
@@ -781,30 +781,30 @@ export default function CompanyDetail() {
               {/* SGK / Tarih */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">SGK Sicil No</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">SGK Sicil No</label>
                   <input
                     type="text"
                     value={editData.sgk_number}
                     onChange={e => setEditData({ ...editData, sgk_number: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Kuruluş Tarihi</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Kuruluş Tarihi</label>
                   <input
                     type="date"
                     value={editData.registration_date}
                     onChange={e => setEditData({ ...editData, registration_date: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="p-6 border-t border-dark-700 flex justify-end gap-3">
+            <div className="p-6 border-t border-theme-border-primary flex justify-end gap-3">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 text-dark-300 hover:text-dark-100 transition-colors"
+                className="px-4 py-2 text-theme-text-tertiary hover:text-theme-text-primary transition-colors"
                 disabled={saving}
               >
                 İptal
@@ -826,32 +826,32 @@ export default function CompanyDetail() {
       {/* Assign Employee Modal */}
       {showAssignModal && createPortal(
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-dark-800 rounded-2xl w-full max-w-md border border-dark-700 animate-fadeIn flex flex-col max-h-[80vh]">
-            <div className="p-6 border-b border-dark-700 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-dark-100">Firmaya Personel Ekle</h3>
+          <div className="bg-theme-bg-secondary rounded-2xl w-full max-w-md border border-theme-border-primary animate-fadeIn flex flex-col max-h-[80vh]">
+            <div className="p-6 border-b border-theme-border-primary flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-theme-text-primary">Firmaya Personel Ekle</h3>
               <button 
                 onClick={() => setShowAssignModal(false)}
-                className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-theme-bg-tertiary rounded-lg transition-colors"
               >
-                <X size={20} className="text-dark-400" />
+                <X size={20} className="text-theme-text-muted" />
               </button>
             </div>
             <div className="p-4 overflow-y-auto flex-1">
               {idleEmployees.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-dark-400">Boşta personel bulunamadı.</p>
+                  <p className="text-theme-text-muted">Boşta personel bulunamadı.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {idleEmployees.map(emp => (
-                    <div key={emp.id} className="flex items-center justify-between p-3 bg-dark-700/30 rounded-xl hover:bg-dark-700/50 transition-colors">
+                    <div key={emp.id} className="flex items-center justify-between p-3 bg-theme-bg-tertiary/30 rounded-xl hover:bg-theme-bg-hover transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
                           <span className="text-white font-medium">{emp.name?.[0]}</span>
                         </div>
                         <div>
-                          <p className="text-dark-100 font-medium">{emp.name}</p>
-                          <p className="text-xs text-dark-400">{emp.title || 'Belirsiz'}</p>
+                          <p className="text-theme-text-primary font-medium">{emp.name}</p>
+                          <p className="text-xs text-theme-text-muted">{emp.title || 'Belirsiz'}</p>
                         </div>
                       </div>
                       <button
@@ -866,8 +866,8 @@ export default function CompanyDetail() {
                 </div>
               )}
             </div>
-            <div className="p-6 border-t border-dark-700 bg-dark-800/50 rounded-b-2xl">
-              <p className="text-xs text-dark-400 flex items-center gap-2">
+            <div className="p-6 border-t border-theme-border-primary bg-theme-bg-secondary/50 rounded-b-2xl">
+              <p className="text-xs text-theme-text-muted flex items-center gap-2">
                 <AlertCircle size={14} />
                  Sadece herhangi bir firmaya atanmamış personeller listelenir.
               </p>

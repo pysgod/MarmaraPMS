@@ -280,23 +280,23 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
   
   return createPortal(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
-      <div className="bg-dark-800 rounded-2xl w-full max-w-4xl border border-dark-700 h-[85vh] flex flex-col relative animate-fadeIn">
+      <div className="bg-theme-bg-secondary rounded-2xl w-full max-w-4xl border border-theme-border-primary h-[85vh] flex flex-col relative animate-fadeIn">
         {/* Header */}
-        <div className="p-6 border-b border-dark-700 flex items-center justify-between">
+        <div className="p-6 border-b border-theme-border-primary flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-dark-100">{project ? 'Proje Düzenle' : 'Proje Ekle'}</h2>
-            <p className="text-sm text-dark-400 mt-1">{company?.name || project?.company?.name}</p>
+            <h2 className="text-xl font-semibold text-theme-text-primary">{project ? 'Proje Düzenle' : 'Proje Ekle'}</h2>
+            <p className="text-sm text-theme-text-muted mt-1">{company?.name || project?.company?.name}</p>
           </div>
           <button 
             onClick={() => { resetForm(); onClose(); }}
-            className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-theme-bg-tertiary rounded-lg transition-colors"
           >
-            <X size={20} className="text-dark-400" />
+            <X size={20} className="text-theme-text-muted" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="px-6 py-3 border-b border-dark-700 flex gap-2 overflow-x-auto">
+        <div className="px-6 py-3 border-b border-theme-border-primary flex gap-2 overflow-x-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon
             const isActive = currentTab === tab.id
@@ -311,7 +311,7 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
                     ? 'bg-accent text-white' 
                     : isCompleted
                       ? 'bg-green-500/20 text-green-400'
-                      : 'bg-dark-700/50 text-dark-400'
+                      : 'bg-theme-bg-hover text-theme-text-muted'
                 }`}
               >
                 {isCompleted ? <Check size={16} /> : <Icon size={16} />}
@@ -327,30 +327,30 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
           {currentTab === 1 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Bağlı Firma</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Bağlı Firma</label>
                 <input
                   type="text"
                   value={company?.name || ''}
                   disabled
-                  className="w-full px-4 py-2.5 bg-dark-600 border border-dark-500 rounded-lg text-dark-300 cursor-not-allowed"
+                  className="w-full px-4 py-2.5 bg-theme-bg-elevated border border-dark-500 rounded-lg text-theme-text-tertiary cursor-not-allowed"
                 />
               </div>
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Proje Adı *</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Proje Adı *</label>
                 <input
                   type="text"
                   value={projectData.name}
                   onChange={e => setProjectData({ ...projectData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   placeholder="Proje adı"
                 />
               </div>
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Hizmet Türü *</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Hizmet Türü *</label>
                 <select
                   value={projectData.service_type}
                   onChange={e => setProjectData({ ...projectData, service_type: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="">Seçiniz...</option>
                   {SERVICE_TYPES.map(st => (
@@ -360,22 +360,22 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Segment</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Segment</label>
                   <input
                     type="text"
                     value={projectData.segment}
                     onChange={e => setProjectData({ ...projectData, segment: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                     placeholder="Segment"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Başlangıç Tarihi *</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Başlangıç Tarihi *</label>
                   <input
                     type="date"
                     value={projectData.start_date}
                     onChange={e => setProjectData({ ...projectData, start_date: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
@@ -386,14 +386,14 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
           {currentTab === 2 && (
             <div className="flex gap-4 h-80">
               {/* Available */}
-              <div className="flex-1 bg-dark-700/50 rounded-xl p-4 border border-dark-600">
-                <h4 className="text-sm font-medium text-dark-300 mb-3">Mevcut Kıyafetler</h4>
+              <div className="flex-1 bg-theme-bg-hover rounded-xl p-4 border border-theme-border-secondary">
+                <h4 className="text-sm font-medium text-theme-text-tertiary mb-3">Mevcut Kıyafetler</h4>
                 <div className="space-y-2">
                   {availableClothing.map(item => (
                     <button
                       key={item.value}
                       onClick={() => handleClothingSelect(item)}
-                      className="w-full text-left px-3 py-2 rounded-lg bg-dark-600 hover:bg-dark-500 text-dark-200 text-sm transition-colors"
+                      className="w-full text-left px-3 py-2 rounded-lg bg-theme-bg-elevated hover:bg-dark-500 text-theme-text-secondary text-sm transition-colors"
                     >
                       {item.label}
                     </button>
@@ -416,7 +416,7 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
                     </button>
                   ))}
                   {selectedClothing.length === 0 && (
-                    <p className="text-dark-400 text-sm text-center py-4">
+                    <p className="text-theme-text-muted text-sm text-center py-4">
                       Sol taraftan kıyafet seçin
                     </p>
                   )}
@@ -430,74 +430,74 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Bağlı Firma</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Bağlı Firma</label>
                   <input
                     type="text"
                     value={company?.name || ''}
                     disabled
-                    className="w-full px-4 py-2.5 bg-dark-600 border border-dark-500 rounded-lg text-dark-300 cursor-not-allowed"
+                    className="w-full px-4 py-2.5 bg-theme-bg-elevated border border-dark-500 rounded-lg text-theme-text-tertiary cursor-not-allowed"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Bağlı Proje</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Bağlı Proje</label>
                   <input
                     type="text"
                     value={projectData.name || '-'}
                     disabled
-                    className="w-full px-4 py-2.5 bg-dark-600 border border-dark-500 rounded-lg text-dark-300 cursor-not-allowed"
+                    className="w-full px-4 py-2.5 bg-theme-bg-elevated border border-dark-500 rounded-lg text-theme-text-tertiary cursor-not-allowed"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Adı</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Adı</label>
                   <input
                     type="text"
                     value={customerRep.first_name}
                     onChange={e => setCustomerRep({ ...customerRep, first_name: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                     placeholder="Yetkili adı"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Soyadı</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Soyadı</label>
                   <input
                     type="text"
                     value={customerRep.last_name}
                     onChange={e => setCustomerRep({ ...customerRep, last_name: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                     placeholder="Yetkili soyadı"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Görevi</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Görevi</label>
                 <input
                   type="text"
                   value={customerRep.title}
                   onChange={e => setCustomerRep({ ...customerRep, title: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   placeholder="Örn: Proje Müdürü"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">Telefon Numarası</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">Telefon Numarası</label>
                   <input
                     type="tel"
                     value={customerRep.phone}
                     onChange={e => setCustomerRep({ ...customerRep, phone: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                     placeholder="0532 123 4567"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-dark-300 mb-2">E-Posta</label>
+                  <label className="block text-sm text-theme-text-tertiary mb-2">E-Posta</label>
                   <input
                     type="email"
                     value={customerRep.email}
                     onChange={e => setCustomerRep({ ...customerRep, email: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                    className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                     placeholder="yetkili@firma.com"
                   />
                 </div>
@@ -509,11 +509,11 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
           {currentTab === 4 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Birincil Proje Yöneticisi *</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Birincil Proje Yöneticisi *</label>
                 <select
                   value={managers.primary_manager_id}
                   onChange={e => setManagers({ ...managers, primary_manager_id: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="">Seçiniz...</option>
                   {adminUsers.map(user => (
@@ -522,11 +522,11 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-dark-300 mb-2">İkincil Proje Yöneticisi</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">İkincil Proje Yöneticisi</label>
                 <select
                   value={managers.secondary_manager_id}
                   onChange={e => setManagers({ ...managers, secondary_manager_id: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="">Seçiniz (Opsiyonel)...</option>
                   {adminUsers.filter(u => u.id !== parseInt(managers.primary_manager_id)).map(user => (
@@ -547,16 +547,16 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
             <div className="space-y-4">
               <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
                 <h4 className="text-sm font-medium text-blue-400 mb-1">Boşta Personel Ataması (Opsiyonel)</h4>
-                <p className="text-xs text-dark-400">
+                <p className="text-xs text-theme-text-muted">
                   Aşağıdan boşta olan personelleri seçerek hem bu firmaya hem de projeye otomatik atayabilirsiniz.
                 </p>
               </div>
               
               {idleEmployees.length === 0 ? (
-                <div className="text-center py-12 bg-dark-700/50 rounded-xl border border-dark-700">
-                  <UserX size={48} className="text-dark-500 mx-auto mb-4" />
-                  <p className="text-dark-300">Sistemde boşta personel bulunmuyor.</p>
-                  <p className="text-xs text-dark-500 mt-2">Tüm personeller bir firmaya atanmış durumda.</p>
+                <div className="text-center py-12 bg-theme-bg-hover rounded-xl border border-theme-border-primary">
+                  <UserX size={48} className="text-theme-text-placeholder mx-auto mb-4" />
+                  <p className="text-theme-text-tertiary">Sistemde boşta personel bulunmuyor.</p>
+                  <p className="text-xs text-theme-text-placeholder mt-2">Tüm personeller bir firmaya atanmış durumda.</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -567,14 +567,14 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
                       className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-colors ${
                         selectedEmployees.includes(emp.id)
                           ? 'bg-accent/20 border-accent/50'
-                          : 'bg-dark-700/50 border-dark-600 hover:border-dark-500'
+                          : 'bg-theme-bg-hover border-theme-border-secondary hover:border-dark-500'
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={selectedEmployees.includes(emp.id)}
                         onChange={() => toggleEmployeeSelection(emp.id)}
-                        className="w-5 h-5 rounded border-dark-600 bg-dark-700 text-accent focus:ring-accent"
+                        className="w-5 h-5 rounded border-theme-border-secondary bg-theme-bg-tertiary text-accent focus:ring-accent"
                       />
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center flex-shrink-0">
                         <span className="text-white font-bold">
@@ -582,10 +582,10 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-dark-100">
+                        <p className="font-medium text-theme-text-primary">
                           {emp.first_name} {emp.last_name}
                         </p>
-                        <p className="text-sm text-dark-400">{emp.title || 'Unvan belirtilmemiş'}</p>
+                        <p className="text-sm text-theme-text-muted">{emp.title || 'Unvan belirtilmemiş'}</p>
                       </div>
                     </div>
                   ))}
@@ -607,56 +607,56 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
             <div className="space-y-6">
               <div className="text-center py-4">
                 <CheckCircle size={48} className="text-accent mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-dark-100">Proje Bilgilerini Onaylayın</h3>
-                <p className="text-dark-400 text-sm mt-2">Aşağıdaki bilgilerin doğru olduğundan emin olun</p>
+                <h3 className="text-lg font-semibold text-theme-text-primary">Proje Bilgilerini Onaylayın</h3>
+                <p className="text-theme-text-muted text-sm mt-2">Aşağıdaki bilgilerin doğru olduğundan emin olun</p>
               </div>
               
-              <div className="bg-dark-700/50 rounded-xl p-4 space-y-3">
+              <div className="bg-theme-bg-hover rounded-xl p-4 space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-dark-400">Firma:</span>
-                  <span className="text-dark-100">{company?.name}</span>
+                  <span className="text-theme-text-muted">Firma:</span>
+                  <span className="text-theme-text-primary">{company?.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-dark-400">Proje Adı:</span>
-                  <span className="text-dark-100">{projectData.name}</span>
+                  <span className="text-theme-text-muted">Proje Adı:</span>
+                  <span className="text-theme-text-primary">{projectData.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-dark-400">Hizmet Türü:</span>
-                  <span className="text-dark-100">
+                  <span className="text-theme-text-muted">Hizmet Türü:</span>
+                  <span className="text-theme-text-primary">
                     {SERVICE_TYPES.find(s => s.value === projectData.service_type)?.label || '-'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-dark-400">Segment:</span>
-                  <span className="text-dark-100">{projectData.segment || '-'}</span>
+                  <span className="text-theme-text-muted">Segment:</span>
+                  <span className="text-theme-text-primary">{projectData.segment || '-'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-dark-400">Başlangıç Tarihi:</span>
-                  <span className="text-dark-100">
+                  <span className="text-theme-text-muted">Başlangıç Tarihi:</span>
+                  <span className="text-theme-text-primary">
                     {projectData.start_date ? new Date(projectData.start_date).toLocaleDateString('tr-TR') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-dark-400">Kıyafet Türleri:</span>
-                  <span className="text-dark-100">{selectedClothing.length} adet</span>
+                  <span className="text-theme-text-muted">Kıyafet Türleri:</span>
+                  <span className="text-theme-text-primary">{selectedClothing.length} adet</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-dark-400">Müşteri Yetkilisi:</span>
-                  <span className="text-dark-100">
+                  <span className="text-theme-text-muted">Müşteri Yetkilisi:</span>
+                  <span className="text-theme-text-primary">
                     {customerRep.first_name && customerRep.last_name 
                       ? `${customerRep.first_name} ${customerRep.last_name}` 
                       : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-dark-400">Proje Yöneticisi:</span>
-                  <span className="text-dark-100">
+                  <span className="text-theme-text-muted">Proje Yöneticisi:</span>
+                  <span className="text-theme-text-primary">
                     {adminUsers.find(u => u.id === parseInt(managers.primary_manager_id))?.name || '-'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-dark-400">Atanacak Personel:</span>
-                  <span className={`${selectedEmployees.length > 0 ? 'text-green-400' : 'text-dark-100'}`}>
+                  <span className="text-theme-text-muted">Atanacak Personel:</span>
+                  <span className={`${selectedEmployees.length > 0 ? 'text-green-400' : 'text-theme-text-primary'}`}>
                     {selectedEmployees.length > 0 ? `${selectedEmployees.length} kişi` : '-'}
                   </span>
                 </div>
@@ -666,11 +666,11 @@ export default function AddProjectWizard({ isOpen, onClose, company, project }) 
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-dark-700 flex justify-between">
+        <div className="p-6 border-t border-theme-border-primary flex justify-between">
           <button
             onClick={handleBack}
             disabled={currentTab === 1}
-            className="flex items-center gap-2 px-4 py-2 text-dark-300 hover:text-dark-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 text-theme-text-tertiary hover:text-theme-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft size={18} />
             Geri

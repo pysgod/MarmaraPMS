@@ -121,13 +121,13 @@ export default function ProjectShifts({ projectId }) {
       
       {/* Unassigned Column */}
       <div 
-        className="w-1/4 bg-dark-800 rounded-lg flex flex-col border border-dark-700"
+        className="w-1/4 bg-theme-bg-secondary rounded-lg flex flex-col border border-theme-border-primary"
         onDragOver={handleDragOver}
         onDrop={(e) => handleDrop(e, null)}
       >
-        <div className="p-4 border-b border-dark-700 bg-dark-700/50 rounded-t-lg">
-          <h3 className="font-semibold text-dark-200">Atanmamış Personel</h3>
-          <span className="text-xs text-dark-400">{unassignedEmployees.length} kişi</span>
+        <div className="p-4 border-b border-theme-border-primary bg-theme-bg-hover rounded-t-lg">
+          <h3 className="font-semibold text-theme-text-secondary">Atanmamış Personel</h3>
+          <span className="text-xs text-theme-text-muted">{unassignedEmployees.length} kişi</span>
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {unassignedEmployees.map(emp => (
@@ -135,20 +135,20 @@ export default function ProjectShifts({ projectId }) {
               key={emp.id}
               draggable
               onDragStart={(e) => handleDragStart(e, emp.id)}
-              className="bg-dark-700 p-3 rounded shadow-sm border border-dark-600 cursor-grab active:cursor-grabbing hover:bg-dark-600 transition-colors flex items-center gap-3"
+              className="bg-theme-bg-tertiary p-3 rounded shadow-sm border border-theme-border-secondary cursor-grab active:cursor-grabbing hover:bg-theme-bg-elevated transition-colors flex items-center gap-3"
             >
-              <div className="w-8 h-8 rounded-full bg-dark-800 flex items-center justify-center text-xs font-bold text-dark-300">
+              <div className="w-8 h-8 rounded-full bg-theme-bg-secondary flex items-center justify-center text-xs font-bold text-theme-text-tertiary">
                 {emp.first_name?.[0]}{emp.last_name?.[0]}
               </div>
               <div>
-                <p className="text-sm font-medium text-dark-100">{emp.first_name} {emp.last_name}</p>
-                <p className="text-xs text-dark-400">{emp.title || 'Personel'}</p>
+                <p className="text-sm font-medium text-theme-text-primary">{emp.first_name} {emp.last_name}</p>
+                <p className="text-xs text-theme-text-muted">{emp.title || 'Personel'}</p>
               </div>
             </div>
           ))}
           {unassignedEmployees.length === 0 && (
              <div className="text-center mt-10 px-2">
-                <p className="text-sm text-dark-500">Boş</p>
+                <p className="text-sm text-theme-text-placeholder">Boş</p>
                 {data.employees.length === 0 && (
                   <p className="text-xs text-red-400 mt-2">Projede kayıtlı personel yok. <br /> Lütfen Personel sekmesinden ekleyin.</p>
                 )}
@@ -168,17 +168,17 @@ export default function ProjectShifts({ projectId }) {
                <div 
                  key={shift.id}
                  className={`min-w-[300px] rounded-lg flex flex-col border-2 transition-colors ${
-                    status === 'active' ? 'border-green-500/30 bg-green-900/10' : 'border-dark-700 bg-dark-800'
+                    status === 'active' ? 'border-green-500/30 bg-green-900/10' : 'border-theme-border-primary bg-theme-bg-secondary'
                  }`}
                  onDragOver={handleDragOver}
                  onDrop={(e) => handleDrop(e, shift.id)}
                >
                  <div className={`p-4 border-b flex justify-between items-start rounded-t-lg ${
-                    status === 'active' ? 'bg-green-900/20 border-green-500/20' : 'bg-dark-700/50 border-dark-700'
+                    status === 'active' ? 'bg-green-900/20 border-green-500/20' : 'bg-theme-bg-hover border-theme-border-primary'
                  }`}>
                    <div>
-                     <h3 className="font-bold text-dark-100">{shift.name}</h3>
-                     <div className="flex items-center text-xs text-dark-400 mt-1">
+                     <h3 className="font-bold text-theme-text-primary">{shift.name}</h3>
+                     <div className="flex items-center text-xs text-theme-text-muted mt-1">
                        <Clock size={12} className="mr-1" />
                        {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
                      </div>
@@ -188,7 +188,7 @@ export default function ProjectShifts({ projectId }) {
                         <CheckCircle size={10} className="mr-1" /> Aktif
                       </span>
                    ) : (
-                      <span className="px-2 py-1 bg-dark-600 text-dark-300 text-xs rounded-full">
+                      <span className="px-2 py-1 bg-theme-bg-elevated text-theme-text-tertiary text-xs rounded-full">
                         Planlı
                       </span>
                    )}
@@ -200,19 +200,19 @@ export default function ProjectShifts({ projectId }) {
                         key={emp.id}
                         draggable
                         onDragStart={(e) => handleDragStart(e, emp.id)}
-                        className="bg-dark-700 p-3 rounded shadow-sm border border-dark-600 cursor-grab flex items-center gap-3 relative group hover:bg-dark-600 transition-colors"
+                        className="bg-theme-bg-tertiary p-3 rounded shadow-sm border border-theme-border-secondary cursor-grab flex items-center gap-3 relative group hover:bg-theme-bg-elevated transition-colors"
                       >
                          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">
                           {emp.first_name?.[0]}{emp.last_name?.[0]}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-dark-100">{emp.first_name} {emp.last_name}</p>
-                          <p className="text-xs text-dark-400">{emp.title || 'Personel'}</p>
+                          <p className="text-sm font-medium text-theme-text-primary">{emp.first_name} {emp.last_name}</p>
+                          <p className="text-xs text-theme-text-muted">{emp.title || 'Personel'}</p>
                         </div>
                       </div>
                    ))}
                    {employees.length === 0 && (
-                      <div className="h-full flex flex-col items-center justify-center text-dark-500 border-2 border-dashed border-dark-700 rounded m-2">
+                      <div className="h-full flex flex-col items-center justify-center text-theme-text-placeholder border-2 border-dashed border-theme-border-primary rounded m-2">
                         <User size={24} className="mb-2 opacity-30" />
                         <span className="text-sm">Personel sürükleyin</span>
                       </div>
@@ -223,11 +223,11 @@ export default function ProjectShifts({ projectId }) {
            })}
 
            {data.shiftDefinitions.length === 0 && (
-             <div className="flex-1 flex items-center justify-center bg-dark-800 rounded-lg border border-dashed border-dark-700">
+             <div className="flex-1 flex items-center justify-center bg-theme-bg-secondary rounded-lg border border-dashed border-theme-border-primary">
                 <div className="text-center">
-                  <AlertCircle size={48} className="mx-auto text-dark-500 mb-2" />
-                  <p className="text-dark-300 font-medium">Bu firmaya tanımlı vardiya bulunamadı.</p>
-                  <p className="text-sm text-dark-500">Lütfen önce firma detay sayfasından vardiya tanımlayın.</p>
+                  <AlertCircle size={48} className="mx-auto text-theme-text-placeholder mb-2" />
+                  <p className="text-theme-text-tertiary font-medium">Bu firmaya tanımlı vardiya bulunamadı.</p>
+                  <p className="text-sm text-theme-text-placeholder">Lütfen önce firma detay sayfasından vardiya tanımlayın.</p>
                 </div>
              </div>
            )}

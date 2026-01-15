@@ -76,7 +76,7 @@ export default function Reports() {
   }, [])
 
   if (loading) {
-    return <div className="p-6 text-center text-dark-300">Yükleniyor...</div>
+    return <div className="p-6 text-center text-theme-text-tertiary">Yükleniyor...</div>
   }
 
   return (
@@ -84,8 +84,8 @@ export default function Reports() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-dark-50">Raporlar</h1>
-          <p className="text-dark-400 mt-1">Tüm raporları görüntüleyin ve oluşturun</p>
+          <h1 className="text-2xl font-bold text-theme-text-primary">Raporlar</h1>
+          <p className="text-theme-text-muted mt-1">Tüm raporları görüntüleyin ve oluşturun</p>
         </div>
         <button className="flex items-center gap-2 px-5 py-2.5 gradient-accent rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-lg shadow-accent/25">
           <FileText size={18} />
@@ -119,8 +119,8 @@ export default function Reports() {
                 }`}
               >
                 <Icon size={32} className={iconColors[type.color] || iconColors.blue} />
-                <h3 className="text-lg font-semibold text-dark-100 mt-4">{type.name}</h3>
-                <p className="text-sm text-dark-400 mt-1">{type.count} rapor</p>
+                <h3 className="text-lg font-semibold text-theme-text-primary mt-4">{type.name}</h3>
+                <p className="text-sm text-theme-text-muted mt-1">{type.count} rapor</p>
               </button>
             )
           })}
@@ -129,11 +129,11 @@ export default function Reports() {
 
       {/* Quick Stats - Dynamic from reports length */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-dark-800 rounded-xl p-6 border border-dark-700">
+        <div className="bg-theme-bg-secondary rounded-xl p-6 border border-theme-border-primary">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-dark-400 text-sm">Toplam Rapor</p>
-              <p className="text-3xl font-bold text-dark-50 mt-2">{reports.length}</p>
+              <p className="text-theme-text-muted text-sm">Toplam Rapor</p>
+              <p className="text-3xl font-bold text-theme-text-primary mt-2">{reports.length}</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
               <BarChart3 size={24} className="text-accent" />
@@ -141,11 +141,11 @@ export default function Reports() {
           </div>
         </div>
         {/* Placeholder stats or derived */}
-        <div className="bg-dark-800 rounded-xl p-6 border border-dark-700">
+        <div className="bg-theme-bg-secondary rounded-xl p-6 border border-theme-border-primary">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-dark-400 text-sm">Hazır Raporlar</p>
-              <p className="text-3xl font-bold text-dark-50 mt-2">
+              <p className="text-theme-text-muted text-sm">Hazır Raporlar</p>
+              <p className="text-3xl font-bold text-theme-text-primary mt-2">
                 {reports.filter(r => r.status === 'ready').length}
               </p>
             </div>
@@ -154,11 +154,11 @@ export default function Reports() {
             </div>
           </div>
         </div>
-        <div className="bg-dark-800 rounded-xl p-6 border border-dark-700">
+        <div className="bg-theme-bg-secondary rounded-xl p-6 border border-theme-border-primary">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-dark-400 text-sm">İşleniyor</p>
-              <p className="text-3xl font-bold text-dark-50 mt-2">
+              <p className="text-theme-text-muted text-sm">İşleniyor</p>
+              <p className="text-3xl font-bold text-theme-text-primary mt-2">
                 {reports.filter(r => r.status === 'processing').length}
               </p>
             </div>
@@ -170,11 +170,11 @@ export default function Reports() {
       </div>
 
       {/* Recent Reports Table */}
-      <div className="bg-dark-800 rounded-2xl border border-dark-700 overflow-hidden">
-        <div className="p-6 border-b border-dark-700">
+      <div className="bg-theme-bg-secondary rounded-2xl border border-theme-border-primary overflow-hidden">
+        <div className="p-6 border-b border-theme-border-primary">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-dark-100">Son Raporlar</h2>
-            <button className="flex items-center gap-2 px-4 py-2 bg-dark-700 hover:bg-dark-600 rounded-lg text-dark-300 text-sm transition-colors">
+            <h2 className="text-lg font-semibold text-theme-text-primary">Son Raporlar</h2>
+            <button className="flex items-center gap-2 px-4 py-2 bg-theme-bg-tertiary hover:bg-theme-bg-elevated rounded-lg text-theme-text-tertiary text-sm transition-colors">
               <Filter size={16} />
               Filtrele
             </button>
@@ -182,34 +182,34 @@ export default function Reports() {
         </div>
         <table className="w-full">
           <thead>
-            <tr className="border-b border-dark-700 bg-dark-700/50">
-              <th className="text-left py-4 px-6 text-sm font-medium text-dark-300">Rapor Adı</th>
-              <th className="text-left py-4 px-6 text-sm font-medium text-dark-300">Tür</th>
-              <th className="text-left py-4 px-6 text-sm font-medium text-dark-300">Tarih</th>
-              <th className="text-left py-4 px-6 text-sm font-medium text-dark-300">Durum</th>
-              <th className="text-right py-4 px-6 text-sm font-medium text-dark-300">İşlem</th>
+            <tr className="border-b border-theme-border-primary bg-theme-bg-hover">
+              <th className="text-left py-4 px-6 text-sm font-medium text-theme-text-tertiary">Rapor Adı</th>
+              <th className="text-left py-4 px-6 text-sm font-medium text-theme-text-tertiary">Tür</th>
+              <th className="text-left py-4 px-6 text-sm font-medium text-theme-text-tertiary">Tarih</th>
+              <th className="text-left py-4 px-6 text-sm font-medium text-theme-text-tertiary">Durum</th>
+              <th className="text-right py-4 px-6 text-sm font-medium text-theme-text-tertiary">İşlem</th>
             </tr>
           </thead>
           <tbody>
             {reports.length === 0 ? (
               <tr>
-                <td colSpan="5" className="py-8 text-center text-dark-400">
+                <td colSpan="5" className="py-8 text-center text-theme-text-muted">
                   Henüz hiç rapor bulunmuyor.
                 </td>
               </tr>
             ) : (
               reports.map(report => (
-                <tr key={report.id} className="border-b border-dark-700/50 hover:bg-dark-700/30 transition-colors">
+                <tr key={report.id} className="border-b border-theme-border-primary/50 hover:bg-theme-bg-tertiary/30 transition-colors">
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
                         <FileText size={18} className="text-accent" />
                       </div>
-                      <span className="font-medium text-dark-100">{report.name}</span>
+                      <span className="font-medium text-theme-text-primary">{report.name}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-dark-300">{report.type}</td>
-                  <td className="py-4 px-6 text-dark-300">{report.date}</td>
+                  <td className="py-4 px-6 text-theme-text-tertiary">{report.type}</td>
+                  <td className="py-4 px-6 text-theme-text-tertiary">{report.date}</td>
                   <td className="py-4 px-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       report.status === 'ready' 
@@ -221,8 +221,8 @@ export default function Reports() {
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right">
-                    <button className="p-2 hover:bg-dark-600 rounded-lg transition-colors" disabled={report.status !== 'ready'}>
-                      <Download size={18} className={report.status === 'ready' ? 'text-accent' : 'text-dark-500'} />
+                    <button className="p-2 hover:bg-theme-bg-elevated rounded-lg transition-colors" disabled={report.status !== 'ready'}>
+                      <Download size={18} className={report.status === 'ready' ? 'text-accent' : 'text-theme-text-placeholder'} />
                     </button>
                   </td>
                 </tr>

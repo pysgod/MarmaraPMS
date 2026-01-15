@@ -38,7 +38,7 @@ function EmployeeCard({ employee, onClick }) {
   return (
     <div 
       onClick={onClick}
-      className="bg-dark-800 rounded-xl p-5 border border-dark-700 hover:border-accent/50 transition-all cursor-pointer group"
+      className="bg-theme-bg-secondary rounded-xl p-5 border border-theme-border-primary hover:border-accent/50 transition-all cursor-pointer group"
     >
       <div className="flex items-start gap-4">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center flex-shrink-0">
@@ -47,18 +47,18 @@ function EmployeeCard({ employee, onClick }) {
           </span>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-dark-100 group-hover:text-accent transition-colors truncate">
+          <h3 className="font-semibold text-theme-text-primary group-hover:text-accent transition-colors truncate">
             {employee.first_name ? `${employee.first_name} ${employee.last_name}` : employee.name}
           </h3>
-          <p className="text-sm text-dark-400 mt-0.5">{employee.title || 'Unvan Belirtilmemiş'}</p>
+          <p className="text-sm text-theme-text-muted mt-0.5">{employee.title || 'Unvan Belirtilmemiş'}</p>
           {employee.phone && (
-            <div className="flex items-center gap-1.5 mt-2 text-xs text-dark-400">
+            <div className="flex items-center gap-1.5 mt-2 text-xs text-theme-text-muted">
               <Phone size={12} />
               <span>{employee.phone}</span>
             </div>
           )}
           {employee.company && (
-            <div className="flex items-center gap-1.5 mt-1 text-xs text-dark-400">
+            <div className="flex items-center gap-1.5 mt-1 text-xs text-theme-text-muted">
               <Building2 size={12} />
               <span>{employee.company.name}</span>
             </div>
@@ -161,8 +161,8 @@ export default function EmployeeList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-dark-100">Personel Yönetimi</h1>
-          <p className="text-dark-400 mt-1">Tüm personelleri görüntüle ve yönet</p>
+          <h1 className="text-2xl font-bold text-theme-text-primary">Personel Yönetimi</h1>
+          <p className="text-theme-text-muted mt-1">Tüm personelleri görüntüle ve yönet</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
@@ -175,18 +175,18 @@ export default function EmployeeList() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar - Category Selection */}
-        <div className="lg:col-span-1 bg-dark-800 rounded-xl border border-dark-700 overflow-hidden flex flex-col h-[calc(100vh-200px)]">
-          <div className="p-4 border-b border-dark-700 bg-dark-700/50">
-            <h3 className="font-semibold text-dark-200 mb-2">Kategoriler</h3>
+        <div className="lg:col-span-1 bg-theme-bg-secondary rounded-xl border border-theme-border-primary overflow-hidden flex flex-col h-[calc(100vh-200px)]">
+          <div className="p-4 border-b border-theme-border-primary bg-theme-bg-hover">
+            <h3 className="font-semibold text-theme-text-secondary mb-2">Kategoriler</h3>
             <div className="relative">
               <input
                 type="text"
                 placeholder="Firma ara..."
-                className="w-full pl-9 pr-3 py-2 text-sm bg-dark-700 border border-dark-600 rounded-lg text-dark-100 placeholder-dark-400 focus:outline-none focus:border-accent"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary placeholder-theme-text-placeholder focus:outline-none focus:border-accent"
                 value={companiesSearchTerm}
                 onChange={e => setCompaniesSearchTerm(e.target.value)}
               />
-              <Search size={16} className="absolute left-3 top-2.5 text-dark-400" />
+              <Search size={16} className="absolute left-3 top-2.5 text-theme-text-muted" />
             </div>
           </div>
           
@@ -197,13 +197,13 @@ export default function EmployeeList() {
               className={`w-full text-left px-3 py-3 rounded-lg text-sm flex items-center gap-3 transition-colors ${
                 selectedCategory === 'all'
                   ? 'bg-accent/20 text-accent-light font-medium'
-                  : 'text-dark-300 hover:bg-dark-700/50'
+                  : 'text-theme-text-tertiary hover:bg-theme-bg-hover'
               }`}
             >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                 selectedCategory === 'all' ? 'bg-accent' : 'bg-dark-700'
+                 selectedCategory === 'all' ? 'bg-accent' : 'bg-theme-bg-tertiary'
               }`}>
-                <Users size={16} className={selectedCategory === 'all' ? 'text-white' : 'text-dark-400'} />
+                <Users size={16} className={selectedCategory === 'all' ? 'text-white' : 'text-theme-text-muted'} />
               </div>
               <div className="flex-1">
                 <p>Tüm Personeller</p>
@@ -216,13 +216,13 @@ export default function EmployeeList() {
               className={`w-full text-left px-3 py-3 rounded-lg text-sm flex items-center gap-3 transition-colors ${
                 selectedCategory === 'idle'
                   ? 'bg-amber-500/20 text-amber-400 font-medium'
-                  : 'text-dark-300 hover:bg-dark-700/50'
+                  : 'text-theme-text-tertiary hover:bg-theme-bg-hover'
               }`}
             >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                 selectedCategory === 'idle' ? 'bg-amber-500' : 'bg-dark-700'
+                 selectedCategory === 'idle' ? 'bg-amber-500' : 'bg-theme-bg-tertiary'
               }`}>
-                <UserX size={16} className={selectedCategory === 'idle' ? 'text-white' : 'text-dark-400'} />
+                <UserX size={16} className={selectedCategory === 'idle' ? 'text-white' : 'text-theme-text-muted'} />
               </div>
               <div className="flex-1">
                 <p>Boşta Personeller</p>
@@ -231,8 +231,8 @@ export default function EmployeeList() {
             </button>
 
             {/* Divider */}
-            <div className="border-t border-dark-700 my-2"></div>
-            <p className="px-3 py-1 text-xs text-dark-500 uppercase">Firmalar</p>
+            <div className="border-t border-theme-border-primary my-2"></div>
+            <p className="px-3 py-1 text-xs text-theme-text-placeholder uppercase">Firmalar</p>
 
             {/* Company List */}
             {filteredCompanies.map(company => (
@@ -242,31 +242,31 @@ export default function EmployeeList() {
                 className={`w-full text-left px-3 py-3 rounded-lg text-sm flex items-center gap-3 transition-colors ${
                   selectedCategory === company.id
                     ? 'bg-accent/20 text-accent-light font-medium'
-                    : 'text-dark-300 hover:bg-dark-700/50'
+                    : 'text-theme-text-tertiary hover:bg-theme-bg-hover'
                 }`}
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                   selectedCategory === company.id ? 'bg-accent' : 'bg-dark-700'
+                   selectedCategory === company.id ? 'bg-accent' : 'bg-theme-bg-tertiary'
                 }`}>
-                  <Building2 size={16} className={selectedCategory === company.id ? 'text-white' : 'text-dark-400'} />
+                  <Building2 size={16} className={selectedCategory === company.id ? 'text-white' : 'text-theme-text-muted'} />
                 </div>
                 <div className="flex-1 truncate">
                   <p className="truncate">{company.name}</p>
                   <p className="text-xs opacity-70">{company.company_code}</p>
                 </div>
-                <ChevronRight size={16} className="text-dark-500" />
+                <ChevronRight size={16} className="text-theme-text-placeholder" />
               </button>
             ))}
             
             {filteredCompanies.length === 0 && (
-              <p className="text-center text-sm text-dark-400 py-4">Firma bulunamadı</p>
+              <p className="text-center text-sm text-theme-text-muted py-4">Firma bulunamadı</p>
             )}
           </div>
         </div>
 
         {/* Main Content - Employee List */}
         <div className="lg:col-span-3">
-          <div className="bg-dark-800 rounded-xl border border-dark-700 p-6">
+          <div className="bg-theme-bg-secondary rounded-xl border border-theme-border-primary p-6">
             {/* Content Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
@@ -274,8 +274,8 @@ export default function EmployeeList() {
                   <Users size={24} className="text-accent" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-dark-100">{getCategoryTitle()}</h2>
-                  <p className="text-dark-400">{filteredEmployees.length} personel</p>
+                  <h2 className="text-xl font-bold text-theme-text-primary">{getCategoryTitle()}</h2>
+                  <p className="text-theme-text-muted">{filteredEmployees.length} personel</p>
                 </div>
               </div>
             </div>
@@ -283,21 +283,21 @@ export default function EmployeeList() {
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="relative flex-1">
-                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400" />
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-text-muted" />
                 <input
                   type="text"
                   placeholder="Personel ara..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 placeholder-dark-500 focus:outline-none focus:border-accent"
+                  className="w-full pl-10 pr-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary placeholder-dark-500 focus:outline-none focus:border-accent"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Filter size={18} className="text-dark-400" />
+                <Filter size={18} className="text-theme-text-muted" />
                 <select
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value)}
-                  className="px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-200 focus:outline-none focus:border-accent"
+                  className="px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-secondary focus:outline-none focus:border-accent"
                 >
                   <option value="all">Tüm Durumlar</option>
                   <option value="active">Aktif</option>
@@ -338,8 +338,8 @@ export default function EmployeeList() {
                 {/* Empty State */}
                 {filteredEmployees.length === 0 && (
                   <div className="text-center py-16">
-                    <Users size={48} className="text-dark-500 mx-auto mb-4" />
-                    <p className="text-dark-300">
+                    <Users size={48} className="text-theme-text-placeholder mx-auto mb-4" />
+                    <p className="text-theme-text-tertiary">
                       {searchTerm || statusFilter !== 'all' 
                         ? 'Aramanızla eşleşen personel bulunamadı.' 
                         : selectedCategory === 'idle'

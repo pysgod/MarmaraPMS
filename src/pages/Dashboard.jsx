@@ -24,16 +24,16 @@ function StatCard({ title, value, icon: Icon, trend, trendValue, color, compared
   }
 
   return (
-    <div className="bg-dark-800 rounded-2xl p-6 border border-dark-700 card-hover">
+    <div className="bg-theme-bg-secondary rounded-2xl p-6 border border-theme-border-primary card-hover">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-dark-400 text-sm font-medium">{title}</p>
-          <p className="text-3xl font-bold text-dark-50 mt-2">{value}</p>
+          <p className="text-theme-text-muted text-sm font-medium">{title}</p>
+          <p className="text-3xl font-bold text-theme-text-primary mt-2">{value}</p>
           {trend && (
             <div className={`flex items-center gap-1 mt-3 ${trend === 'up' ? 'text-green-400' : 'text-red-400'}`}>
               {trend === 'up' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
               <span className="text-sm font-medium">{trendValue}</span>
-              <span className="text-dark-400 text-xs ml-1">{comparedText}</span>
+              <span className="text-theme-text-muted text-xs ml-1">{comparedText}</span>
             </div>
           )}
         </div>
@@ -61,25 +61,25 @@ function ProjectCard({ project, onClick }) {
   return (
     <div 
       onClick={onClick}
-      className="bg-dark-700/50 rounded-xl p-4 hover:bg-dark-700 transition-colors cursor-pointer"
+      className="bg-theme-bg-hover rounded-xl p-4 hover:bg-theme-bg-tertiary transition-colors cursor-pointer"
     >
       <div className="flex items-center justify-between mb-3">
-        <h4 className="font-medium text-dark-100 text-sm truncate pr-2">{project.name}</h4>
+        <h4 className="font-medium text-theme-text-primary text-sm truncate pr-2">{project.name}</h4>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs text-dark-400">{project.start_date ? new Date(project.start_date).toLocaleDateString('tr-TR') : ''}</span>
+          <span className="text-xs text-theme-text-muted">{project.start_date ? new Date(project.start_date).toLocaleDateString('tr-TR') : ''}</span>
           <span className={`w-2 h-2 rounded-full ${statusColors[project.status] || 'bg-gray-500'}`} />
         </div>
       </div>
-      <p className="text-xs text-dark-400 mb-3">{project.company?.name || 'Firma Belirsiz'}</p>
-      <div className="relative h-2 bg-dark-600 rounded-full overflow-hidden">
+      <p className="text-xs text-theme-text-muted mb-3">{project.company?.name || 'Firma Belirsiz'}</p>
+      <div className="relative h-2 bg-theme-bg-elevated rounded-full overflow-hidden">
         <div 
           className="absolute left-0 top-0 h-full bg-gradient-to-r from-accent to-accent-dark rounded-full transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
       <div className="flex items-center justify-between mt-2">
-        <p className="text-xs text-dark-400">{project.employeeCount || 0} çalışan</p>
-        <p className="text-xs text-dark-400">{progress}%</p>
+        <p className="text-xs text-theme-text-muted">{project.employeeCount || 0} çalışan</p>
+        <p className="text-xs text-theme-text-muted">{progress}%</p>
       </div>
     </div>
   )
@@ -92,19 +92,19 @@ function PatrolCard({ patrol, statusConfig, onClick }) {
   return (
     <div 
       onClick={onClick}
-      className="flex items-center gap-4 p-4 bg-dark-700/50 rounded-xl hover:bg-dark-700 transition-colors cursor-pointer"
+      className="flex items-center gap-4 p-4 bg-theme-bg-hover rounded-xl hover:bg-theme-bg-tertiary transition-colors cursor-pointer"
     >
       <div className={`w-10 h-10 rounded-lg ${status.bg} flex items-center justify-center flex-shrink-0`}>
         <StatusIcon size={20} className={status.color} />
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-dark-100 text-sm truncate">{patrol.name}</h4>
-        <p className="text-xs text-dark-400 truncate">
+        <h4 className="font-medium text-theme-text-primary text-sm truncate">{patrol.name}</h4>
+        <p className="text-xs text-theme-text-muted truncate">
           {patrol.company?.name} • {patrol.assignments?.length || 0} personel
         </p>
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-xs text-dark-300">
+        <p className="text-xs text-theme-text-tertiary">
            {patrol.assignments?.[0] ? `${patrol.assignments[0].start_time}` : '-'}
         </p>
         <p className={`text-xs ${status.color} mt-1`}>{status.label}</p>
@@ -115,16 +115,16 @@ function PatrolCard({ patrol, statusConfig, onClick }) {
 
 function RecentActivityItem({ activity }) {
   return (
-    <div className="flex items-start gap-3 p-3 hover:bg-dark-700/30 rounded-lg transition-colors">
+    <div className="flex items-start gap-3 p-3 hover:bg-theme-bg-tertiary/30 rounded-lg transition-colors">
       <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center mt-0.5">
         <span className="text-accent text-xs font-semibold">{activity.user[0]}</span>
       </div>
       <div className="flex-1">
-        <p className="text-sm text-dark-200">
-          <span className="font-medium text-dark-100">{activity.user}</span>
+        <p className="text-sm text-theme-text-secondary">
+          <span className="font-medium text-theme-text-primary">{activity.user}</span>
           {' '}{activity.action}
         </p>
-        <p className="text-xs text-dark-400 mt-1">{activity.time}</p>
+        <p className="text-xs text-theme-text-muted mt-1">{activity.time}</p>
       </div>
     </div>
   )
@@ -155,8 +155,8 @@ export default function Dashboard() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-dark-50">{t('dashboard.title') || 'Dashboard'}</h1>
-          <p className="text-dark-400 mt-1">{t('dashboard.welcome') || 'Hoş geldiniz'}</p>
+          <h1 className="text-2xl font-bold text-theme-text-primary">{t('dashboard.title') || 'Dashboard'}</h1>
+          <p className="text-theme-text-muted mt-1">{t('dashboard.welcome') || 'Hoş geldiniz'}</p>
         </div>
         <button 
           onClick={() => navigate('/reports')}
@@ -207,9 +207,9 @@ export default function Dashboard() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Project Progress */}
-        <div className="lg:col-span-2 bg-dark-800 rounded-2xl border border-dark-700 p-6">
+        <div className="lg:col-span-2 bg-theme-bg-secondary rounded-2xl border border-theme-border-primary p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-dark-50">{t('dashboard.projectProgress') || 'Proje Durumları'}</h2>
+            <h2 className="text-lg font-semibold text-theme-text-primary">{t('dashboard.projectProgress') || 'Proje Durumları'}</h2>
             <button 
               onClick={() => navigate('/projects')}
               className="text-sm text-accent hover:text-accent-light transition-colors"
@@ -226,19 +226,19 @@ export default function Dashboard() {
               />
             ))}
             {projects.length === 0 && (
-              <p className="text-dark-400 col-span-2 text-center py-4">Henüz proje bulunmuyor.</p>
+              <p className="text-theme-text-muted col-span-2 text-center py-4">Henüz proje bulunmuyor.</p>
             )}
           </div>
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-dark-800 rounded-2xl border border-dark-700 p-6">
+        <div className="bg-theme-bg-secondary rounded-2xl border border-theme-border-primary p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-dark-50">{t('dashboard.recentActivities') || 'Son Aktiviteler'}</h2>
+            <h2 className="text-lg font-semibold text-theme-text-primary">{t('dashboard.recentActivities') || 'Son Aktiviteler'}</h2>
           </div>
           <div className="space-y-1">
             {recentActivities.length === 0 ? (
-               <p className="text-dark-400 text-sm py-2">Henüz aktivite yok.</p>
+               <p className="text-theme-text-muted text-sm py-2">Henüz aktivite yok.</p>
             ) : (
               recentActivities.map(activity => (
                 <RecentActivityItem key={activity.id} activity={activity} />
@@ -249,11 +249,11 @@ export default function Dashboard() {
       </div>
 
       {/* Patrols Section */}
-      <div className="bg-dark-800 rounded-2xl border border-dark-700 p-6">
+      <div className="bg-theme-bg-secondary rounded-2xl border border-theme-border-primary p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-lg font-semibold text-dark-50">{t('dashboard.patrolStatus') || 'Devriye Durumu'}</h2>
-            <p className="text-sm text-dark-400 mt-1">
+            <h2 className="text-lg font-semibold text-theme-text-primary">{t('dashboard.patrolStatus') || 'Devriye Durumu'}</h2>
+            <p className="text-sm text-theme-text-muted mt-1">
               {stats.activePatrols} {t('common.active')?.toLowerCase() || 'aktif'}, {stats.completedPatrols} {t('common.completed')?.toLowerCase() || 'tamamlandı'}
             </p>
           </div>
@@ -274,7 +274,7 @@ export default function Dashboard() {
             />
           ))}
           {patrols.length === 0 && (
-            <p className="text-dark-400 col-span-2 text-center py-4">Henüz devriye bulunmuyor.</p>
+            <p className="text-theme-text-muted col-span-2 text-center py-4">Henüz devriye bulunmuyor.</p>
           )}
         </div>
       </div>

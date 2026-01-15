@@ -48,12 +48,12 @@ export default function Topbar() {
   }
 
   return (
-    <header className="h-16 bg-dark-800/80 backdrop-blur-xl border-b border-dark-700 flex items-center justify-between px-6 sticky top-0 z-20">
+    <header className="h-16 bg-theme-bg-secondary/80 backdrop-blur-xl border-b border-theme-border-primary flex items-center justify-between px-6 sticky top-0 z-20">
       {/* Left Section - Search */}
       <div className="flex items-center gap-4 flex-1">
         <div ref={searchRef} className="relative w-full max-w-md">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-text-muted" size={18} />
             <input
               type="text"
               placeholder={t('topbar.searchPlaceholder')}
@@ -62,8 +62,8 @@ export default function Topbar() {
                 setSearchQuery(e.target.value)
                 setShowSearch(e.target.value.length > 0)
               }}
-              className="w-full pl-10 pr-4 py-2.5 bg-dark-700/50 border border-dark-600 rounded-lg
-                text-dark-100 placeholder-dark-400 text-sm
+              className="w-full pl-10 pr-4 py-2.5 bg-theme-bg-tertiary/50 border border-theme-border-secondary rounded-lg
+                text-theme-text-primary placeholder-theme-text-placeholder text-sm
                 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent
                 transition-all duration-200"
             />
@@ -71,9 +71,9 @@ export default function Topbar() {
           
           {/* Search Results */}
           {showSearch && searchQuery && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-dark-800 border border-dark-700 rounded-xl shadow-xl overflow-hidden animate-fadeIn">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-theme-bg-secondary border border-theme-border-primary rounded-xl shadow-xl overflow-hidden animate-fadeIn">
               <div className="p-2">
-                <p className="text-xs text-dark-400 px-3 py-2">{t('topbar.searchResults')}</p>
+                <p className="text-xs text-theme-text-muted px-3 py-2">{t('topbar.searchResults')}</p>
                 <div className="space-y-1">
                   {companies
                     .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -86,10 +86,10 @@ export default function Topbar() {
                           setSearchQuery('')
                           setShowSearch(false)
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-700/50 text-left transition-colors"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-theme-bg-hover text-left transition-colors"
                       >
-                        <Building2 size={16} className="text-dark-400" />
-                        <span className="text-sm text-dark-200">{company.name}</span>
+                        <Building2 size={16} className="text-theme-text-muted" />
+                        <span className="text-sm text-theme-text-secondary">{company.name}</span>
                       </button>
                     ))
                   }
@@ -106,30 +106,30 @@ export default function Topbar() {
         <div ref={companyRef} className="relative">
           <button
             onClick={() => setShowCompanyDropdown(!showCompanyDropdown)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-700/50 border border-dark-600
-              hover:bg-dark-700 transition-colors text-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-theme-bg-tertiary/50 border border-theme-border-secondary
+              hover:bg-theme-bg-tertiary transition-colors text-sm"
           >
             <Building2 size={16} className="text-accent" />
-            <span className="text-dark-200 max-w-[120px] truncate">
+            <span className="text-theme-text-secondary max-w-[120px] truncate">
               {selectedCompany ? selectedCompany.name : t('topbar.selectCompany')}
             </span>
-            <ChevronDown size={16} className={`text-dark-400 transition-transform ${showCompanyDropdown ? 'rotate-180' : ''}`} />
+            <ChevronDown size={16} className={`text-theme-text-muted transition-transform ${showCompanyDropdown ? 'rotate-180' : ''}`} />
           </button>
 
           {showCompanyDropdown && (
-            <div className="absolute top-full right-0 mt-2 w-64 bg-dark-800 border border-dark-700 rounded-xl shadow-xl overflow-hidden animate-fadeIn">
+            <div className="absolute top-full right-0 mt-2 w-64 bg-theme-bg-secondary border border-theme-border-primary rounded-xl shadow-xl overflow-hidden animate-fadeIn">
               <div className="p-2">
                 <button
                   onClick={() => {
                     exitCompanyContext()
                     setShowCompanyDropdown(false)
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-dark-700/50 transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-theme-bg-hover transition-colors"
                 >
-                  <span className="text-sm text-dark-300">{t('topbar.allCompanies')}</span>
+                  <span className="text-sm text-theme-text-tertiary">{t('topbar.allCompanies')}</span>
                   {!selectedCompany && <Check size={16} className="text-accent" />}
                 </button>
-                <div className="h-px bg-dark-700 my-2" />
+                <div className="h-px bg-theme-border-primary my-2" />
                 {companies.map(company => (
                   <button
                     key={company.id}
@@ -137,11 +137,11 @@ export default function Topbar() {
                       setCompanyContext(company)
                       setShowCompanyDropdown(false)
                     }}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-dark-700/50 transition-colors"
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-theme-bg-hover transition-colors"
                   >
                     <div>
-                      <p className="text-sm text-dark-200 text-left">{company.name}</p>
-                      <p className="text-xs text-dark-400">{company.company_code}</p>
+                      <p className="text-sm text-theme-text-secondary text-left">{company.name}</p>
+                      <p className="text-xs text-theme-text-muted">{company.company_code}</p>
                     </div>
                     {selectedCompany?.id === company.id && <Check size={16} className="text-accent" />}
                   </button>
@@ -155,9 +155,9 @@ export default function Topbar() {
         <div ref={notifRef} className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2.5 rounded-lg bg-dark-700/50 border border-dark-600 hover:bg-dark-700 transition-colors"
+            className="relative p-2.5 rounded-lg bg-theme-bg-tertiary/50 border border-theme-border-secondary hover:bg-theme-bg-tertiary transition-colors"
           >
-            <Bell size={18} className="text-dark-300" />
+            <Bell size={18} className="text-theme-text-tertiary" />
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent rounded-full flex items-center justify-center text-xs text-white font-medium">
                 {unreadCount}
@@ -166,15 +166,15 @@ export default function Topbar() {
           </button>
 
           {showNotifications && (
-            <div className="absolute top-full right-0 mt-2 w-80 bg-dark-800 border border-dark-700 rounded-xl shadow-xl overflow-hidden animate-fadeIn">
-              <div className="p-4 border-b border-dark-700">
-                <h3 className="font-semibold text-dark-100">{t('topbar.notifications')}</h3>
+            <div className="absolute top-full right-0 mt-2 w-80 bg-theme-bg-secondary border border-theme-border-primary rounded-xl shadow-xl overflow-hidden animate-fadeIn">
+              <div className="p-4 border-b border-theme-border-primary">
+                <h3 className="font-semibold text-theme-text-primary">{t('topbar.notifications')}</h3>
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {notifications.map(notif => (
                   <div
                     key={notif.id}
-                    className={`p-4 border-b border-dark-700/50 hover:bg-dark-700/30 cursor-pointer transition-colors
+                    className={`p-4 border-b border-theme-border-primary/50 hover:bg-theme-bg-hover cursor-pointer transition-colors
                       ${!notif.read ? 'bg-accent/5' : ''}`}
                   >
                     <div className="flex items-start gap-3">
@@ -183,9 +183,9 @@ export default function Topbar() {
                         notif.type === 'warning' ? 'bg-amber-500' : 'bg-accent'
                       }`} />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-dark-100">{notif.title}</p>
-                        <p className="text-xs text-dark-400 mt-1">{notif.message}</p>
-                        <p className="text-xs text-dark-500 mt-2">{notif.time}</p>
+                        <p className="text-sm font-medium text-theme-text-primary">{notif.title}</p>
+                        <p className="text-xs text-theme-text-muted mt-1">{notif.message}</p>
+                        <p className="text-xs text-theme-text-placeholder mt-2">{notif.time}</p>
                       </div>
                     </div>
                   </div>
@@ -196,7 +196,7 @@ export default function Topbar() {
                   navigate('/notifications')
                   setShowNotifications(false)
                 }}
-                className="w-full p-3 text-sm text-accent hover:bg-dark-700/30 transition-colors"
+                className="w-full p-3 text-sm text-accent hover:bg-theme-bg-hover transition-colors"
               >
                 {t('topbar.viewAllNotifications')}
               </button>
@@ -208,22 +208,22 @@ export default function Topbar() {
         <div ref={userRef} className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-3 p-1.5 pr-3 rounded-lg bg-dark-700/50 border border-dark-600 hover:bg-dark-700 transition-colors"
+            className="flex items-center gap-3 p-1.5 pr-3 rounded-lg bg-theme-bg-tertiary/50 border border-theme-border-secondary hover:bg-theme-bg-tertiary transition-colors"
           >
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
               <span className="text-white font-semibold text-sm">A</span>
             </div>
-            <ChevronDown size={16} className={`text-dark-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+            <ChevronDown size={16} className={`text-theme-text-muted transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
           </button>
 
           {showUserMenu && (
-            <div className="absolute top-full right-0 mt-2 w-56 bg-dark-800 border border-dark-700 rounded-xl shadow-xl overflow-hidden animate-fadeIn">
-              <div className="p-4 border-b border-dark-700">
-                <p className="font-medium text-dark-100">Admin User</p>
-                <p className="text-sm text-dark-400">admin@marmara.com</p>
+            <div className="absolute top-full right-0 mt-2 w-56 bg-theme-bg-secondary border border-theme-border-primary rounded-xl shadow-xl overflow-hidden animate-fadeIn">
+              <div className="p-4 border-b border-theme-border-primary">
+                <p className="font-medium text-theme-text-primary">Admin User</p>
+                <p className="text-sm text-theme-text-muted">admin@marmara.com</p>
               </div>
               <div className="p-2">
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-700/50 text-dark-300 hover:text-dark-100 transition-colors">
+                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-theme-bg-hover text-theme-text-tertiary hover:text-theme-text-primary transition-colors">
                   <User size={16} />
                   <span className="text-sm">{t('topbar.profile')}</span>
                 </button>
@@ -232,12 +232,12 @@ export default function Topbar() {
                     navigate('/settings')
                     setShowUserMenu(false)
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-700/50 text-dark-300 hover:text-dark-100 transition-colors"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-theme-bg-hover text-theme-text-tertiary hover:text-theme-text-primary transition-colors"
                 >
                   <Settings size={16} />
                   <span className="text-sm">{t('sidebar.settings')}</span>
                 </button>
-                <div className="h-px bg-dark-700 my-2" />
+                <div className="h-px bg-theme-border-primary my-2" />
                 <button 
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-400 hover:text-red-300 transition-colors"

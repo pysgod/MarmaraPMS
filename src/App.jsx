@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider } from './context/ThemeContext'
 import { AppProvider, useApp } from './context/AppContext'
 import MainLayout from './layouts/MainLayout'
 import Login from './pages/Login'
@@ -24,7 +25,7 @@ function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
+      <div className="min-h-screen bg-theme-bg-primary flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
       </div>
     )
@@ -39,43 +40,45 @@ function ProtectedRoute({ children }) {
 
 function App() {
   return (
-    <AppProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          
-          {/* Firmalar */}
-          <Route path="/companies" element={<ProtectedRoute><CompanyList /></ProtectedRoute>} />
-          <Route path="/companies/:id" element={<ProtectedRoute><CompanyDetail /></ProtectedRoute>} />
-          
-          {/* Projeler */}
-          <Route path="/projects" element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
-          <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
-          
-          {/* Çalışanlar (was Personeller) */}
-          <Route path="/employees" element={<ProtectedRoute><EmployeeList /></ProtectedRoute>} />
-          <Route path="/employees/:id" element={<ProtectedRoute><EmployeeDetail /></ProtectedRoute>} />
-          
-          {/* Devriye */}
-          <Route path="/patrol" element={<ProtectedRoute><PatrolList /></ProtectedRoute>} />
-          <Route path="/patrol/:id" element={<ProtectedRoute><PatrolDetail /></ProtectedRoute>} />
+    <ThemeProvider>
+      <AppProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            
+            {/* Firmalar */}
+            <Route path="/companies" element={<ProtectedRoute><CompanyList /></ProtectedRoute>} />
+            <Route path="/companies/:id" element={<ProtectedRoute><CompanyDetail /></ProtectedRoute>} />
+            
+            {/* Projeler */}
+            <Route path="/projects" element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
+            <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+            
+            {/* Çalışanlar (was Personeller) */}
+            <Route path="/employees" element={<ProtectedRoute><EmployeeList /></ProtectedRoute>} />
+            <Route path="/employees/:id" element={<ProtectedRoute><EmployeeDetail /></ProtectedRoute>} />
+            
+            {/* Devriye */}
+            <Route path="/patrol" element={<ProtectedRoute><PatrolList /></ProtectedRoute>} />
+            <Route path="/patrol/:id" element={<ProtectedRoute><PatrolDetail /></ProtectedRoute>} />
 
-          <Route path="/archive" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
-          
-          <Route path="/shifts" element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
+            <Route path="/archive" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
+            
+            <Route path="/shifts" element={<ProtectedRoute><Shifts /></ProtectedRoute>} />
 
-          {/* Diğer */}
-          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-          <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
-          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
-        </Routes>
-      </Router>
-    </AppProvider>
+            {/* Diğer */}
+            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+          </Routes>
+        </Router>
+      </AppProvider>
+    </ThemeProvider>
   )
 }
 

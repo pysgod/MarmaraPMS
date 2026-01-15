@@ -34,8 +34,8 @@ export default function ProjectList() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle size={64} className="text-amber-400 mb-4" />
-        <h2 className="text-xl font-semibold text-dark-200 mb-2">Firma Seçimi Gerekli</h2>
-        <p className="text-dark-400 mb-6 text-center">
+        <h2 className="text-xl font-semibold text-theme-text-secondary mb-2">Firma Seçimi Gerekli</h2>
+        <p className="text-theme-text-muted mb-6 text-center">
           Projeleri görüntülemek için önce bir firma seçmelisiniz.
         </p>
         <button 
@@ -69,8 +69,8 @@ export default function ProjectList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ">
         <div>
-          <h1 className="text-2xl font-bold text-dark-50">Projeler</h1>
-          <p className="text-dark-400 mt-1">
+          <h1 className="text-2xl font-bold text-theme-text-primary">Projeler</h1>
+          <p className="text-theme-text-muted mt-1">
             {selectedCompany.name} - {projects.length} proje
           </p>
         </div>
@@ -86,21 +86,21 @@ export default function ProjectList() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400" />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-text-muted" />
           <input
             type="text"
             placeholder="Proje ara..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-dark-800 border border-dark-700 rounded-lg text-dark-100 placeholder-dark-500 focus:outline-none focus:border-accent"
+            className="w-full pl-10 pr-4 py-2.5 bg-theme-bg-secondary border border-theme-border-primary rounded-lg text-theme-text-primary placeholder-dark-500 focus:outline-none focus:border-accent"
           />
         </div>
         <div className="flex items-center gap-2">
-          <Filter size={18} className="text-dark-400" />
+          <Filter size={18} className="text-theme-text-muted" />
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 bg-dark-800 border border-dark-700 rounded-lg text-dark-200 focus:outline-none focus:border-accent"
+            className="px-4 py-2.5 bg-theme-bg-secondary border border-theme-border-primary rounded-lg text-theme-text-secondary focus:outline-none focus:border-accent"
           >
             <option value="all">Tümü</option>
             <option value="active">Aktif</option>
@@ -117,7 +117,7 @@ export default function ProjectList() {
           <div 
             key={project.id}
             onClick={() => navigate(`/projects/${project.id}`)}
-            className="bg-dark-800 h-min rounded-xl p-5 border border-dark-700 hover:border-accent/50 transition-all cursor-pointer group "
+            className="bg-theme-bg-secondary h-min rounded-xl p-5 border border-theme-border-primary hover:border-accent/50 transition-all cursor-pointer group "
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
@@ -125,7 +125,7 @@ export default function ProjectList() {
                   <FolderKanban size={18} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-dark-100 group-hover:text-accent transition-colors">
+                  <h3 className="font-semibold text-theme-text-primary group-hover:text-accent transition-colors">
                     {project.name}
                   </h3>
                 </div>
@@ -135,12 +135,12 @@ export default function ProjectList() {
               </span>
             </div>
             
-            <p className="text-sm text-dark-400 mb-4 line-clamp-2">
+            <p className="text-sm text-theme-text-muted mb-4 line-clamp-2">
               {project.description || 'Açıklama yok'}
             </p>
 
             {(project.start_date || project.end_date) && (
-              <div className="flex items-center gap-2 text-xs text-dark-500 mb-4">
+              <div className="flex items-center gap-2 text-xs text-theme-text-placeholder mb-4">
                 <Calendar size={12} />
                 <span>
                   {project.start_date ? new Date(project.start_date).toLocaleDateString('tr-TR') : '?'} - {project.end_date ? new Date(project.end_date).toLocaleDateString('tr-TR') : '?'}
@@ -148,12 +148,12 @@ export default function ProjectList() {
               </div>
             )}
 
-            <div className="flex items-center gap-4 pt-4 border-t border-dark-700">
-              <div className="flex items-center gap-1.5 text-sm text-dark-400">
+            <div className="flex items-center gap-4 pt-4 border-t border-theme-border-primary">
+              <div className="flex items-center gap-1.5 text-sm text-theme-text-muted">
                 <Users size={14} />
                 <span>{project.employeeCount || 0}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-sm text-dark-400">
+              <div className="flex items-center gap-1.5 text-sm text-theme-text-muted">
                 <Shield size={14} />
                 <span>{project.patrolCount || 0}</span>
               </div>
@@ -163,9 +163,9 @@ export default function ProjectList() {
       </div>
 
       {filteredProjects.length === 0 && (
-        <div className="text-center py-16 bg-dark-800 rounded-xl border border-dark-700">
-          <FolderKanban size={48} className="text-dark-500 mx-auto mb-4" />
-          <p className="text-dark-300">
+        <div className="text-center py-16 bg-theme-bg-secondary rounded-xl border border-theme-border-primary">
+          <FolderKanban size={48} className="text-theme-text-placeholder mx-auto mb-4" />
+          <p className="text-theme-text-tertiary">
             {searchTerm || statusFilter !== 'all' 
               ? 'Aramanızla eşleşen proje bulunamadı.' 
               : 'Henüz proje eklenmemiş.'}

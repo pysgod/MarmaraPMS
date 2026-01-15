@@ -33,8 +33,8 @@ export default function PatrolList() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle size={64} className="text-amber-400 mb-4" />
-        <h2 className="text-xl font-semibold text-dark-200 mb-2">Firma Seçimi Gerekli</h2>
-        <p className="text-dark-400 mb-6 text-center">
+        <h2 className="text-xl font-semibold text-theme-text-secondary mb-2">Firma Seçimi Gerekli</h2>
+        <p className="text-theme-text-muted mb-6 text-center">
           Devriyeleri görüntülemek için önce bir firma seçmelisiniz.
         </p>
         <button 
@@ -81,8 +81,8 @@ export default function PatrolList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-dark-50">Devriyeler</h1>
-          <p className="text-dark-400 mt-1">
+          <h1 className="text-2xl font-bold text-theme-text-primary">Devriyeler</h1>
+          <p className="text-theme-text-muted mt-1">
             {selectedCompany.name} - {patrols.length} devriye
           </p>
         </div>
@@ -98,21 +98,21 @@ export default function PatrolList() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400" />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-text-muted" />
           <input
             type="text"
             placeholder="Devriye ara..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-dark-800 border border-dark-700 rounded-lg text-dark-100 placeholder-dark-500 focus:outline-none focus:border-accent"
+            className="w-full pl-10 pr-4 py-2.5 bg-theme-bg-secondary border border-theme-border-primary rounded-lg text-theme-text-primary placeholder-dark-500 focus:outline-none focus:border-accent"
           />
         </div>
         <div className="flex items-center gap-2">
-          <Filter size={18} className="text-dark-400" />
+          <Filter size={18} className="text-theme-text-muted" />
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 bg-dark-800 border border-dark-700 rounded-lg text-dark-200 focus:outline-none focus:border-accent"
+            className="px-4 py-2.5 bg-theme-bg-secondary border border-theme-border-primary rounded-lg text-theme-text-secondary focus:outline-none focus:border-accent"
           >
             <option value="all">Tümü</option>
             <option value="active">Aktif</option>
@@ -131,15 +131,15 @@ export default function PatrolList() {
             <div 
               key={patrol.id}
               onClick={() => navigate(`/patrol/${patrol.id}`)}
-              className="bg-dark-800 rounded-xl p-5 border border-dark-700 hover:border-accent/50 transition-all cursor-pointer group"
+              className="bg-theme-bg-secondary rounded-xl p-5 border border-theme-border-primary hover:border-accent/50 transition-all cursor-pointer group"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-dark-700 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-theme-bg-tertiary flex items-center justify-center">
                     <StatusIcon size={20} className={status.color.split(' ')[1]} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-dark-100 group-hover:text-accent transition-colors">
+                    <h3 className="font-semibold text-theme-text-primary group-hover:text-accent transition-colors">
                       {patrol.name}
                     </h3>
                   </div>
@@ -149,17 +149,17 @@ export default function PatrolList() {
                 </span>
               </div>
               
-              <p className="text-sm text-dark-400 mb-4 line-clamp-2">
+              <p className="text-sm text-theme-text-muted mb-4 line-clamp-2">
                 {patrol.description || 'Açıklama yok'}
               </p>
 
-              <div className="flex items-center gap-2 text-xs text-dark-500 mb-4">
+              <div className="flex items-center gap-2 text-xs text-theme-text-placeholder mb-4">
                 <FolderKanban size={12} />
                 <span>{patrol.project?.name || 'Proje atanmamış'}</span>
               </div>
 
-              <div className="flex items-center gap-4 pt-4 border-t border-dark-700">
-                <div className="flex items-center gap-1.5 text-sm text-dark-400">
+              <div className="flex items-center gap-4 pt-4 border-t border-theme-border-primary">
+                <div className="flex items-center gap-1.5 text-sm text-theme-text-muted">
                   <Users size={14} />
                   <span>{patrol.assignments?.length || 0} atama</span>
                 </div>
@@ -170,9 +170,9 @@ export default function PatrolList() {
       </div>
 
       {filteredPatrols.length === 0 && (
-        <div className="text-center py-16 bg-dark-800 rounded-xl border border-dark-700">
-          <Shield size={48} className="text-dark-500 mx-auto mb-4" />
-          <p className="text-dark-300">
+        <div className="text-center py-16 bg-theme-bg-secondary rounded-xl border border-theme-border-primary">
+          <Shield size={48} className="text-theme-text-placeholder mx-auto mb-4" />
+          <p className="text-theme-text-tertiary">
             {searchTerm || statusFilter !== 'all' 
               ? 'Aramanızla eşleşen devriye bulunamadı.' 
               : 'Henüz devriye eklenmemiş.'}
@@ -183,28 +183,28 @@ export default function PatrolList() {
       {/* Add Patrol Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 rounded-2xl w-full max-w-md border border-dark-700">
-            <div className="p-6 border-b border-dark-700">
-              <h2 className="text-xl font-semibold text-dark-100">Yeni Devriye Ekle</h2>
-              <p className="text-sm text-dark-400 mt-1">{selectedCompany.name}</p>
+          <div className="bg-theme-bg-secondary rounded-2xl w-full max-w-md border border-theme-border-primary">
+            <div className="p-6 border-b border-theme-border-primary">
+              <h2 className="text-xl font-semibold text-theme-text-primary">Yeni Devriye Ekle</h2>
+              <p className="text-sm text-theme-text-muted mt-1">{selectedCompany.name}</p>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Devriye Adı *</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Devriye Adı *</label>
                 <input
                   type="text"
                   value={newPatrol.name}
                   onChange={e => setNewPatrol({ ...newPatrol, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                   placeholder="Devriye adı"
                 />
               </div>
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Proje *</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Proje *</label>
                 <select
                   value={newPatrol.project_id}
                   onChange={e => setNewPatrol({ ...newPatrol, project_id: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="">Seçiniz...</option>
                   {projects.map(project => (
@@ -213,31 +213,31 @@ export default function PatrolList() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Açıklama</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Açıklama</label>
                 <textarea
                   value={newPatrol.description}
                   onChange={e => setNewPatrol({ ...newPatrol, description: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent resize-none"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent resize-none"
                   rows={3}
                   placeholder="Devriye açıklaması"
                 />
               </div>
               <div>
-                <label className="block text-sm text-dark-300 mb-2">Durum</label>
+                <label className="block text-sm text-theme-text-tertiary mb-2">Durum</label>
                 <select
                   value={newPatrol.status}
                   onChange={e => setNewPatrol({ ...newPatrol, status: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg text-dark-100 focus:outline-none focus:border-accent"
+                  className="w-full px-4 py-2.5 bg-theme-bg-tertiary border border-theme-border-secondary rounded-lg text-theme-text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="active">Aktif</option>
                   <option value="inactive">Pasif</option>
                 </select>
               </div>
             </div>
-            <div className="p-6 border-t border-dark-700 flex justify-end gap-3">
+            <div className="p-6 border-t border-theme-border-primary flex justify-end gap-3">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-dark-300 hover:text-dark-100 transition-colors"
+                className="px-4 py-2 text-theme-text-tertiary hover:text-theme-text-primary transition-colors"
               >
                 İptal
               </button>
