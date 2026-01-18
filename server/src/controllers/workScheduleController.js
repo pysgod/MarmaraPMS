@@ -203,6 +203,7 @@ exports.updateWorkSchedule = async (req, res) => {
 exports.toggleWorkSchedule = async (req, res) => {
   try {
     const { project_id, employee_id, date } = req.body
+    console.log('[TOGGLE DEBUG] Received:', { project_id, employee_id, date })
 
     const projectEmployee = await ProjectEmployee.findOne({
       where: { project_id, employee_id }
@@ -717,10 +718,28 @@ exports.getEmployeeWorkSchedule = async (req, res) => {
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0)
 
-    // Get schedules with Project and ShiftType info
+    // First, get active project assignments for this employee
+    // Only show schedules for projects the employee is STILL assigned to
+    const employeeProjectAssignments = await ProjectEmployee.findAll({
+      where: { employee_id: employeeId },
+      attributes: ['project_id']
+    })
+    const activeProjectIds = employeeProjectAssignments.map(pe => pe.project_id)
+
+    // If employee has no project assignments, return empty
+    if (activeProjectIds.length === 0) {
+      return res.json({
+        schedules: [],
+        scheduleMap: {},
+        stats: { totalGozetim: 0, totalMesai: 0 }
+      })
+    }
+
+    // Get schedules with Project and ShiftType info - ONLY for active projects
     const schedules = await WorkSchedule.findAll({
       where: {
         employee_id: employeeId,
+        project_id: { [Op.in]: activeProjectIds },
         date: {
           [Op.between]: [startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
         }

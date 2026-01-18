@@ -109,26 +109,75 @@ export default function EmployeeScheduleViewer({ employeeId }) {
                 const daySchedules = data?.scheduleMap?.[dateStr] || []
                 const isWeekend = new Date(year, month - 1, day).getDay() === 0 || new Date(year, month - 1, day).getDay() === 6
                 
+                // Calculate date status for color coding
+                const today = new Date()
+                today.setHours(0, 0, 0, 0)
+                const cellDate = new Date(year, month - 1, day)
+                cellDate.setHours(0, 0, 0, 0)
+                const isFuture = cellDate > today
+                const isPast = cellDate < today
+                const isToday = cellDate.getTime() === today.getTime()
+
+                // Check if there's any overtime on this day
+                const hasMesai = daySchedules.some(sch => parseFloat(sch.mesai_hours) > 0)
+                const totalMesaiHours = daySchedules.reduce((sum, sch) => sum + (parseFloat(sch.mesai_hours) || 0), 0)
+                
                 return (
                   <div 
                     key={day} 
-                    className={`h-24 p-2 rounded-lg border border-theme-border-secondary relative ${
+                    className={`h-24 p-2 rounded-lg border relative ${
+                       isToday ? 'border-accent border-2' : 'border-theme-border-secondary'
+                    } ${
                        isWeekend ? 'bg-theme-bg-tertiary/30' : 'bg-theme-bg-secondary'
                     }`}
                   >
-                    <div className="text-right text-xs text-theme-text-muted mb-1">{day}</div>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="text-xs text-theme-text-muted">{day}</div>
+                      {hasMesai && (
+                        <span className="text-[9px] px-1 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold" title={`Mesai: ${totalMesaiHours} saat`}>
+                          +M
+                        </span>
+                      )}
+                    </div>
                     <div className="space-y-1 overflow-y-auto max-h-[60px] scrollbar-thin">
-                       {daySchedules.length > 0 ? daySchedules.map((sch, i) => (
+                       {daySchedules.length > 0 ? daySchedules.map((sch, i) => {
+                           // Determine status color
+                           let statusColorClass = ''
+                           let borderColorClass = ''
+                           
+                           if (sch.leave_type) {
+                             // Leave days - red
+                             statusColorClass = 'bg-red-500/20'
+                             borderColorClass = 'border-red-500/50'
+                           } else if (isFuture) {
+                             // Future shifts - orange
+                             statusColorClass = 'bg-orange-500/20'
+                             borderColorClass = 'border-orange-500/50'
+                           } else if (isPast || isToday) {
+                             // Past/today with completed shift - green if shift assigned
+                             if (sch.shift_type_id && sch.gozetim_hours > 0) {
+                               statusColorClass = 'bg-green-500/20'
+                               borderColorClass = 'border-green-500/50'
+                             } else {
+                               // Missed/incomplete - red
+                               statusColorClass = 'bg-red-500/20'
+                               borderColorClass = 'border-red-500/50'
+                             }
+                           }
+                           
+                           return (
                            <div 
                              key={i} 
-                             className="text-[10px] p-1 rounded bg-theme-bg-elevated border border-theme-border-primary"
-                             title={`${sch.project?.name || 'Proje'} - ${sch.shiftType?.name || 'Vardiya'}`}
+                             className={`text-[10px] p-1 rounded border ${statusColorClass} ${borderColorClass}`}
+                             title={`${sch.project?.name || 'Proje'} - ${sch.shiftType?.name || 'Vardiya'}${parseFloat(sch.mesai_hours) > 0 ? ` (+${sch.mesai_hours}h mesai)` : ''}`}
                            >
                               {sch.leave_type ? (
                                 <span className="text-red-400 font-bold block text-center">{sch.leave_type}</span>
                               ) : (
                                 <>
-                                  <div className="font-bold text-accent truncate">{sch.shiftType?.short_code || sch.shiftType?.name || '-'}</div>
+                                  <div className={`font-bold truncate ${isFuture ? 'text-orange-400' : (isPast || isToday) && sch.shift_type_id ? 'text-green-400' : 'text-red-400'}`}>
+                                    {sch.shiftType?.short_code || sch.shiftType?.name || '-'}
+                                  </div>
                                   <div className="text-theme-text-muted truncate text-[9px]">{sch.project?.name}</div>
                                   <div className="text-theme-text-tertiary text-[9px]">
                                     {sch.shiftType?.start_time ? `${sch.shiftType.start_time.slice(0,5)}-${sch.shiftType.end_time.slice(0,5)}` : (sch.gozetim_hours + 'h')}
@@ -136,7 +185,7 @@ export default function EmployeeScheduleViewer({ employeeId }) {
                                 </>
                               )}
                            </div>
-                       )) : (
+                       )}) : (
                           <div className="text-center text-theme-text-placeholder text-[10px] mt-2">-</div>
                        )}
                     </div>
