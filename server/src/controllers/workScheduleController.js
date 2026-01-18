@@ -70,6 +70,7 @@ exports.getProjectWorkSchedule = async (req, res) => {
         leave_type: s.leave_type,
         gozetim_hours: parseFloat(s.gozetim_hours) || 0,
         mesai_hours: parseFloat(s.mesai_hours) || 0,
+        mesai_shift_type_id: s.mesai_shift_type_id,
         notes: s.notes
       }
     })
@@ -121,7 +122,7 @@ exports.getProjectWorkSchedule = async (req, res) => {
 // Update a single cell (employee + date)
 exports.updateWorkSchedule = async (req, res) => {
   try {
-    const { project_id, employee_id, date, shift_type_id, leave_type, gozetim_hours, mesai_hours, notes } = req.body
+    const { project_id, employee_id, date, shift_type_id, leave_type, gozetim_hours, mesai_hours, mesai_shift_type_id, notes } = req.body
 
     // Validate employee is in project
     const projectEmployee = await ProjectEmployee.findOne({
@@ -140,13 +141,21 @@ exports.updateWorkSchedule = async (req, res) => {
     }
 
     // Find or create the schedule entry
+    // Calculate mesai hours from shift type if mesai_shift_type_id is provided
+    let calculatedMesai = mesai_hours
+    if (mesai_shift_type_id && calculatedMesai === undefined) {
+      const mesaiShiftType = await ShiftType.findByPk(mesai_shift_type_id)
+      calculatedMesai = mesaiShiftType ? parseFloat(mesaiShiftType.hours) : 0
+    }
+
     const [schedule, created] = await WorkSchedule.findOrCreate({
       where: { project_id, employee_id, date },
       defaults: { 
         shift_type_id: shift_type_id || null, // null = off or unknown
         leave_type: leave_type || null,
         gozetim_hours: calculatedGozetim || 0,
-        mesai_hours: mesai_hours || 0,
+        mesai_hours: calculatedMesai || 0,
+        mesai_shift_type_id: mesai_shift_type_id || null,
         notes
       }
     })
@@ -160,6 +169,16 @@ exports.updateWorkSchedule = async (req, res) => {
         // If updating shift type but not hours, fetch hours
         const shiftType = await ShiftType.findByPk(shift_type_id)
         updateData.gozetim_hours = shiftType ? parseFloat(shiftType.hours) : 0
+      }
+      if (mesai_shift_type_id !== undefined) {
+        updateData.mesai_shift_type_id = mesai_shift_type_id
+        // Auto-calculate mesai_hours from shift type if not explicitly provided
+        if (mesai_hours === undefined && mesai_shift_type_id) {
+          const mesaiShiftType = await ShiftType.findByPk(mesai_shift_type_id)
+          updateData.mesai_hours = mesaiShiftType ? parseFloat(mesaiShiftType.hours) : 0
+        } else if (!mesai_shift_type_id) {
+          updateData.mesai_hours = 0
+        }
       }
       if (mesai_hours !== undefined) updateData.mesai_hours = mesai_hours
       if (notes !== undefined) updateData.notes = notes
@@ -363,7 +382,7 @@ exports.getProjectJokers = async (req, res) => {
 // Toggle joker slot (cycle through: off -> type1 -> type2 -> ... -> off)
 exports.toggleJoker = async (req, res) => {
   try {
-    const { project_id, date, shift_type, mesai_hours, notes } = req.body // shift_type can be ID now
+    const { project_id, date, shift_type, mesai_hours, mesai_shift_type_id, notes } = req.body // shift_type can be ID now
 
     const joker = await WorkScheduleJoker.findOne({
       where: { project_id, date }
@@ -380,14 +399,29 @@ exports.toggleJoker = async (req, res) => {
 
     // Determine New State
     if (joker) {
-      if (mesai_hours !== undefined) {
+      if (mesai_hours !== undefined || mesai_shift_type_id !== undefined) {
          // Explicit overtime update
+         let updateMesai = mesai_hours
+         let updateMesaiShiftTypeId = mesai_shift_type_id
+         
+         // If mesai_shift_type_id provided, calculate hours from it
+         if (mesai_shift_type_id !== undefined) {
+           if (mesai_shift_type_id) {
+             const st = shiftTypes.find(t => t.id === parseInt(mesai_shift_type_id))
+             updateMesai = st ? parseFloat(st.hours) : 0
+           } else {
+             updateMesai = 0
+             updateMesaiShiftTypeId = null
+           }
+         }
+         
          await joker.update({
-           mesai_hours: mesai_hours,
+           mesai_hours: updateMesai !== undefined ? updateMesai : joker.mesai_hours,
+           mesai_shift_type_id: updateMesaiShiftTypeId !== undefined ? updateMesaiShiftTypeId : joker.mesai_shift_type_id,
            notes: notes !== undefined ? notes : joker.notes
          })
          return res.json(joker)
-      }
+       }
 
       if (shift_type) {
          // User selected specific ID from context menu for Shift
@@ -418,8 +452,9 @@ exports.toggleJoker = async (req, res) => {
       await joker.update({ 
         shift_type_id: nextShiftTypeId,
         gozetim_hours: nextHours,
-        // Preserve existing mesai_hours if not explicitly changed
-        mesai_hours: joker.mesai_hours, 
+        // Preserve existing mesai data if not explicitly changed
+        mesai_hours: joker.mesai_hours,
+        mesai_shift_type_id: joker.mesai_shift_type_id, 
         notes: notes !== undefined ? notes : joker.notes 
       })
       return res.json(joker)
@@ -427,14 +462,20 @@ exports.toggleJoker = async (req, res) => {
 
     // New Joker Creation
     let initialMesai = mesai_hours || 0
+    let initialMesaiShiftTypeId = mesai_shift_type_id || null
     
-    if (mesai_hours !== undefined) {
-      // If preventing creation with just mesai... maybe allow?
-      // Just create with null shift type
+    // Calculate mesai hours from shift type if provided
+    if (mesai_shift_type_id) {
+      const st = shiftTypes.find(t => t.id === parseInt(mesai_shift_type_id))
+      initialMesai = st ? parseFloat(st.hours) : 0
+    }
+    
+    if (mesai_hours !== undefined || mesai_shift_type_id !== undefined) {
+      // Creating joker with only mesai data - don't set gozetim
       nextShiftTypeId = null
       nextHours = 0
     } else {
-        // Standard Cycle Creation
+        // Standard Cycle Creation (clicking on gozetim row)
         if (shiftTypes.length > 0) {
         // Start with first type
         nextShiftTypeId = shiftTypes[0].id
@@ -448,6 +489,7 @@ exports.toggleJoker = async (req, res) => {
       shift_type_id: nextShiftTypeId,
       gozetim_hours: nextHours,
       mesai_hours: initialMesai,
+      mesai_shift_type_id: initialMesaiShiftTypeId,
       notes
     })
 

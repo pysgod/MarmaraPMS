@@ -100,7 +100,7 @@ export default function ProjectWorkSchedule({ projectId }) {
 
   const getCellData = (employeeId, date) => {
     const key = `${employeeId}-${date}`
-    return data.scheduleMap[key] || { shift_type_id: null, leave_type: null, mesai_hours: 0, gozetim_hours: 0 }
+    return data.scheduleMap[key] || { shift_type_id: null, leave_type: null, mesai_hours: 0, gozetim_hours: 0, mesai_shift_type_id: null }
   }
 
   const getShiftTypeDetails = (id) => {
@@ -127,34 +127,28 @@ export default function ProjectWorkSchedule({ projectId }) {
   const handleCellClick = async (employeeId, date, rowType, isJoker = false) => {
     if (rowType === 'overtime') {
        const currentData = isJoker 
-          ? (data.jokers.find(j => j.date === date) || { mesai_hours: 0 }) 
-          : (getCellData(employeeId, date) || { mesai_hours: 0 })
+          ? (data.jokers.find(j => j.date === date) || { mesai_shift_type_id: null }) 
+          : (getCellData(employeeId, date) || { mesai_shift_type_id: null })
           
-       const currentHours = parseFloat(currentData.mesai_hours || 0)
-       
-       // Cycle through defined Shift Types to mimic "Shift" row behavior
-       // Find "current" shift type index based on hours
-       // Note: If multiple shifts have same hours, we might jump, but it's acceptable for "hours-only" storage.
-       // We'll try to find the match that effectively "looks" like the current one, or just the first match.
-       
+       // Cycle through shift types like Gözetim row
        const sortedShifts = [...(data.shiftTypes || [])].sort((a,b) => a.order - b.order || a.id - b.id)
        
-       let nextHours = 0
+       let nextShiftTypeId = null
+       let currentIndex = -1
        
-       if (currentHours === 0 && sortedShifts.length > 0) {
-          // Off -> First Shift
-          nextHours = parseFloat(sortedShifts[0].hours)
+       if (currentData.mesai_shift_type_id) {
+         currentIndex = sortedShifts.findIndex(t => t.id === currentData.mesai_shift_type_id)
+       }
+       
+       if (currentIndex === -1 && sortedShifts.length > 0) {
+         // Off -> First Shift
+         nextShiftTypeId = sortedShifts[0].id
+       } else if (currentIndex !== -1 && currentIndex < sortedShifts.length - 1) {
+         // Go to Next Shift
+         nextShiftTypeId = sortedShifts[currentIndex + 1].id
        } else {
-          // Find current index
-          const currentIndex = sortedShifts.findIndex(t => Math.abs(parseFloat(t.hours) - currentHours) < 0.1)
-          
-          if (currentIndex !== -1 && currentIndex < sortedShifts.length - 1) {
-             // Go to Next Shift
-             nextHours = parseFloat(sortedShifts[currentIndex + 1].hours)
-          } else {
-             // Last Shift or Unknown -> Off (0)
-             nextHours = 0
-          }
+         // Last Shift or Unknown -> Off (null)
+         nextShiftTypeId = null
        }
 
        setSaving(true)
@@ -163,7 +157,7 @@ export default function ProjectWorkSchedule({ projectId }) {
            await api.toggleJoker({ 
              project_id: projectId, 
              date, 
-             mesai_hours: nextHours 
+             mesai_shift_type_id: nextShiftTypeId 
            })
          } else {
            const cellInfo = getCellData(employeeId, date)
@@ -174,7 +168,7 @@ export default function ProjectWorkSchedule({ projectId }) {
               shift_type_id: cellInfo.shift_type_id,
               gozetim_hours: cellInfo.gozetim_hours,
               leave_type: cellInfo.leave_type,
-              mesai_hours: nextHours,
+              mesai_shift_type_id: nextShiftTypeId,
               notes: cellInfo.notes
            })
          }
@@ -236,7 +230,22 @@ export default function ProjectWorkSchedule({ projectId }) {
 
   const handleCellRightClick = (e, employeeId, date, rowType, isJoker = false) => {
     e.preventDefault()
-    setContextMenu({ x: e.clientX, y: e.clientY, employeeId, date, rowType, isJoker })
+    e.stopPropagation()
+    
+    // Mouse pozisyonunu nativeEvent'ten al (React synthetic event sorunlarını önler)
+    const mouseX = e.nativeEvent.clientX || e.clientX
+    const mouseY = e.nativeEvent.clientY || e.clientY
+    
+    console.log('Right click at:', mouseX, mouseY) // Debug için
+    
+    setContextMenu({ 
+      x: mouseX, 
+      y: mouseY, 
+      employeeId, 
+      date, 
+      rowType, 
+      isJoker 
+    })
   }
 
   const handleMenuAction = async (type, value) => {
@@ -255,22 +264,11 @@ export default function ProjectWorkSchedule({ projectId }) {
         } else {
            // Set Overtime (Mesai)
            if (type === 'shift') {
-             const shift = data.shiftTypes.find(t => t.id === value)
-             const hours = shift ? parseFloat(shift.hours) : 0
-             
              await api.toggleJoker({
                project_id: projectId,
                date: contextMenu.date,
-               mesai_hours: hours
+               mesai_shift_type_id: value || null
              })
-           } else {
-             if (!value) {
-                await api.toggleJoker({
-                   project_id: projectId,
-                   date: contextMenu.date,
-                   mesai_hours: 0
-                 })
-             }
            }
         }
       } else {
@@ -297,11 +295,8 @@ export default function ProjectWorkSchedule({ projectId }) {
         } else {
            // MESAI / OVERTIME ROW
            // value here is a shift_type_id (if type=='shift')
-           if (type === 'shift' && value) {
-              const shift = data.shiftTypes.find(t => t.id === value)
-              const hours = shift ? parseFloat(shift.hours) : 0
-              
-              // We need to keep existing shift_type_id/gozetim, only update mesai_hours
+           if (type === 'shift') {
+              // We need to keep existing shift_type_id/gozetim, only update mesai
               const current = getCellData(contextMenu.employeeId, contextMenu.date)
               
               await api.updateWorkSchedule({
@@ -311,23 +306,11 @@ export default function ProjectWorkSchedule({ projectId }) {
                 shift_type_id: current.shift_type_id,
                 gozetim_hours: current.gozetim_hours,
                 leave_type: current.leave_type,
-                mesai_hours: hours,
+                mesai_shift_type_id: value || null,
                 notes: current.notes
               })
-           } else if (type === 'shift' && !value) {
-              // Clear Overtime
-              const current = getCellData(contextMenu.employeeId, contextMenu.date)
-              await api.updateWorkSchedule({
-                project_id: projectId,
-                employee_id: contextMenu.employeeId,
-                date: contextMenu.date,
-                shift_type_id: current.shift_type_id,
-                gozetim_hours: current.gozetim_hours,
-                leave_type: current.leave_type,
-                mesai_hours: 0
-              })
            }
-        }
+         }
       }
       loadSchedule()
     } catch (error) {
@@ -478,31 +461,21 @@ export default function ProjectWorkSchedule({ projectId }) {
                       {/* Mesai Cells */}
                       {data.days.map(day => {
                          const cellData = getCellData(employee.id, day.date)
-                         const hasOvertime = cellData.mesai_hours > 0
-                         
-                         // Try to find matching shift type using hours logic only
-                         let matchShift = null
-                         if (hasOvertime) {
-                           matchShift = data.shiftTypes.find(t => Math.abs(parseFloat(t.hours) - parseFloat(cellData.mesai_hours)) < 0.1)
-                         }
-                         const matchInfo = matchShift ? getShiftTypeDetails(matchShift.id) : null
+                         const mesaiShiftInfo = getShiftTypeDetails(cellData.mesai_shift_type_id)
+                         const hasMesai = cellData.mesai_shift_type_id
 
                          return (
                            <td 
                              key={`mesai-${employee.id}-${day.date}`}
                              onClick={(e) => handleCellClick(employee.id, day.date, 'overtime')}
                              onContextMenu={(e) => handleCellRightClick(e, employee.id, day.date, 'overtime')}
-                             className={`min-w-[40px] h-9 text-center cursor-pointer select-none border-l border-theme-border-secondary/30 hover:ring-2 hover:ring-white/30 hover:z-10 transition-all ${!matchInfo ? 'hover:bg-orange-500/10' : ''}`}
-                             style={matchInfo && matchInfo.isHex ? { backgroundColor: matchInfo.color, color: '#fff' } : {}}
+                             className={`min-w-[40px] h-9 text-center cursor-pointer select-none border-l border-theme-border-secondary/30 hover:ring-2 hover:ring-white/30 hover:z-10 transition-all ${!hasMesai ? 'hover:bg-orange-500/10' : ''}`}
+                             style={hasMesai && mesaiShiftInfo.isHex ? { backgroundColor: mesaiShiftInfo.color, color: '#fff' } : {}}
                            >
-                              {hasOvertime ? (
-                                matchInfo ? (
-                                  <div className={`w-full h-full flex items-center justify-center font-bold ${!matchInfo.isHex ? matchInfo.color : ''}`}>
-                                     {matchInfo.label}
-                                  </div>
-                                ) : (
-                                  <span className="text-orange-400 font-bold">{cellData.mesai_hours}</span>
-                                )
+                              {hasMesai ? (
+                                <div className={`w-full h-full flex items-center justify-center font-bold ${!mesaiShiftInfo.isHex ? mesaiShiftInfo.color : ''}`}>
+                                   {mesaiShiftInfo.label}
+                                </div>
                               ) : (
                                 <span className="text-transparent hover:text-gray-500/50 text-[10px]">+</span>
                               )}
@@ -551,31 +524,21 @@ export default function ProjectWorkSchedule({ projectId }) {
                       <td className="text-center border-r border-theme-border-secondary/30 text-[10px] font-bold text-yellow-600/70 bg-yellow-500/10">Mesai</td>
                       {data.days.map(day => {
                          const joker = getJokerForDate(day.date)
-                         const hasOvertime = joker && joker.mesai_hours > 0
-                         
-                         // Try to find matching shift type
-                         let matchShift = null
-                         if (hasOvertime) {
-                           matchShift = data.shiftTypes.find(t => Math.abs(parseFloat(t.hours) - parseFloat(joker.mesai_hours)) < 0.1)
-                         }
-                         const matchInfo = matchShift ? getShiftTypeDetails(matchShift.id) : null
+                         const hasMesai = joker?.mesai_shift_type_id
+                         const mesaiShiftInfo = getShiftTypeDetails(joker?.mesai_shift_type_id)
 
                          return (
                             <td 
                                key={`joker-mesai-${day.date}`} 
                                onClick={() => handleCellClick(null, day.date, 'overtime', true)}
                                onContextMenu={(e) => handleCellRightClick(e, null, day.date, 'overtime', true)}
-                               className={`min-w-[40px] h-9 text-center cursor-pointer select-none border-l border-theme-border-secondary/30 hover:ring-2 hover:ring-yellow-400/50 transition-all ${!matchInfo ? 'hover:bg-yellow-500/20' : ''}`}
-                               style={matchInfo && matchInfo.isHex ? { backgroundColor: matchInfo.color, color: '#fff' } : {}}
+                               className={`min-w-[40px] h-9 text-center cursor-pointer select-none border-l border-theme-border-secondary/30 hover:ring-2 hover:ring-yellow-400/50 transition-all ${!hasMesai ? 'hover:bg-yellow-500/20' : ''}`}
+                               style={hasMesai && mesaiShiftInfo.isHex ? { backgroundColor: mesaiShiftInfo.color, color: '#fff' } : {}}
                             >
-                               {hasOvertime ? (
-                                  matchInfo ? (
-                                    <div className={`w-full h-full flex items-center justify-center font-bold ${!matchInfo.isHex ? matchInfo.color : ''}`}>
-                                       {matchInfo.label}
-                                    </div>
-                                  ) : (
-                                    <span className="text-orange-400 font-bold">{joker.mesai_hours}</span>
-                                  )
+                               {hasMesai ? (
+                                 <div className={`w-full h-full flex items-center justify-center font-bold ${!mesaiShiftInfo.isHex ? mesaiShiftInfo.color : ''}`}>
+                                    {mesaiShiftInfo.label}
+                                 </div>
                                ) : (
                                   <span className="text-transparent hover:text-yellow-600/50 text-[10px]">+</span>
                                )}
@@ -592,185 +555,478 @@ export default function ProjectWorkSchedule({ projectId }) {
       </div>
 
       {/* ==================== ATTENDANCE SECTION ==================== */}
-      <div className="mt-8 border border-theme-border-primary rounded-xl overflow-hidden bg-theme-bg-secondary">
-        <div className="bg-theme-bg-hover px-4 py-3 border-b border-theme-border-primary flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CheckCircle size={18} className="text-green-400" />
-            <h3 className="text-sm font-semibold text-theme-text-primary">Aylık Yoklama Durumu</h3>
-            <span className="text-xs text-theme-text-muted">({monthNames[selectedMonth - 1]} {selectedYear})</span>
-          </div>
-          <div className="flex items-center gap-3 text-xs">
-            {loadingAttendance && <Loader2 size={14} className="animate-spin text-accent" />}
-            <div className="flex items-center gap-2">
-              {Object.entries(ATTENDANCE_STATUS).slice(0, 4).map(([key, val]) => (
-                <div key={key} className={`flex items-center gap-1 px-2 py-1 rounded ${val.color}`}>
-                  <span className="font-bold">{val.label}</span>
-                  <span className="hidden sm:inline">{val.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-auto max-h-[350px]">
-          <table className="w-full border-collapse text-xs">
-            <thead className="sticky top-0 z-20 bg-theme-bg-hover shadow-sm">
-              <tr>
-                <th className="sticky left-0 z-30 bg-theme-bg-hover min-w-[200px] px-3 py-2 text-left font-semibold text-theme-text-muted uppercase tracking-wider border-b border-r border-theme-border-primary">
-                  <Users size={14} className="inline mr-1" /> Personel
-                </th>
-                <th className="min-w-[50px] px-2 py-2 text-center font-semibold text-theme-text-muted border-b border-theme-border-primary bg-green-500/10">Geldi</th>
-                <th className="min-w-[50px] px-2 py-2 text-center font-semibold text-theme-text-muted border-b border-theme-border-primary bg-red-500/10">Gelmedi</th>
-                <th className="min-w-[60px] px-2 py-2 text-center font-semibold text-theme-text-muted border-b border-theme-border-primary bg-orange-500/10">Mesai (s)</th>
-                {data.days.map(day => (
-                  <th key={day.date} className={`min-w-[36px] px-1 py-2 text-center border-b border-theme-border-primary ${day.isWeekend ? 'bg-red-500/10' : ''}`}>
-                    <div className="font-bold text-theme-text-primary">{day.day}</div>
-                    <div className="text-[9px] text-theme-text-muted">{day.dayName}</div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.employees.map((employee, idx) => {
-                // Calculate attendance stats
-                let presentCount = 0
-                let absentCount = 0
-                let totalOvertime = 0
+      {(() => {
+        // Calculate project-wide statistics
+        let totalPresent = 0
+        let totalLate = 0
+        let totalAbsent = 0
+        
+        // Gözetim (Shift) calculations - planned vs actual
+        let totalPlannedGozetimHours = 0
+        let totalActualGozetimHours = 0
+        let totalMissedGozetimHours = 0
+        
+        // Mesai (Overtime) calculations - planned vs actual
+        let totalPlannedMesaiHours = 0
+        let totalActualMesaiHours = 0
+        let totalMissedMesaiHours = 0
+        
+        let totalLeaveDays = { hafta_tatili: 0, resmi_tatil: 0, ucretsiz_izin: 0, yillik_izin: 0, raporlu: 0, dogum_izni: 0 }
+        
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        
+        // Calculate per-employee stats
+        const employeeStats = {}
+        data.employees.forEach(emp => {
+          const stats = {
+            presentCount: 0,
+            lateCount: 0,
+            absentCount: 0,
+            totalWorkHours: 0,
+            plannedGozetim: 0,
+            actualGozetim: 0,
+            missedGozetim: 0,
+            plannedMesai: 0,
+            actualMesai: 0,
+            missedMesai: 0,
+            leaveCount: 0
+          }
+          
+          data.days.forEach(day => {
+            const cellData = getCellData(emp.id, day.date)
+            const attendance = getAttendanceData(emp.id, day.date)
+            const dayDate = new Date(day.date)
+            
+            // Calculate planned gözetim hours from shift type
+            if (cellData.shift_type_id && !cellData.leave_type) {
+              const gozetimShiftInfo = getShiftTypeDetails(cellData.shift_type_id)
+              stats.plannedGozetim += gozetimShiftInfo.hours || 0
+              totalPlannedGozetimHours += gozetimShiftInfo.hours || 0
+            }
+            
+            // Calculate planned mesai hours
+            if (cellData.mesai_shift_type_id) {
+              const mesaiShiftInfo = getShiftTypeDetails(cellData.mesai_shift_type_id)
+              stats.plannedMesai += mesaiShiftInfo.hours || 0
+              totalPlannedMesaiHours += mesaiShiftInfo.hours || 0
+            }
+            
+            if (cellData.leave_type) {
+              totalLeaveDays[cellData.leave_type] = (totalLeaveDays[cellData.leave_type] || 0) + 1
+              stats.leaveCount++
+            } else if (cellData.shift_type_id) {
+              if (attendance) {
+                // Has attendance record
+                if (attendance.status === 'present') { stats.presentCount++; totalPresent++ }
+                else if (attendance.status === 'late') { stats.presentCount++; stats.lateCount++; totalPresent++; totalLate++ }
+                else if (attendance.status === 'absent') { stats.absentCount++; totalAbsent++ }
                 
-                data.days.forEach(day => {
-                  const cellData = getCellData(employee.id, day.date)
-                  const attendance = getAttendanceData(employee.id, day.date)
-                  
-                  // Calculate overtime from attendance records
-                  if (attendance && attendance.overtime_hours) {
-                    totalOvertime += parseFloat(attendance.overtime_hours)
+                // Actual gözetim hours worked
+                if (attendance.actual_hours) {
+                  const actualHours = parseFloat(attendance.actual_hours)
+                  stats.actualGozetim += actualHours
+                  stats.totalWorkHours += actualHours
+                  totalActualGozetimHours += actualHours
+                }
+                
+                // Actual mesai hours worked
+                if (attendance.overtime_hours) {
+                  const overtimeHours = parseFloat(attendance.overtime_hours)
+                  stats.actualMesai += overtimeHours
+                  totalActualMesaiHours += overtimeHours
+                }
+                
+                // Check for missed gözetim on past days
+                if (dayDate < today && cellData.shift_type_id) {
+                  const plannedGozetim = getShiftTypeDetails(cellData.shift_type_id).hours || 0
+                  const actualGozetim = attendance.actual_hours ? parseFloat(attendance.actual_hours) : 0
+                  if (actualGozetim < plannedGozetim) {
+                    const missed = plannedGozetim - actualGozetim
+                    stats.missedGozetim += missed
+                    totalMissedGozetimHours += missed
                   }
-                  
-                  // Only count days where a shift was assigned
-                  if (cellData.shift_type_id && !cellData.leave_type) {
-                    if (attendance && (attendance.status === 'present' || attendance.status === 'late')) {
-                      presentCount++
-                    } else if (!attendance || attendance.status === 'absent' || attendance.status === 'incomplete') {
-                      // If date is in the past and no attendance record, count as absent
-                      const dayDate = new Date(day.date)
-                      const today = new Date()
-                      today.setHours(0, 0, 0, 0)
-                      if (dayDate < today) {
-                        absentCount++
-                      }
-                    }
+                }
+                
+                // Check for missed mesai on past days
+                if (dayDate < today && cellData.mesai_shift_type_id) {
+                  const plannedMesai = getShiftTypeDetails(cellData.mesai_shift_type_id).hours || 0
+                  const actualMesai = attendance.overtime_hours ? parseFloat(attendance.overtime_hours) : 0
+                  if (actualMesai < plannedMesai) {
+                    const missed = plannedMesai - actualMesai
+                    stats.missedMesai += missed
+                    totalMissedMesaiHours += missed
                   }
-                })
+                }
+              } else if (dayDate < today) {
+                // No attendance record for past day = absent
+                stats.absentCount++
+                totalAbsent++
+                
+                // All planned gözetim is missed
+                const plannedGozetim = getShiftTypeDetails(cellData.shift_type_id).hours || 0
+                stats.missedGozetim += plannedGozetim
+                totalMissedGozetimHours += plannedGozetim
+                
+                // If had planned mesai, count as missed
+                if (cellData.mesai_shift_type_id) {
+                  const plannedMesai = getShiftTypeDetails(cellData.mesai_shift_type_id).hours || 0
+                  stats.missedMesai += plannedMesai
+                  totalMissedMesaiHours += plannedMesai
+                }
+              }
+            }
+          })
+          
+          employeeStats[emp.id] = stats
+        })
 
-                return (
-                  <tr key={employee.id} className={`${idx % 2 === 0 ? 'bg-theme-bg-secondary' : 'bg-theme-bg-tertiary/20'} border-b border-theme-border-secondary/50`}>
-                    {/* Employee Name */}
-                    <td className={`sticky left-0 z-10 px-3 py-2 border-r border-theme-border-primary ${idx % 2 === 0 ? 'bg-theme-bg-secondary' : 'bg-theme-bg-tertiary/20'}`}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">
-                          {employee.first_name?.[0]}{employee.last_name?.[0]}
-                        </div>
-                        <span className="font-medium text-theme-text-primary truncate max-w-[140px]">
-                          {employee.first_name} {employee.last_name}
-                        </span>
-                      </div>
-                    </td>
+        return (
+          <div className="mt-6 space-y-4">
+            {/* Section Header */}
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <CheckCircle size={18} className="text-green-400" />
+                <h3 className="text-base font-semibold text-theme-text-primary">Aylık Yoklama Detayı</h3>
+                <span className="text-sm text-theme-text-muted">({monthNames[selectedMonth - 1]} {selectedYear})</span>
+                {loadingAttendance && <Loader2 size={14} className="animate-spin text-accent" />}
+              </div>
+            </div>
 
-                    {/* Stats: Present Count */}
-                    <td className="text-center font-bold text-green-400 bg-green-500/5">{presentCount}</td>
-                    
-                    {/* Stats: Absent Count */}
-                    <td className="text-center font-bold text-red-400 bg-red-500/5">{absentCount}</td>
-                    
-                    {/* Stats: Total Overtime */}
-                    <td className="text-center font-bold text-orange-400 bg-orange-500/5">
-                      {totalOvertime > 0 ? `+${totalOvertime.toFixed(1)}` : '-'}
-                    </td>
+            {/* Summary Cards - Two Sections Side by Side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Gözetim Summary */}
+              <div className="bg-theme-bg-tertiary/30 border border-green-500/30 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
+                  <Users size={16} />
+                  Gözetim Özeti (Vardiya Çalışması)
+                </h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
+                    <p className="text-[10px] text-theme-text-muted mb-1">Planlanan</p>
+                    <p className="text-2xl font-bold text-green-400">{totalPlannedGozetimHours.toFixed(0)}</p>
+                    <p className="text-[10px] text-green-400/70">saat</p>
+                  </div>
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-center">
+                    <p className="text-[10px] text-theme-text-muted mb-1">Yapılan</p>
+                    <p className="text-2xl font-bold text-emerald-400">{totalActualGozetimHours.toFixed(0)}</p>
+                    <p className="text-[10px] text-emerald-400/70">saat</p>
+                  </div>
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
+                    <p className="text-[10px] text-theme-text-muted mb-1">Kaçırılan</p>
+                    <p className="text-2xl font-bold text-red-400">{totalMissedGozetimHours.toFixed(0)}</p>
+                    <p className="text-[10px] text-red-400/70">saat</p>
+                  </div>
+                </div>
+              </div>
 
-                    {/* Daily Attendance Cells */}
-                    {data.days.map(day => {
-                      const cellData = getCellData(employee.id, day.date)
-                      const attendance = getAttendanceData(employee.id, day.date)
-                      const leaveInfo = cellData.leave_type ? LEAVE_TYPES[cellData.leave_type] : null
-                      const hasShift = cellData.shift_type_id && !cellData.leave_type
+              {/* Mesai Summary */}
+              <div className="bg-theme-bg-tertiary/30 border border-orange-500/30 rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-orange-400 mb-3 flex items-center gap-2">
+                  <Clock size={16} />
+                  Mesai Özeti (Fazla Çalışma)
+                </h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 text-center">
+                    <p className="text-[10px] text-theme-text-muted mb-1">Planlanan</p>
+                    <p className="text-2xl font-bold text-orange-400">{totalPlannedMesaiHours.toFixed(0)}</p>
+                    <p className="text-[10px] text-orange-400/70">saat</p>
+                  </div>
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-center">
+                    <p className="text-[10px] text-theme-text-muted mb-1">Yapılan</p>
+                    <p className="text-2xl font-bold text-emerald-400">{totalActualMesaiHours.toFixed(0)}</p>
+                    <p className="text-[10px] text-emerald-400/70">saat</p>
+                  </div>
+                  <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-center">
+                    <p className="text-[10px] text-theme-text-muted mb-1">Kaçırılan</p>
+                    <p className="text-2xl font-bold text-rose-400">{totalMissedMesaiHours.toFixed(0)}</p>
+                    <p className="text-[10px] text-rose-400/70">saat</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Monthly Grid Table - Like Work Schedule */}
+            <div className="border border-theme-border-primary rounded-xl overflow-hidden bg-theme-bg-secondary">
+              <div className="overflow-auto max-h-[calc(100vh-400px)]">
+                <table className="w-full border-collapse text-xs">
+                  <thead className="sticky top-0 z-20 bg-theme-bg-hover shadow-sm">
+                    <tr>
+                      <th className="sticky left-0 z-30 bg-theme-bg-hover w-[150px] px-2 py-1 text-left font-semibold text-theme-text-muted uppercase tracking-wider border-b border-r border-theme-border-primary text-[10px]">
+                        <Users size={12} className="inline mr-1" /> Personel
+                      </th>
+                      <th className="w-[50px] px-1 py-1 text-center font-semibold text-theme-text-muted border-b border-theme-border-primary bg-theme-bg-tertiary/50 text-[9px]">
+                        Top.<br/><span className="text-[8px]">(s)</span>
+                      </th>
+                      {data.days.map(day => (
+                        <th key={day.date} className={`min-w-[28px] w-[28px] px-0 py-1 text-center border-b border-theme-border-primary ${day.isWeekend ? 'bg-red-500/10' : ''}`}>
+                          <div className="font-bold text-theme-text-primary text-[10px]">{day.day}</div>
+                          <div className="text-[7px] text-theme-text-muted">{day.dayName.charAt(0)}</div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.employees.map((employee, idx) => {
+                      const stats = employeeStats[employee.id]
                       
-                      // Determine cell display
-                      let cellContent = ''
-                      let cellClass = ''
-                      let tooltip = ''
+                      // Calculate planned gözetim hours for this employee
+                      let plannedGozetimHours = 0
+                      let actualGozetimHours = stats.totalWorkHours
+                      let missedGozetimHours = 0
                       
-                      if (leaveInfo) {
-                        // On leave - show leave type
-                        cellContent = leaveInfo.label
-                        cellClass = leaveInfo.color
-                        tooltip = leaveInfo.name
-                      } else if (!hasShift) {
-                        // No shift assigned
-                        cellContent = '-'
-                        cellClass = 'text-gray-500'
-                        tooltip = 'Vardiya yok'
-                      } else if (attendance) {
-                        // Has attendance record
-                        const status = ATTENDANCE_STATUS[attendance.status] || ATTENDANCE_STATUS.incomplete
-                        cellContent = status.label
-                        cellClass = status.color
-                        
-                        // Build tooltip with overtime info
-                        let tooltipParts = [status.name]
-                        tooltipParts.push(`Giriş: ${attendance.check_in_time ? new Date(attendance.check_in_time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'}`)
-                        tooltipParts.push(`Çıkış: ${attendance.check_out_time ? new Date(attendance.check_out_time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'}`)
-                        if (attendance.actual_hours) tooltipParts.push(`Çalışma: ${attendance.actual_hours}s`)
-                        if (attendance.overtime_hours > 0) tooltipParts.push(`Mesai: +${attendance.overtime_hours}s`)
-                        tooltip = tooltipParts.join('\n')
-                      } else {
-                        // No attendance record but shift exists
-                        const dayDate = new Date(day.date)
-                        const today = new Date()
-                        today.setHours(0, 0, 0, 0)
-                        
-                        if (dayDate < today) {
-                          // Past day - absent
-                          cellContent = '✗'
-                          cellClass = 'bg-red-500/30 text-red-400'
-                          tooltip = 'Gelmedi'
-                        } else if (dayDate.getTime() === today.getTime()) {
-                          // Today - pending
-                          cellContent = '...'
-                          cellClass = 'bg-blue-500/20 text-blue-400'
-                          tooltip = 'Bugün'
-                        } else {
-                          // Future day
-                          cellContent = '○'
-                          cellClass = 'text-gray-400'
-                          tooltip = 'Planlı'
+                      data.days.forEach(day => {
+                        const cellData = getCellData(employee.id, day.date)
+                        if (cellData.shift_type_id && !cellData.leave_type) {
+                          const shiftInfo = getShiftTypeDetails(cellData.shift_type_id)
+                          plannedGozetimHours += shiftInfo.hours || 0
                         }
-                      }
-
+                      })
+                      
+                      // Calculate missed (for past days with no attendance)
+                      const dayDate = new Date()
+                      data.days.forEach(day => {
+                        const cellData = getCellData(employee.id, day.date)
+                        const attendance = getAttendanceData(employee.id, day.date)
+                        const thisDay = new Date(day.date)
+                        if (cellData.shift_type_id && !cellData.leave_type && thisDay < today && !attendance) {
+                          const shiftInfo = getShiftTypeDetails(cellData.shift_type_id)
+                          missedGozetimHours += shiftInfo.hours || 0
+                        }
+                      })
+                      
                       return (
-                        <td 
-                          key={`att-${employee.id}-${day.date}`}
-                          title={tooltip}
-                          className={`min-w-[36px] h-8 text-center border-l border-theme-border-secondary/30 ${cellClass} ${day.isWeekend ? 'opacity-80' : ''}`}
-                        >
-                          <div className="w-full h-full flex items-center justify-center font-bold text-[11px]">
-                            {cellContent}
-                          </div>
-                        </td>
+                        <React.Fragment key={employee.id}>
+                          {/* Row 1: Gözetim (Vardiya Çalışması) */}
+                          <tr className={idx % 2 === 0 ? 'bg-theme-bg-secondary' : 'bg-theme-bg-tertiary/20'}>
+                            {/* Name Cell - Spans 2 Rows */}
+                            <td rowSpan={2} className={`sticky left-0 z-10 px-2 py-1 border-r border-theme-border-primary border-b ${idx % 2 === 0 ? 'bg-theme-bg-secondary' : 'bg-theme-bg-tertiary/20'}`}>
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-[9px] font-bold text-accent">
+                                  {employee.first_name?.[0]}{employee.last_name?.[0]}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-theme-text-primary truncate max-w-[100px] text-[10px]">{employee.first_name} {employee.last_name}</p>
+                                  <p className="text-[8px] text-theme-text-muted truncate max-w-[100px]">{employee.title || 'Personel'}</p>
+                                  <div className="flex gap-2 mt-1 text-[9px]">
+                                    <span className="text-green-400 font-bold" title="Gözetim Saati">{actualGozetimHours.toFixed(0)}s</span>
+                                    <span className="text-orange-400 font-bold" title="Mesai Saati">{stats.actualMesai.toFixed(0)}s</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            
+                            {/* Gözetim Totals */}
+                            <td className="text-center border-r border-theme-border-secondary/30 bg-green-500/5 px-0">
+                              <div className="flex flex-col items-center text-[8px] leading-tight">
+                                <span className="text-green-400 font-bold">{plannedGozetimHours.toFixed(0)}</span>
+                                <span className="text-emerald-400">{actualGozetimHours.toFixed(0)}</span>
+                                {missedGozetimHours > 0 && <span className="text-red-400">-{missedGozetimHours.toFixed(0)}</span>}
+                              </div>
+                            </td>
+
+                            {/* Gözetim Daily Cells */}
+                            {data.days.map(day => {
+                              const cellData = getCellData(employee.id, day.date)
+                              const attendance = getAttendanceData(employee.id, day.date)
+                              const leaveInfo = cellData.leave_type ? LEAVE_TYPES[cellData.leave_type] : null
+                              const hasShift = cellData.shift_type_id && !cellData.leave_type
+                              const shiftInfo = hasShift ? getShiftTypeDetails(cellData.shift_type_id) : null
+                              const dayDate = new Date(day.date)
+                              
+                              let cellBg = ''
+                              let cellText = '-'
+                              let cellColor = 'text-gray-500'
+                              let tooltip = ''
+                              
+                              if (leaveInfo) {
+                                cellBg = leaveInfo.color
+                                cellText = leaveInfo.label
+                                tooltip = leaveInfo.name
+                              } else if (!hasShift) {
+                                tooltip = 'Vardiya yok'
+                              } else if (attendance) {
+                                const status = ATTENDANCE_STATUS[attendance.status] || ATTENDANCE_STATUS.incomplete
+                                const actualHours = attendance.actual_hours || 0
+                                cellText = actualHours > 0 ? `${actualHours}` : status.label
+                                cellBg = status.color
+                                
+                                let tooltipParts = [status.name, `Planlanan: ${shiftInfo?.hours || 0} saat`, `Çalışılan: ${actualHours} saat`]
+                                if (attendance.check_in_time) tooltipParts.push(`Giriş: ${new Date(attendance.check_in_time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`)
+                                if (attendance.check_out_time) tooltipParts.push(`Çıkış: ${new Date(attendance.check_out_time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`)
+                                tooltip = tooltipParts.join('\n')
+                              } else {
+                                if (dayDate < today) {
+                                  cellBg = 'bg-red-500/30 text-red-400'
+                                  cellText = '0'
+                                  tooltip = `Gelmedi\nPlanlanan: ${shiftInfo?.hours || 0} saat\nÇalışılan: 0 saat`
+                                } else if (dayDate.getTime() === today.getTime()) {
+                                  cellBg = 'bg-blue-500/10'
+                                  cellText = '...'
+                                  cellColor = 'text-blue-400'
+                                  tooltip = `Bugün - Bekleniyor\nPlanlanan: ${shiftInfo?.hours || 0} saat`
+                                } else {
+                                  cellText = `${shiftInfo?.hours || 0}`
+                                  cellColor = 'text-gray-400'
+                                  tooltip = `Planlı\nPlanlanan: ${shiftInfo?.hours || 0} saat`
+                                }
+                              }
+
+                              return (
+                                <td 
+                                  key={`gozetim-${employee.id}-${day.date}`}
+                                  title={tooltip}
+                                  className={`min-w-[28px] w-[28px] h-7 text-center border-l border-theme-border-secondary/30 ${cellBg} ${cellColor} ${day.isWeekend && !leaveInfo ? 'opacity-80' : ''}`}
+                                >
+                                  <div className="w-full h-full flex items-center justify-center font-bold text-[8px]">
+                                    {cellText}
+                                  </div>
+                                </td>
+                              )
+                            })}
+                          </tr>
+
+                          {/* Row 2: Mesai (Fazla Çalışma) */}
+                          <tr className={`border-b border-theme-border-primary ${idx % 2 === 0 ? 'bg-theme-bg-secondary' : 'bg-theme-bg-tertiary/20'}`}>
+                            {/* Mesai Totals */}
+                            <td className="text-center border-r border-theme-border-secondary/30 bg-orange-500/5 px-0">
+                              <div className="flex flex-col items-center text-[8px] leading-tight">
+                                <span className="text-orange-400 font-bold">{stats.plannedMesai.toFixed(0)}</span>
+                                <span className="text-emerald-400">{stats.actualMesai.toFixed(0)}</span>
+                                {stats.missedMesai > 0 && <span className="text-rose-400">-{stats.missedMesai.toFixed(0)}</span>}
+                              </div>
+                            </td>
+
+                            {/* Mesai Daily Cells */}
+                            {data.days.map(day => {
+                              const cellData = getCellData(employee.id, day.date)
+                              const attendance = getAttendanceData(employee.id, day.date)
+                              const hasMesai = cellData.mesai_shift_type_id
+                              const mesaiShiftInfo = hasMesai ? getShiftTypeDetails(cellData.mesai_shift_type_id) : null
+                              const plannedMesaiHours = mesaiShiftInfo?.hours || 0
+                              const actualMesaiHours = attendance?.overtime_hours || 0
+                              const dayDate = new Date(day.date)
+                              
+                              let cellBg = ''
+                              let cellText = '-'
+                              let cellColor = 'text-gray-500'
+                              let tooltip = ''
+                              
+                              if (!hasMesai && actualMesaiHours === 0) {
+                                tooltip = 'Mesai planlanmadı'
+                              } else if (attendance) {
+                                if (actualMesaiHours >= plannedMesaiHours && plannedMesaiHours > 0) {
+                                  cellBg = 'bg-emerald-500/30'
+                                  cellText = `+${actualMesaiHours}`
+                                  cellColor = 'text-emerald-400'
+                                  tooltip = `Mesai Tamamlandı\nPlanlanan: ${plannedMesaiHours} saat\nYapılan: ${actualMesaiHours} saat`
+                                } else if (dayDate < today && plannedMesaiHours > 0) {
+                                  cellBg = 'bg-rose-500/30'
+                                  cellText = `${actualMesaiHours}/${plannedMesaiHours}`
+                                  cellColor = 'text-rose-400'
+                                  tooltip = `Mesai Eksik\nPlanlanan: ${plannedMesaiHours} saat\nYapılan: ${actualMesaiHours} saat\nKaçırılan: ${plannedMesaiHours - actualMesaiHours} saat`
+                                } else if (actualMesaiHours > 0) {
+                                  cellBg = 'bg-emerald-500/30'
+                                  cellText = `+${actualMesaiHours}`
+                                  cellColor = 'text-emerald-400'
+                                  tooltip = `Mesai Yapıldı\nYapılan: ${actualMesaiHours} saat`
+                                } else if (plannedMesaiHours > 0) {
+                                  cellBg = 'bg-orange-500/10'
+                                  cellText = `${plannedMesaiHours}`
+                                  cellColor = 'text-orange-400'
+                                  tooltip = `Mesai Planlandı\nPlanlanan: ${plannedMesaiHours} saat`
+                                }
+                              } else {
+                                if (dayDate < today && plannedMesaiHours > 0) {
+                                  cellBg = 'bg-rose-500/30'
+                                  cellText = `0/${plannedMesaiHours}`
+                                  cellColor = 'text-rose-400'
+                                  tooltip = `Mesai Kaçırıldı\nPlanlanan: ${plannedMesaiHours} saat\nYapılan: 0 saat`
+                                } else if (dayDate.getTime() === today.getTime() && plannedMesaiHours > 0) {
+                                  cellBg = 'bg-orange-500/10'
+                                  cellText = `${plannedMesaiHours}`
+                                  cellColor = 'text-orange-400'
+                                  tooltip = `Bugün Mesai Planlandı\nPlanlanan: ${plannedMesaiHours} saat`
+                                } else if (plannedMesaiHours > 0) {
+                                  cellBg = 'bg-orange-500/5'
+                                  cellText = `${plannedMesaiHours}`
+                                  cellColor = 'text-orange-400/70'
+                                  tooltip = `Gelecek Mesai\nPlanlanan: ${plannedMesaiHours} saat`
+                                }
+                              }
+
+                              return (
+                                <td 
+                                  key={`mesai-${employee.id}-${day.date}`}
+                                  title={tooltip}
+                                  className={`min-w-[28px] w-[28px] h-7 text-center border-l border-theme-border-secondary/30 ${cellBg} ${cellColor} ${day.isWeekend ? 'opacity-80' : ''}`}
+                                >
+                                  <div className="w-full h-full flex items-center justify-center font-bold text-[8px]">
+                                    {cellText}
+                                  </div>
+                                </td>
+                              )
+                            })}
+                          </tr>
+                        </React.Fragment>
                       )
                     })}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap gap-4 text-xs text-theme-text-muted px-1">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-green-500/30"></div>
+                <span><strong>Gözetim:</strong> Normal vardiya saatlerinde çalışılan süre (saat)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-orange-500/30"></div>
+                <span><strong>Mesai:</strong> Fazla çalışma saatleri (planlanan/yapılan)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-emerald-500/30"></div>
+                <span><strong>Tamamlandı:</strong> Planlanan saat başarıyla tamamlandı</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-rose-500/30"></div>
+                <span><strong>Kaçırıldı:</strong> Planlanan saatin altında çalışıldı</span>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
        {/* Context Menu */}
-       {contextMenu && (
+       {contextMenu && (() => {
+         // Menü boyutları
+         const menuWidth = 200;
+         const menuHeight = 350;
+         
+         // Mouse pozisyonundan başla (tam tıklanan yerde)
+         let left = contextMenu.x;
+         let top = contextMenu.y;
+         
+         // Sağ kenardan taşarsa, menüyü sola aç
+         if (left + menuWidth > window.innerWidth) {
+           left = contextMenu.x - menuWidth;
+         }
+         
+         // Alt kenardan taşarsa, menüyü yukarı aç
+         if (top + menuHeight > window.innerHeight) {
+           top = contextMenu.y - menuHeight;
+         }
+         
+         // Negatif değerleri önle (ekranın sol/üst kenarından taşmasın)
+         left = Math.max(5, left);
+         top = Math.max(5, top);
+         
+         return (
         <div 
-          className="fixed bg-theme-bg-elevated border border-theme-border-primary rounded-lg shadow-xl py-2 z-50 min-w-[180px]"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          className="fixed bg-theme-bg-elevated border border-theme-border-primary rounded-lg shadow-xl py-2 z-[100] min-w-[180px]"
+          style={{ left, top }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="px-3 py-1 text-xs text-theme-text-muted border-b border-theme-border-secondary mb-1">
@@ -807,7 +1063,8 @@ export default function ProjectWorkSchedule({ projectId }) {
             </>
           )}
         </div>
-      )}
+        )
+       })()}
 
       {showShiftManager && <ShiftTypeManager projectId={projectId} onClose={() => setShowShiftManager(false)} onUpdate={() => loadSchedule()} />}
     </div>

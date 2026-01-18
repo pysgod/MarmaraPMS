@@ -55,6 +55,14 @@ const WorkSchedule = sequelize.define('WorkSchedule', {
     defaultValue: 0,
     allowNull: false
   },
+  mesai_shift_type_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'shift_types',
+      key: 'id'
+    }
+  },
   
   notes: {
     type: DataTypes.STRING(255),
