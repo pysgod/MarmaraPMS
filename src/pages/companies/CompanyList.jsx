@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useApp } from '../../context/AppContext'
 import { 
@@ -15,10 +15,21 @@ import {
 
 export default function CompanyList() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { companies, setCompanyContext, addCompany } = useApp()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [showAddModal, setShowAddModal] = useState(false)
+
+  // Auto-open modal if ?new=true
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setShowAddModal(true)
+      searchParams.delete('new')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams])
+
   const [newCompany, setNewCompany] = useState({ 
     name: '', 
     company_code: '', 

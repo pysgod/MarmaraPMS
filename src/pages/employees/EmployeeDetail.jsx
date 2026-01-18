@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import api from '../../services/api'
 import AddEmployeeWizard from './AddEmployeeWizard'
+import EmployeeScheduleViewer from '../../components/EmployeeScheduleViewer'
 import { 
   User, 
   ArrowLeft, 
@@ -635,33 +636,7 @@ export default function EmployeeDetail() {
             {/* 8. VARDİYALAR */}
             {activeTab === 'shifts' && (
                <div className="space-y-4">
-                 {employee.shiftAssignments?.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       {employee.shiftAssignments.map(sa => (
-                          <div key={sa.id} className="bg-theme-bg-hover rounded-xl p-4 border border-theme-border-secondary flex items-start gap-4">
-                             <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
-                                <Clock size={18} className="text-indigo-400" />
-                             </div>
-                             <div>
-                                <h4 className="font-semibold text-theme-text-primary">{sa.shiftDefinition?.name || 'Vardiya'}</h4>
-                                <p className="text-sm text-theme-text-tertiary mt-1">
-                                   {sa.shiftDefinition?.start_time?.slice(0,5)} - {sa.shiftDefinition?.end_time?.slice(0,5)}
-                                </p>
-                                <p className="text-xs text-theme-text-muted mt-2 flex items-center gap-1">
-                                   <FolderKanban size={12} />
-                                   {sa.project?.name || 'Proje'}
-                                </p>
-                             </div>
-                          </div>
-                       ))}
-                    </div>
-                 ) : (
-                    <div className="text-center py-12 bg-theme-bg-hover rounded-xl border border-theme-border-primary">
-                      <Clock size={48} className="text-theme-text-placeholder mx-auto mb-4" />
-                      <p className="text-theme-text-tertiary">Herhangi bir vardiyaya atanmamış.</p>
-                      <p className="text-sm text-theme-text-placeholder mt-2">Personeli bir projeye atayıp vardiya tanımlayabilirsiniz.</p>
-                    </div>
-                 )}
+                 <EmployeeScheduleViewer employeeId={employee.id} />
                </div>
             )}
         </div>

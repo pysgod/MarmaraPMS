@@ -19,6 +19,7 @@ import Documents from './pages/Documents'
 import Notifications from './pages/Notifications'
 import Settings from './pages/Settings'
 import Support from './pages/Support'
+import AttendanceScan from './pages/AttendanceScan'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useApp()
@@ -45,6 +46,8 @@ function App() {
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
+            {/* Public attendance scan route (for QR codes) */}
+            <Route path="/attendance/scan" element={<AttendanceScan />} />
             
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

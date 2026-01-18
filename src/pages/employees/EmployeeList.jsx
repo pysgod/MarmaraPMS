@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../../services/api'
 import AddEmployeeWizard from './AddEmployeeWizard'
 import { 
@@ -11,7 +11,11 @@ import {
   Building2,
   UserX,
   Briefcase,
-  ChevronRight
+  ChevronRight,
+  FolderKanban,
+  AlertTriangle,
+  Trash2,
+  Unlink
 } from 'lucide-react'
 
 // Durum badge bileşeni
@@ -72,6 +76,7 @@ function EmployeeCard({ employee, onClick }) {
 
 export default function EmployeeList() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   
   // State
   const [companies, setCompanies] = useState([])
@@ -83,11 +88,26 @@ export default function EmployeeList() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [companiesSearchTerm, setCompaniesSearchTerm] = useState('')
 
+  const [currentProjects, setCurrentProjects] = useState([])
+  const [employeeToRemove, setEmployeeToRemove] = useState(null)
+  const [showRemoveModal, setShowRemoveModal] = useState(false)
+  const [showUnlinkModal, setShowUnlinkModal] = useState(false)
+  const [unlinkData, setUnlinkData] = useState(null) // { projectId, employeeId, employeeName }
+
   // Initial data load
   useEffect(() => {
     loadCompanies()
     loadEmployees()
   }, [])
+
+  // Auto-open modal if ?new=true
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setShowAddModal(true)
+      searchParams.delete('new')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams])
 
   // Reload employees when category changes
   useEffect(() => {
@@ -106,19 +126,65 @@ export default function EmployeeList() {
   const loadEmployees = async () => {
     setLoading(true)
     try {
-      let data
+      let employeesData = []
+      let projectsData = []
+
       if (selectedCategory === 'idle') {
-        data = await api.getIdleEmployees()
+        employeesData = await api.getIdleEmployees()
       } else if (selectedCategory === 'all') {
-        data = await api.getEmployees()
+        employeesData = await api.getEmployees()
       } else {
-        data = await api.getEmployees(selectedCategory)
+        // Fetch employees and projects in parallel, but handle project failure gracefully
+        const [empResult, projResult] = await Promise.allSettled([
+          api.getEmployees(selectedCategory),
+          api.getProjects(selectedCategory)
+        ])
+
+        if (empResult.status === 'fulfilled') {
+          employeesData = empResult.value
+        } else {
+          throw empResult.reason // Re-throw employee fetch error as it's critical
+        }
+
+        if (projResult.status === 'fulfilled') {
+          projectsData = projResult.value
+        } else {
+          console.warn('Proje verileri yüklenemedi', projResult.reason)
+          // projectsData stays []
+        }
       }
-      setEmployees(data)
+
+      setEmployees(employeesData)
+      setCurrentProjects(Array.isArray(projectsData) ? projectsData : [])
     } catch (error) {
       console.error('Personeller yüklenirken hata:', error)
+      alert('Veri yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRemoveFromCompany = async () => {
+    if (!employeeToRemove) return
+    try {
+      await api.unassignEmployeeFromCompany(employeeToRemove.id)
+      setShowRemoveModal(false)
+      setEmployeeToRemove(null)
+      loadEmployees()
+    } catch (error) {
+      alert('Personeli çıkarma hatası: ' + error.message)
+    }
+  }
+
+  const handleRemoveFromProject = async () => {
+    if (!unlinkData) return
+    try {
+      await api.removeEmployeeFromProject(unlinkData.projectId, unlinkData.employeeId)
+      setShowUnlinkModal(false)
+      setUnlinkData(null)
+      loadEmployees()
+    } catch (error) {
+      alert('Projeden çıkarma hatası: ' + error.message)
     }
   }
 
@@ -324,16 +390,169 @@ export default function EmployeeList() {
               </div>
             ) : (
               <>
-                {/* Employee Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredEmployees.map(employee => (
-                    <EmployeeCard 
-                      key={employee.id} 
-                      employee={employee} 
-                      onClick={() => navigate(`/employees/${employee.id}`)}
-                    />
-                  ))}
-                </div>
+                {/* Employee Content */}
+                {selectedCategory !== 'all' && selectedCategory !== 'idle' ? (
+                  // Group by Project View
+                  (() => {
+                    const employeesByProject = {}
+                    const employeesWithoutProject = []
+
+                    filteredEmployees.forEach(employee => {
+                      if (!employee.projectAssignments || employee.projectAssignments.length === 0) {
+                        employeesWithoutProject.push(employee)
+                      } else {
+                        let assignedToAny = false
+                        employee.projectAssignments.forEach(assignment => {
+                          const projectId = assignment.project_id
+                          // Only show projects that belong to this company (filtered by currentProjects)
+                          if (currentProjects.find(p => p.id === projectId)) {
+                            if (!employeesByProject[projectId]) {
+                              employeesByProject[projectId] = []
+                            }
+                            employeesByProject[projectId].push(employee)
+                            assignedToAny = true
+                          }
+                        })
+                        if (!assignedToAny) employeesWithoutProject.push(employee)
+                      }
+                    })
+
+                     // Helper to get project name
+                    const getProjectName = (id) => {
+                      const proj = currentProjects.find(p => p.id === parseInt(id))
+                      return proj ? proj.name : 'Bilinmeyen Proje'
+                    }
+
+                    return (
+                      <div className="space-y-8">
+                        {/* Grouped by Projects */}
+                        {Object.keys(employeesByProject).map(projectId => (
+                          <div key={projectId} className="space-y-4">
+                            <div className="flex items-center gap-2 text-theme-text-primary font-semibold border-b border-theme-border-primary pb-2">
+                              <FolderKanban size={18} className="text-accent" />
+                              <h3>{getProjectName(projectId)}</h3>
+                              <span className="text-xs font-normal text-theme-text-muted ml-2">
+                                ({employeesByProject[projectId].length} personel)
+                              </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {employeesByProject[projectId].map(employee => (
+                                <div 
+                                  key={`${projectId}-${employee.id}`} 
+                                  className="bg-theme-bg-secondary rounded-xl p-4 flex items-center gap-4 border border-theme-border-primary hover:border-accent/50 transition-all"
+                                >
+                                  <div 
+                                    onClick={() => navigate(`/employees/${employee.id}`)}
+                                    className="flex items-center gap-4 flex-1 cursor-pointer"
+                                  >
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
+                                      <span className="text-white font-semibold">{employee.name?.[0]}</span>
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="font-medium text-theme-text-primary">{employee.name}</p>
+                                      <p className="text-sm text-theme-text-muted">{employee.title || 'Belirsiz'}</p>
+                                    </div>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                      employee.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+                                    }`}>
+                                      {employee.status === 'active' ? 'Aktif' : 'Pasif'}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        setUnlinkData({ 
+                                          projectId: parseInt(projectId), 
+                                          employeeId: employee.id,
+                                          employeeName: employee.name,
+                                          projectName: getProjectName(projectId)
+                                        });
+                                        setShowUnlinkModal(true);
+                                      }}
+                                      className="p-2 text-amber-400 hover:bg-amber-500/20 rounded-lg transition-colors"
+                                      title="Projeden Çıkar"
+                                    >
+                                      <Unlink size={16} />
+                                    </button>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setEmployeeToRemove(employee); setShowRemoveModal(true); }}
+                                      className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                      title="Firmadan Çıkar"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Unassigned Employees */}
+                        {employeesWithoutProject.length > 0 && (
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-theme-text-primary font-semibold border-b border-theme-border-primary pb-2">
+                              <Users size={18} className="text-theme-text-muted" />
+                              <h3>Projesiz Personeller</h3>
+                              <span className="text-xs font-normal text-theme-text-muted ml-2">
+                                ({employeesWithoutProject.length} personel)
+                              </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {employeesWithoutProject.map(employee => (
+                                <div 
+                                  key={employee.id} 
+                                  className="bg-theme-bg-secondary rounded-xl p-4 flex items-center gap-4 border border-theme-border-primary hover:border-accent/50 transition-all"
+                                >
+                                  <div 
+                                    onClick={() => navigate(`/employees/${employee.id}`)}
+                                    className="flex items-center gap-4 flex-1 cursor-pointer"
+                                  >
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-theme-bg-elevated to-theme-bg-hover border border-theme-border-secondary flex items-center justify-center">
+                                      <span className="text-theme-text-secondary font-semibold">{employee.name?.[0]}</span>
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="font-medium text-theme-text-primary">{employee.name}</p>
+                                      <p className="text-sm text-theme-text-muted">{employee.title || 'Belirsiz'}</p>
+                                    </div>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${
+                                      employee.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+                                    }`}>
+                                      {employee.status === 'active' ? 'Aktif' : 'Pasif'}
+                                    </span>
+                                  </div>
+
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setEmployeeToRemove(employee); setShowRemoveModal(true); }}
+                                    className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                    title="Firmadan Çıkar"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()
+                ) : (
+                  // Default Flat Grid View
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredEmployees.map(employee => (
+                      <EmployeeCard 
+                        key={employee.id} 
+                        employee={employee} 
+                        onClick={() => navigate(`/employees/${employee.id}`)}
+                      />
+                    ))}
+                  </div>
+                )}
 
                 {/* Empty State */}
                 {filteredEmployees.length === 0 && (
@@ -357,6 +576,83 @@ export default function EmployeeList() {
                   </div>
                 )}
               </>
+            )}
+
+            {/* Remove from Company Modal */}
+            {showRemoveModal && employeeToRemove && (
+              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                <div className="bg-theme-bg-secondary rounded-2xl w-full max-w-md border border-theme-border-primary animate-fadeIn">
+                  <div className="p-6 border-b border-theme-border-primary">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <AlertTriangle size={20} className="text-red-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-theme-text-primary">Firmadan Çıkar</h3>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-theme-text-tertiary mb-4">
+                      <strong>{employeeToRemove.name}</strong> personelini firmadan çıkarmak istediğinizden emin misiniz?
+                    </p>
+                    <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <p className="text-red-400 text-sm flex items-start gap-2">
+                        <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
+                        Bu işlem personeli tüm projelerden de otomatik olarak çıkaracaktır.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-6 border-t border-theme-border-primary flex justify-end gap-3">
+                    <button 
+                      onClick={() => { setShowRemoveModal(false); setEmployeeToRemove(null); }}
+                      className="px-4 py-2 text-theme-text-tertiary hover:text-theme-text-primary transition-colors"
+                    >
+                      Vazgeç
+                    </button>
+                    <button 
+                      onClick={handleRemoveFromCompany}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors"
+                    >
+                      Firmadan Çıkar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Unlink from Project Modal */}
+            {showUnlinkModal && unlinkData && (
+              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                <div className="bg-theme-bg-secondary rounded-2xl w-full max-w-md border border-theme-border-primary animate-fadeIn">
+                   <div className="p-6 border-b border-theme-border-primary">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                        <Unlink size={20} className="text-amber-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-theme-text-primary">Projeden Çıkar</h3>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-theme-text-tertiary">
+                      <strong>{unlinkData.employeeName}</strong> personelini 
+                      <strong className="text-accent"> {unlinkData.projectName}</strong> projesinden çıkarmak istiyor musunuz?
+                    </p>
+                  </div>
+                  <div className="p-6 border-t border-theme-border-primary flex justify-end gap-3">
+                     <button 
+                      onClick={() => { setShowUnlinkModal(false); setUnlinkData(null); }}
+                      className="px-4 py-2 text-theme-text-tertiary hover:text-theme-text-primary transition-colors"
+                    >
+                      Vazgeç
+                    </button>
+                    <button 
+                      onClick={handleRemoveFromProject}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-white transition-colors"
+                    >
+                      Projeden Çıkar
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>

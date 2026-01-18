@@ -16,7 +16,9 @@ const reportRoutes = require('./routes/reports')
 const documentRoutes = require('./routes/documents')
 const activityRoutes = require('./routes/activities')
 const shiftRoutes = require('./routes/shifts')
-
+const workScheduleRoutes = require('./routes/workSchedule')
+const shiftTypeRoutes = require('./routes/shiftTypes')
+const attendanceRoutes = require('./routes/attendance')
 const app = express()
 
 // Middleware
@@ -51,6 +53,9 @@ app.use('/api/reports', reportRoutes)
 app.use('/api/documents', documentRoutes)
 app.use('/api/activities', activityRoutes)
 app.use('/api/shifts', shiftRoutes)
+app.use('/api/work-schedule', workScheduleRoutes)
+app.use('/api/shift-types', shiftTypeRoutes)
+app.use('/api/attendance', attendanceRoutes)
 app.use('/api/data-view', require('./routes/dataView'))
 
 // Error handler

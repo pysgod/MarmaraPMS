@@ -18,6 +18,7 @@ const Report = require('./Report')
 const Document = require('./Document')
 const Activity = require('./Activity')
 const EmployeeHistory = require('./EmployeeHistory')
+const Attendance = require('./Attendance')
 
 // ==========================================
 // Company Associations (Grand Mother)
@@ -109,26 +110,10 @@ Document.belongsTo(DocumentCategory, { foreignKey: 'category_id', as: 'category'
 DocumentCategory.hasMany(Document, { foreignKey: 'category_id', as: 'documents' })
 
 // ==========================================
-// Shift Associations
+// Shift Associations (Legacy Removed)
 // ==========================================
-// Company has many ShiftDefinitions
-const ShiftDefinition = require('./ShiftDefinition')
-const ShiftAssignment = require('./ShiftAssignment')
-
-Company.hasMany(ShiftDefinition, { foreignKey: 'company_id', as: 'shiftDefinitions' })
-ShiftDefinition.belongsTo(Company, { foreignKey: 'company_id', as: 'company' })
-
-// ShiftDefinition has many Assignments
-ShiftDefinition.hasMany(ShiftAssignment, { foreignKey: 'shift_id', as: 'assignments' })
-ShiftAssignment.belongsTo(ShiftDefinition, { foreignKey: 'shift_id', as: 'shiftDefinition' })
-
-// Project has many Assignments
-Project.hasMany(ShiftAssignment, { foreignKey: 'project_id', as: 'shiftAssignments' })
-ShiftAssignment.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
-
-// Employee has many Assignments
-Employee.hasMany(ShiftAssignment, { foreignKey: 'employee_id', as: 'shiftAssignments' })
-ShiftAssignment.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' })
+// ShiftDefinition and ShiftAssignment models have been removed.
+// New system uses ShiftType and WorkSchedule.
 
 // ==========================================
 // Employee History Associations
@@ -138,6 +123,50 @@ EmployeeHistory.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' 
 EmployeeHistory.belongsTo(Company, { foreignKey: 'company_id', as: 'company' })
 EmployeeHistory.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
 EmployeeHistory.belongsTo(User, { foreignKey: 'performed_by', as: 'performedBy' })
+
+// ==========================================
+// Work Schedule Associations (New Table-based System)
+// ==========================================
+const WorkSchedule = require('./WorkSchedule')
+const WorkScheduleJoker = require('./WorkScheduleJoker')
+
+// Project has many WorkSchedule entries
+Project.hasMany(WorkSchedule, { foreignKey: 'project_id', as: 'workSchedules' })
+WorkSchedule.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
+
+// Employee has many WorkSchedule entries
+Employee.hasMany(WorkSchedule, { foreignKey: 'employee_id', as: 'workSchedules' })
+WorkSchedule.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' })
+
+// Project has many Joker slots
+Project.hasMany(WorkScheduleJoker, { foreignKey: 'project_id', as: 'jokerSlots' })
+WorkScheduleJoker.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
+
+// ShiftType Associations
+const ShiftType = require('./ShiftType')
+
+// Project has many ShiftTypes
+Project.hasMany(ShiftType, { foreignKey: 'project_id', as: 'shiftTypes' })
+ShiftType.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
+
+// WorkSchedule belongs to ShiftType
+WorkSchedule.belongsTo(ShiftType, { foreignKey: 'shift_type_id', as: 'shiftType' })
+ShiftType.hasMany(WorkSchedule, { foreignKey: 'shift_type_id', as: 'workSchedules' })
+
+// WorkScheduleJoker belongs to ShiftType
+WorkScheduleJoker.belongsTo(ShiftType, { foreignKey: 'shift_type_id', as: 'shiftType' })
+ShiftType.hasMany(WorkScheduleJoker, { foreignKey: 'shift_type_id', as: 'jokerSlots' })
+
+// ==========================================
+// Attendance Associations
+// ==========================================
+// Attendance belongs to Project
+Project.hasMany(Attendance, { foreignKey: 'project_id', as: 'attendances' })
+Attendance.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
+
+// Attendance belongs to Employee
+Employee.hasMany(Attendance, { foreignKey: 'employee_id', as: 'attendances' })
+Attendance.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' })
 
 module.exports = {
   sequelize,
@@ -159,8 +188,10 @@ module.exports = {
   Report,
   Document,
   Activity,
-  ShiftDefinition,
-  ShiftAssignment,
-  EmployeeHistory
+  EmployeeHistory,
+  WorkSchedule,
+  WorkScheduleJoker,
+  ShiftType,
+  Attendance
 }
 

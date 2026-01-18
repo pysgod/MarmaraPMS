@@ -130,6 +130,111 @@ class ApiService {
   }
 
   // ==========================================
+  // Work Schedule (New Table-based System)
+  // ==========================================
+  async getProjectWorkSchedule(projectId, year, month) {
+    return this.request(`/work-schedule/project/${projectId}?year=${year}&month=${month}`)
+  }
+
+  async toggleWorkSchedule(data) {
+    return this.request('/work-schedule/toggle', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateWorkSchedule(data) {
+    return this.request('/work-schedule/update', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async setLeaveType(data) {
+    return this.request('/work-schedule/leave', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async bulkUpdateWorkSchedule(data) {
+    return this.request('/work-schedule/bulk', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getProjectJokers(projectId, year, month) {
+    return this.request(`/work-schedule/jokers/${projectId}?year=${year}&month=${month}`)
+  }
+
+  async toggleJoker(data) {
+    return this.request('/work-schedule/jokers/toggle', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async addJoker(data) {
+    return this.request('/work-schedule/jokers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteJoker(id) {
+    return this.request(`/work-schedule/jokers/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async getMonthlySummary(projectId, year, month) {
+    return this.request(`/work-schedule/project/${projectId}/summary?year=${year}&month=${month}`)
+  }
+
+  async getCompanyWorkScheduleStats(companyId, year, month) {
+    return this.request(`/work-schedule/company/${companyId}/stats?year=${year}&month=${month}`)
+  }
+
+  async getEmployeeWorkSchedule(employeeId, year, month) {
+    return this.request(`/work-schedule/employee/${employeeId}?year=${year}&month=${month}`)
+  }
+
+  // ==========================================
+  // Shift Type Management (Dynamic)
+  // ==========================================
+  async getShiftTypes(projectId) {
+    return this.request(`/shift-types/project/${projectId}`)
+  }
+
+  async createShiftType(data) {
+    return this.request('/shift-types', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateShiftType(id, data) {
+    return this.request(`/shift-types/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteShiftType(id) {
+    return this.request(`/shift-types/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async reorderShiftTypes(orderUpdates) {
+    return this.request('/shift-types/reorder', {
+      method: 'POST',
+      body: JSON.stringify({ orderUpdates }),
+    })
+  }
+
+  // ==========================================
   // Companies
   // ==========================================
   async getCompanies() {
@@ -414,6 +519,24 @@ class ApiService {
   async getStats(companyId = null) {
     const query = companyId ? `?companyId=${companyId}` : ''
     return this.request(`/stats${query}`)
+  }
+
+  // ==========================================
+  // Attendance (QR System)
+  // ==========================================
+  async recordAttendanceScan(projectId, employeeId, type) {
+    return this.request('/attendance/scan', {
+      method: 'POST',
+      body: JSON.stringify({ projectId, employeeId, type }),
+    })
+  }
+
+  async getProjectAttendance(projectId, startDate, endDate) {
+    return this.request(`/attendance/project/${projectId}?startDate=${startDate}&endDate=${endDate}`)
+  }
+
+  async getAttendanceStats(projectId, month) {
+    return this.request(`/attendance/stats/${projectId}?month=${month}`)
   }
 }
 

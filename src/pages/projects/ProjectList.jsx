@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import AddProjectWizard from './AddProjectWizard'
 import { 
@@ -16,6 +16,7 @@ import {
 
 export default function ProjectList() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { projects, selectedCompany, hasCompanyContext, fetchCompanyData } = useApp()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -27,6 +28,15 @@ export default function ProjectList() {
       fetchCompanyData(selectedCompany.id)
     }
   }, [])
+
+  // Auto-open modal if ?new=true
+  useEffect(() => {
+    if (searchParams.get('new') === 'true' && hasCompanyContext) {
+      setShowAddModal(true)
+      searchParams.delete('new')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams, hasCompanyContext])
 
 
   // Require company context

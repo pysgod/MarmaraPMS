@@ -56,8 +56,15 @@ function CompanyContextBanner() {
 function MenuItem({ item, isOpen, onToggle }) {
   const location = useLocation()
   const Icon = item.icon
-  const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/')
   const hasChildren = item.children && item.children.length > 0
+  
+  // For items with children, check if any child is active
+  const isChildActive = hasChildren && item.children.some(child => 
+    location.pathname === child.path.split('?')[0] || location.pathname.startsWith(child.path.split('?')[0] + '/')
+  )
+  
+  // For items without children, check direct path match
+  const isActive = !hasChildren && (location.pathname === item.path || location.pathname.startsWith(item.path + '/'))
 
   return (
     <div className="mb-1">
@@ -66,22 +73,31 @@ function MenuItem({ item, isOpen, onToggle }) {
         className={`
           flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer
           transition-all duration-200 group
-          ${isActive && !hasChildren
+          ${isActive
             ? 'bg-accent/20 text-accent-light border-l-4 border-accent' 
-            : isActive && hasChildren
-              ? 'bg-accent/20 text-accent-light'
+            : isChildActive
+              ? 'text-accent-light'
               : 'text-theme-text-muted hover:bg-theme-bg-hover hover:text-theme-text-primary'
           }
         `}
       >
-        <NavLink 
-          to={hasChildren ? '#' : item.path}
-          className="flex items-center gap-3 flex-1"
-          onClick={(e) => hasChildren && e.preventDefault()}
-        >
-          <Icon size={20} className={`transition-colors ${isActive ? 'text-accent' : 'text-theme-text-placeholder group-hover:text-theme-text-tertiary'}`} />
-          <span className="font-medium text-sm">{item.name}</span>
-        </NavLink>
+        {hasChildren ? (
+          /* Parent Item - Render as div to avoid Router active state */
+          <div className="flex items-center gap-3 flex-1">
+            <Icon size={20} className={`transition-colors ${isActive || isChildActive ? 'text-accent' : 'text-theme-text-placeholder group-hover:text-theme-text-tertiary'}`} />
+            <span className="font-medium text-sm">{item.name}</span>
+          </div>
+        ) : (
+          /* Regular Link Item */
+          <NavLink 
+            to={item.path}
+            className="flex items-center gap-3 flex-1"
+          >
+            <Icon size={20} className={`transition-colors ${isActive || isChildActive ? 'text-accent' : 'text-theme-text-placeholder group-hover:text-theme-text-tertiary'}`} />
+            <span className="font-medium text-sm">{item.name}</span>
+          </NavLink>
+        )}
+        
         {hasChildren && (
           <span className="transition-transform duration-200">
             {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -130,21 +146,31 @@ export default function Sidebar() {
       key: 'companies',
       name: t('sidebar.companies'), 
       path: '/companies', 
-      icon: Building2
+      icon: Building2,
+      children: [
+        { name: 'Firma Listesi', path: '/companies' },
+        { name: 'Yeni Firma Ekle', path: '/companies?new=true' },
+      ]
     },
     { 
       key: 'projects',
       name: t('sidebar.projects'), 
       path: '/projects', 
       icon: FolderKanban,
-      requiresCompany: true
+      children: [
+        { name: 'Proje Listesi', path: '/projects' },
+        { name: 'Yeni Proje Ekle', path: '/projects?new=true' },
+      ]
     },
     { 
       key: 'employees',
       name: 'Çalışanlar', 
       path: '/employees', 
       icon: Users,
-      requiresCompany: true
+      children: [
+        { name: 'Personel Listesi', path: '/employees' },
+        { name: 'Yeni Personel Ekle', path: '/employees?new=true' },
+      ]
     },
     { 
       key: 'shifts',
@@ -157,7 +183,9 @@ export default function Sidebar() {
       name: t('sidebar.patrol'), 
       path: '/patrol', 
       icon: Shield,
-      requiresCompany: true
+      children: [
+        { name: 'Devriye Listesi', path: '/patrol' },
+      ]
     },
     { 
       key: 'documents',
@@ -169,13 +197,11 @@ export default function Sidebar() {
       key: 'reports',
       name: t('sidebar.reports'), 
       path: '/reports', 
-      icon: FileText 
-    },
-    { 
-      key: 'archive',
-      name: 'Arşiv', 
-      path: '/archive', 
-      icon: History
+      icon: FileText,
+      children: [
+        { name: 'Tüm Raporlar', path: '/reports' },
+        { name: 'Arşiv', path: '/archive' },
+      ]
     },
     { 
       key: 'notifications',

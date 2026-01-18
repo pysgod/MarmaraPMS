@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import api from '../../services/api'
 import { 
@@ -7,7 +7,8 @@ import {
   Building2,
   Users,
   Calendar,
-  Clock,
+  Clock, // used for status icon
+  TableProperties,
   CheckCircle,
   AlertCircle,
   ArrowLeft,
@@ -26,16 +27,18 @@ import {
   Play,
   Pause,
   StopCircle,
-  AlertTriangle
+  AlertTriangle,
+  QrCode
 } from 'lucide-react'
 import AddProjectWizard from './AddProjectWizard'
-import ProjectShifts from './ProjectShifts'
+import ProjectWorkSchedule from './ProjectWorkSchedule'
+import QRCodeModal from '../../components/QRCodeModal'
 
 const tabs = [
   { id: 'general', name: 'Genel Bilgiler', icon: FolderKanban },
   { id: 'employees', name: 'Çalışanlar', icon: Users },
   { id: 'patrols', name: 'Devriyeler', icon: Shield },
-  { id: 'shifts', name: 'Vardiyalar', icon: Clock },
+  { id: 'shifts', name: 'Vardiya Çizelgesi', icon: TableProperties },
 ]
 
 function TabContent({ activeTab, project, projectEmployees, projectPatrols, allEmployees, onAssignEmployee, onRemoveEmployee }) {
@@ -243,7 +246,11 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {projectEmployees.map(employee => (
-              <div key={employee.id} className="bg-theme-bg-hover rounded-xl p-4 flex items-center gap-4">
+              <div 
+                key={employee.id} 
+                onClick={() => navigate(`/employees/${employee.id}`)}
+                className="bg-theme-bg-hover rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-theme-bg-tertiary transition-colors"
+              >
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
                   <span className="text-white font-semibold">{employee.name?.[0]}</span>
                 </div>
@@ -252,7 +259,11 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
                   <p className="text-sm text-theme-text-muted">{employee.assigned_role || employee.title || 'Belirsiz'}</p>
                 </div>
                 <button
-                  onClick={() => { setEmployeeToRemove(employee); setShowRemoveModal(true); }}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setEmployeeToRemove(employee); 
+                    setShowRemoveModal(true); 
+                  }}
                   className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
                   title="Projeden Çıkar"
                 >
@@ -408,7 +419,7 @@ function TabContent({ activeTab, project, projectEmployees, projectPatrols, allE
       )
 
     case 'shifts':
-      return <ProjectShifts projectId={project.id} />
+      return <ProjectWorkSchedule projectId={project.id} />
 
     default:
       return (
@@ -423,13 +434,21 @@ export default function ProjectDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { employees, patrols } = useApp()
-  const [activeTab, setActiveTab] = useState('general')
+  const [searchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState(tabParam === 'vardiya' ? 'shifts' : (tabParam || 'general'))
   const [project, setProject] = useState(null)
   const [projectEmployees, setProjectEmployees] = useState([])
   const [companyEmployees, setCompanyEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
+  const [showQRModal, setShowQRModal] = useState(false)
+
+  useEffect(() => {
+    if (tabParam === 'vardiya') setActiveTab('shifts')
+    else if (tabParam) setActiveTab(tabParam)
+  }, [tabParam])
 
   useEffect(() => {
     loadProject()
@@ -555,8 +574,13 @@ export default function ProjectDetail() {
             <Edit size={16} />
             Düzenle
           </button>
-
-          
+          <button 
+            onClick={() => setShowQRModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg text-white text-sm transition-colors"
+          >
+            <QrCode size={16} />
+            QR Kodları
+          </button>
           <div className="relative">
             <button 
               onClick={() => setShowMenu(!showMenu)}
@@ -719,6 +743,13 @@ export default function ProjectDetail() {
           project={project}
         />
       )}
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={showQRModal}
+        onClose={() => setShowQRModal(false)}
+        project={project}
+      />
     </div>
   )
 }

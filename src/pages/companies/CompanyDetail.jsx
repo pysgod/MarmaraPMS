@@ -42,7 +42,7 @@ const tabs = [
   { id: 'shifts', name: 'Vardiyalar', icon: Clock },
 ]
 
-function TabContent({ activeTab, company, employees, projects, patrols, onRemoveEmployee, onOpenAssignModal }) {
+function TabContent({ activeTab, company, employees, projects, patrols, onRemoveEmployee, onRemoveFromProject, onOpenAssignModal }) {
   const navigate = useNavigate()
   const [employeeToRemove, setEmployeeToRemove] = useState(null)
   const [showRemoveModal, setShowRemoveModal] = useState(false)
@@ -140,15 +140,42 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
       )
 
     case 'employees':
+      // Group employees by project
+      const employeesByProject = {}
+      const employeesWithoutProject = []
+
+      employees.forEach(employee => {
+        if (!employee.projectAssignments || employee.projectAssignments.length === 0) {
+          employeesWithoutProject.push(employee)
+        } else {
+          employee.projectAssignments.forEach(assignment => {
+            const projectId = assignment.project_id
+            if (!employeesByProject[projectId]) {
+              employeesByProject[projectId] = []
+            }
+            employeesByProject[projectId].push({
+              ...employee,
+              assignmentDetails: assignment // Store specific assignment details
+            })
+          })
+        }
+      })
+
+      // Helper to get project name
+      const getProjectName = (id) => {
+        const proj = projects.find(p => p.id === id)
+        return proj ? proj.name : 'Bilinmeyen Proje'
+      }
+
       return (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-8">
+           <div className="flex items-center justify-between">
             <p className="text-theme-text-muted">{employees.length} çalışan</p>
             <div className="flex gap-2">
               <button 
                 onClick={onOpenAssignModal}
                 className="px-4 py-2 bg-theme-bg-tertiary hover:bg-theme-bg-elevated rounded-lg text-theme-text-secondary text-sm flex items-center gap-2 transition-colors"
-              >
+                >
                 <Plus size={16} />
                 Çalışan Ekle
               </button>
@@ -160,39 +187,117 @@ function TabContent({ activeTab, company, employees, projects, patrols, onRemove
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {employees.slice(0, 10).map(employee => (
-              <div 
-                key={employee.id} 
-                className="bg-theme-bg-hover rounded-xl p-4 flex items-center gap-4 hover:bg-theme-bg-tertiary transition-colors"
-              >
-                <div 
-                  onClick={() => navigate(`/employees/${employee.id}`)}
-                  className="flex items-center gap-4 flex-1 cursor-pointer"
-                >
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
-                    <span className="text-white font-semibold">{employee.name?.[0]}</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-theme-text-primary">{employee.name}</p>
-                    <p className="text-sm text-theme-text-muted">{employee.title || 'Belirsiz'}</p>
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    employee.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
-                  }`}>
-                    {employee.status === 'active' ? 'Aktif' : 'Pasif'}
-                  </span>
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setEmployeeToRemove(employee); setShowRemoveModal(true); }}
-                  className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                  title="Firmadan Çıkar"
-                >
-                  <Unlink size={16} />
-                </button>
+
+          {/* Grouped by Projects */}
+          {Object.keys(employeesByProject).map(projectId => (
+            <div key={projectId} className="space-y-4">
+              <div className="flex items-center gap-2 text-theme-text-primary font-semibold border-b border-theme-border-primary pb-2">
+                <FolderKanban size={18} className="text-accent" />
+                <h3>{getProjectName(parseInt(projectId))}</h3>
+                <span className="text-xs font-normal text-theme-text-muted ml-2">
+                  ({employeesByProject[projectId].length} personel)
+                </span>
               </div>
-            ))}
-          </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {employeesByProject[projectId].map(employee => (
+                  <div 
+                    key={`${projectId}-${employee.id}`} 
+                    className="bg-theme-bg-hover rounded-xl p-4 flex items-center gap-4 hover:bg-theme-bg-tertiary transition-colors"
+                  >
+                    <div 
+                      onClick={() => navigate(`/employees/${employee.id}`)}
+                      className="flex items-center gap-4 flex-1 cursor-pointer"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
+                        <span className="text-white font-semibold">{employee.name?.[0]}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-theme-text-primary">{employee.name}</p>
+                        <p className="text-sm text-theme-text-muted">{employee.title || 'Belirsiz'}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        employee.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+                      }`}>
+                        {employee.status === 'active' ? 'Aktif' : 'Pasif'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          if(confirm(`${employee.name} isimli personeli bu projeden çıkarmak istiyor musunuz?`)) {
+                            onRemoveFromProject(projectId, employee.id);
+                          }
+                        }}
+                        className="p-2 text-amber-400 hover:bg-amber-500/20 rounded-lg transition-colors"
+                        title="Projeden Çıkar"
+                      >
+                        <Unlink size={16} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEmployeeToRemove(employee); setShowRemoveModal(true); }}
+                        className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                        title="Firmadan Çıkar"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Employees without Project */}
+          {employeesWithoutProject.length > 0 && (
+             <div className="space-y-4">
+              <div className="flex items-center gap-2 text-theme-text-primary font-semibold border-b border-theme-border-primary pb-2">
+                <Users size={18} className="text-theme-text-muted" />
+                <h3>Projesiz Personeller</h3>
+                <span className="text-xs font-normal text-theme-text-muted ml-2">
+                  ({employeesWithoutProject.length} personel)
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {employeesWithoutProject.map(employee => (
+                  <div 
+                    key={employee.id} 
+                    className="bg-theme-bg-hover rounded-xl p-4 flex items-center gap-4 hover:bg-theme-bg-tertiary transition-colors"
+                  >
+                    <div 
+                      onClick={() => navigate(`/employees/${employee.id}`)}
+                      className="flex items-center gap-4 flex-1 cursor-pointer"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-theme-bg-elevated to-theme-bg-hover border border-theme-border-secondary flex items-center justify-center">
+                        <span className="text-theme-text-secondary font-semibold">{employee.name?.[0]}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-theme-text-primary">{employee.name}</p>
+                        <p className="text-sm text-theme-text-muted">{employee.title || 'Belirsiz'}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        employee.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'
+                      }`}>
+                        {employee.status === 'active' ? 'Aktif' : 'Pasif'}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEmployeeToRemove(employee); setShowRemoveModal(true); }}
+                      className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                      title="Firmadan Çıkar"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {employees.length === 0 && (
             <div className="text-center py-12 bg-theme-bg-hover rounded-xl">
               <Users size={48} className="text-theme-text-placeholder mx-auto mb-4" />
@@ -353,7 +458,7 @@ export default function CompanyDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const { selectedCompany, setCompanyContext, companies, employees, projects, patrols, updateCompany } = useApp()
+  const { selectedCompany, setCompanyContext, companies, employees, projects, patrols, updateCompany, fetchCompanyData } = useApp()
   const [activeTab, setActiveTab] = useState('general')
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -403,6 +508,7 @@ export default function CompanyDetail() {
     try {
       await updateCompany(company.id, editData)
       setShowEditModal(false)
+      loadCompany() // Refresh to sync everything
     } catch (error) {
       alert('Güncelleme hatası: ' + error.message)
     }
@@ -426,6 +532,7 @@ export default function CompanyDetail() {
       await updateCompany(company.id, { status: newStatus })
       setCompany(prev => ({ ...prev, status: newStatus }))
       setShowMenu(false)
+      loadCompany()
     } catch (error) {
       alert('Durum güncelleme hatası: ' + error.message)
     }
@@ -437,6 +544,16 @@ export default function CompanyDetail() {
       loadCompany()
     } catch (error) {
       alert('Personeli çıkarma hatası: ' + error.message)
+    }
+  }
+
+  const handleRemoveFromProject = async (projectId, employeeId) => {
+    try {
+      await api.removeEmployeeFromProject(projectId, employeeId)
+      // Refresh data
+      loadCompany() 
+    } catch (error) {
+      alert('Projeden çıkarma hatası: ' + error.message)
     }
   }
 
@@ -474,10 +591,16 @@ export default function CompanyDetail() {
     try {
       const data = await api.getCompany(id)
       setCompany(data)
-      // Set company context if not already set
+      
+      // Update global context
       if (!selectedCompany || selectedCompany.id !== parseInt(id)) {
         setCompanyContext(data)
       }
+
+      // Explicitly refresh all relational data (employees, projects, etc.)
+      // This is crucial for UI updates after mutations
+      await fetchCompanyData(id)
+      
     } catch (error) {
       console.error('Load company error:', error)
     }
@@ -659,6 +782,7 @@ export default function CompanyDetail() {
             projects={projects}
             patrols={patrols}
             onRemoveEmployee={handleRemoveEmployee}
+            onRemoveFromProject={handleRemoveFromProject}
             onOpenAssignModal={() => setShowAssignModal(true)}
           />
         </div>

@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const { Employee, Company, ProjectEmployee, Project, PatrolAssignment, PatrolLog, ShiftAssignment, ShiftDefinition, EmployeeHistory } = require('../models')
+const { Employee, Company, ProjectEmployee, Project, PatrolAssignment, PatrolLog, EmployeeHistory } = require('../models')
 const { sequelize } = require('../models') // for transaction
 const { Op } = require('sequelize')
 
@@ -49,7 +49,9 @@ router.get('/', async (req, res) => {
         { 
           model: ProjectEmployee, 
           as: 'projectAssignments',
-          attributes: ['id', 'project_id']
+          attributes: ['id', 'project_id', 'status'],
+          where: { status: 'active' },
+          required: false
         }
       ],
       order: [['created_at', 'DESC']]
@@ -58,18 +60,16 @@ router.get('/', async (req, res) => {
     // Mevcut personeller için assignment_status hesaplaması (NULL durumu için)
     employees = employees.map(emp => {
       const empData = emp.toJSON()
-      if (!empData.assignment_status) {
-        // assignment_status NULL ise company_id'ye göre hesapla
-        if (empData.company_id) {
-          // Proje ataması var mı kontrol et
-          if (empData.projectAssignments && empData.projectAssignments.length > 0) {
-            empData.assignment_status = 'assigned_to_project'
-          } else {
-            empData.assignment_status = 'assigned_to_company'
-          }
+      // assignment_status'u her zaman hesapla (DB'deki değer senkronize değilse bile)
+      if (empData.company_id) {
+        // Proje ataması var mı kontrol et (status='active' olanlar include edildi)
+        if (empData.projectAssignments && empData.projectAssignments.length > 0) {
+          empData.assignment_status = 'assigned_to_project'
         } else {
-          empData.assignment_status = 'idle'
+          empData.assignment_status = 'assigned_to_company'
         }
+      } else {
+        empData.assignment_status = 'idle'
       }
       return empData
     })
@@ -163,14 +163,7 @@ router.get('/:id', async (req, res) => {
           as: 'projectAssignments',
           include: [{ model: Project, as: 'project', attributes: ['id', 'name', 'status'] }]
         },
-        {
-          model: ShiftAssignment,
-          as: 'shiftAssignments',
-          include: [
-            { model: ShiftDefinition, as: 'shiftDefinition' },
-            { model: Project, as: 'project', attributes: ['id', 'name'] }
-          ]
-        },
+        // Legacy shifts removed
         {
           model: EmployeeHistory,
           as: 'history',
