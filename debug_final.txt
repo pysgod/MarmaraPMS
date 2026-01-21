@@ -1,0 +1,21 @@
+Scanning for Ensar/Esman/Esnar Bildik...
+Found 2 employees with last name Bildik.
+
+-----------------------------------------------------------
+Employee: Esman Bildik (ID: 26)
+Total Schedule Entries: 23
+  => TOTALS for JAN 2026: Gozetim=0, Mesai=0
+
+-----------------------------------------------------------
+Employee: Ensar Bildik (ID: 1)
+Total Schedule Entries: 25
+  Date: 2026-01-02 | Project: Kapı Güvenliği | ShiftTypeID: null | Gozetim: 0 | Mesai: 12 | MesaiShiftTypeID: 3 | Leave: null
+  Date: 2026-01-03 | Project: Kapı Güvenliği | ShiftTypeID: null | Gozetim: 0 | Mesai: 12 | MesaiShiftTypeID: 3 | Leave: null
+  Date: 2026-01-05 | Project: Kapı Güvenliği | ShiftTypeID: 3 | Gozetim: 12 | Mesai: 12 | MesaiShiftTypeID: 4 | Leave: null
+  Date: 2026-01-06 | Project: Kapı Güvenliği | ShiftTypeID: 3 | Gozetim: 12 | Mesai: 0 | MesaiShiftTypeID: null | Leave: null
+  Date: 2026-01-08 | Project: Kapı Güvenliği | ShiftTypeID: 3 | Gozetim: 12 | Mesai: 12 | MesaiShiftTypeID: 4 | Leave: null
+  Date: 2026-01-17 | Project: Kapı Güvenliği | ShiftTypeID: 4 | Gozetim: 12 | Mesai: 0 | MesaiShiftTypeID: null | Leave: null
+  Date: 2026-01-19 | Project: Kapı Güvenliği | ShiftTypeID: 3 | Gozetim: 12 | Mesai: 0 | MesaiShiftTypeID: null | Leave: null
+  Date: 2026-01-20 | Project: Kapı Güvenliği | ShiftTypeID: null | Gozetim: 0 | Mesai: 12 | MesaiShiftTypeID: 3 | Leave: null
+  Date: 2026-01-30 | Project: Kapı Güvenliği | ShiftTypeID: 3 | Gozetim: 12 | Mesai: 0 | MesaiShiftTypeID: null | Leave: null
+  => TOTALS for JAN 2026: Gozetim=72, Mesai=60

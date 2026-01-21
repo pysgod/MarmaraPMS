@@ -1,4 +1,4 @@
-const { WorkSchedule, WorkScheduleJoker, Project, Employee, ProjectEmployee, Company, ShiftType } = require('../models')
+const { WorkSchedule, WorkScheduleJoker, Project, Employee, ProjectEmployee, Company, ShiftType, Attendance } = require('../models')
 const { Op } = require('sequelize')
 
 // Fallback shift hours if no dynamic type found
@@ -31,16 +31,25 @@ exports.getProjectWorkSchedule = async (req, res) => {
 
     const employees = projectEmployees.map(pe => pe.employee).filter(Boolean)
 
+    const toLocalDateString = (date) => {
+      const offset = date.getTimezoneOffset()
+      const localDate = new Date(date.getTime() - (offset * 60 * 1000))
+      return localDate.toISOString().split('T')[0]
+    }
+
     // Calculate date range for the month
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0)
+    
+    const startDateStr = toLocalDateString(startDate)
+    const endDateStr = toLocalDateString(endDate)
 
     // Get all work schedule entries for this project/month
     const schedules = await WorkSchedule.findAll({
       where: {
         project_id: projectId,
         date: {
-          [Op.between]: [startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
+          [Op.between]: [startDateStr, endDateStr]
         }
       }
     })
@@ -715,8 +724,17 @@ exports.getEmployeeWorkSchedule = async (req, res) => {
       return res.status(400).json({ error: 'Year and month are required' })
     }
 
+    const toLocalDateString = (date) => {
+      const offset = date.getTimezoneOffset()
+      const localDate = new Date(date.getTime() - (offset * 60 * 1000))
+      return localDate.toISOString().split('T')[0]
+    }
+
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0)
+
+    const startDateStr = toLocalDateString(startDate)
+    const endDateStr = toLocalDateString(endDate)
 
     // First, get active project assignments for this employee
     // Only show schedules for projects the employee is STILL assigned to
@@ -741,7 +759,7 @@ exports.getEmployeeWorkSchedule = async (req, res) => {
         employee_id: employeeId,
         project_id: { [Op.in]: activeProjectIds },
         date: {
-          [Op.between]: [startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
+          [Op.between]: [startDateStr, endDateStr]
         }
       },
       include: [
@@ -771,9 +789,25 @@ exports.getEmployeeWorkSchedule = async (req, res) => {
       totalMesai += parseFloat(s.mesai_hours) || 0
     })
 
+    // Get Attendance records for this employee/period
+    const attendances = await Attendance.findAll({
+      where: {
+        employee_id: employeeId,
+        date: {
+           [Op.between]: [startDateStr, endDateStr]
+        }
+      }
+    })
+
+    const attendanceMap = {}
+    attendances.forEach(a => {
+      attendanceMap[a.date] = a
+    })
+
     res.json({
       schedules,
       scheduleMap,
+      attendanceMap,
       stats: { totalGozetim, totalMesai }
     })
   } catch (error) {

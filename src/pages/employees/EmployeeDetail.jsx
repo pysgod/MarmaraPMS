@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import api from '../../services/api'
 import AddEmployeeWizard from './AddEmployeeWizard'
-import EmployeeScheduleViewer from '../../components/EmployeeScheduleViewer'
+import EmployeeScheduleTable from '../../components/EmployeeScheduleTable'
 import { 
   User, 
   ArrowLeft, 
@@ -636,7 +636,7 @@ export default function EmployeeDetail() {
             {/* 8. VARDİYALAR */}
             {activeTab === 'shifts' && (
                <div className="space-y-4">
-                 <EmployeeScheduleViewer employeeId={employee.id} />
+                 <EmployeeScheduleTable employee={employee} />
                </div>
             )}
         </div>

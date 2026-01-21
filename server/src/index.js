@@ -80,6 +80,9 @@ async function start() {
     await sequelize.sync({ alter: true })
     console.log('✅ Veritabanı senkronize edildi (Veriler korundu)')
     
+    // Initialize scheduled jobs
+    require('./services/schedulerService').initScheduledJobs()
+
     // Run seed after sync
     // await require('./scripts/seedDb').seed()
     console.log('✅ Veritabanı hazır')
