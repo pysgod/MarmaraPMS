@@ -206,7 +206,7 @@ export default function Archive() {
                           )}
                         </div>
                       </td>
-                      <td className="p-4 text-sm text-theme-text-muted max-w-xs truncate" title={item.notes}>
+                      <td className="p-4 text-sm text-theme-text-muted max-w-md break-words whitespace-normal">
                         {item.notes || '-'}
                       </td>
                     </tr>

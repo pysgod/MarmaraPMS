@@ -1,9 +1,19 @@
-const { WorkSchedule, WorkScheduleJoker, Project, Employee, ProjectEmployee, Company, ShiftType, Attendance } = require('../models')
+const { WorkSchedule, WorkScheduleJoker, Project, Employee, ProjectEmployee, Company, ShiftType, Attendance, EmployeeHistory } = require('../models')
 const { Op } = require('sequelize')
 
 // Fallback shift hours if no dynamic type found
 const DEFAULT_SHIFT_HOURS = {
   off: 0
+}
+
+// Helper for duration formatting
+const formatDuration = (hours) => {
+  const val = parseFloat(hours) || 0
+  const h = Math.floor(val)
+  const m = Math.round((val - h) * 60)
+  if (h > 0 && m > 0) return `${h} sa ${m} dk`
+  if (h > 0) return `${h} saat`
+  return `${m} dk`
 }
 
 // Get work schedule for a project and month
@@ -59,7 +69,7 @@ exports.getProjectWorkSchedule = async (req, res) => {
       where: {
         project_id: projectId,
         date: {
-          [Op.between]: [startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
+          [Op.between]: [toLocalDateString(startDate), toLocalDateString(endDate)]
         }
       },
       order: [['date', 'ASC'], ['id', 'ASC']]
@@ -91,7 +101,11 @@ exports.getProjectWorkSchedule = async (req, res) => {
       let totalMesai = 0
       
       schedules.filter(s => s.employee_id === emp.id).forEach(s => {
-        totalGozetim += parseFloat(s.gozetim_hours) || 0
+        // Only count gozetim hours if there is an active shift assignment
+        if (s.shift_type_id) {
+            totalGozetim += parseFloat(s.gozetim_hours) || 0
+        }
+        // Always count mesai hours as they can exist independent of shift (e.g. extra overtime)
         totalMesai += parseFloat(s.mesai_hours) || 0
       })
       
@@ -105,7 +119,7 @@ exports.getProjectWorkSchedule = async (req, res) => {
       const date = new Date(year, month - 1, d)
       days.push({
         day: d,
-        date: date.toISOString().split('T')[0],
+        date: toLocalDateString(date), // FIX: Use local date string helper instead of toISOString
         dayName: date.toLocaleDateString('tr-TR', { weekday: 'short' }),
         isWeekend: date.getDay() === 0 || date.getDay() === 6
       })
@@ -198,6 +212,38 @@ exports.updateWorkSchedule = async (req, res) => {
         updateData.shift_type_id = null
       }
       
+      // Check if we're removing shift (setting to null)
+      const isRemovingShift = (shift_type_id === null && schedule.shift_type_id !== null) || 
+                              (leave_type && schedule.shift_type_id !== null)
+      
+      if (isRemovingShift) {
+        // Check if there's an attendance record for this date
+        const attendance = await Attendance.findOne({
+          where: { project_id, employee_id, date }
+        })
+        
+        if (attendance && (attendance.check_in_time || attendance.check_out_time)) {
+          // Archive the attendance data before clearing
+          try {
+            const checkInStr = attendance.check_in_time ? new Date(attendance.check_in_time).toLocaleTimeString('tr-TR') : 'Yok'
+            const checkOutStr = attendance.check_out_time ? new Date(attendance.check_out_time).toLocaleTimeString('tr-TR') : 'Yok'
+            
+            await EmployeeHistory.create({
+              employee_id,
+              project_id,
+              action: 'shift_deleted',
+              notes: `Vardiya değiştirildi. Tarih: ${date}, Eski Giriş: ${checkInStr}, Eski Çıkış: ${checkOutStr}, Çalışılan: ${formatDuration(attendance.actual_hours)}. Aynı gün içinde yeni vardiya ataması yapılabilir.`
+            })
+          } catch (historyError) {
+            console.error('Failed to log shift change to history:', historyError)
+          }
+          
+          // Delete the attendance record so new shift can start fresh
+          await attendance.destroy()
+          console.log(`[SHIFT CHANGED] Attendance record cleared for Employee ${employee_id} on ${date}`)
+        }
+      }
+      
       await schedule.update(updateData)
     }
 
@@ -268,6 +314,37 @@ exports.toggleWorkSchedule = async (req, res) => {
     }
 
     if (existing) {
+      // Check if we're toggling to OFF (removing shift)
+      const isRemovingShift = nextShiftTypeId === null && existing.shift_type_id !== null
+      
+      if (isRemovingShift) {
+        // Check if there's an attendance record for this date
+        const attendance = await Attendance.findOne({
+          where: { project_id, employee_id, date }
+        })
+        
+        if (attendance && (attendance.check_in_time || attendance.check_out_time)) {
+          // Archive the attendance data before clearing
+          try {
+            const checkInStr = attendance.check_in_time ? new Date(attendance.check_in_time).toLocaleTimeString('tr-TR') : 'Yok'
+            const checkOutStr = attendance.check_out_time ? new Date(attendance.check_out_time).toLocaleTimeString('tr-TR') : 'Yok'
+            
+            await EmployeeHistory.create({
+              employee_id,
+              project_id,
+              action: 'shift_deleted',
+              notes: `Vardiya silindi. Tarih: ${date}, Eski Giriş: ${checkInStr}, Eski Çıkış: ${checkOutStr}, Çalışılan: ${formatDuration(attendance.actual_hours)}. Aynı gün içinde yeni vardiya ataması yapılabilir.`
+            })
+          } catch (historyError) {
+            console.error('Failed to log shift deletion to history:', historyError)
+          }
+          
+          // Delete the attendance record so new shift can start fresh
+          await attendance.destroy()
+          console.log(`[SHIFT DELETED] Attendance record cleared for Employee ${employee_id} on ${date}`)
+        }
+      }
+      
       await existing.update({
         shift_type_id: nextShiftTypeId,
         leave_type: null,
@@ -369,14 +446,23 @@ exports.getProjectJokers = async (req, res) => {
     const { projectId } = req.params
     const { year, month } = req.query
 
+    const toLocalDateString = (date) => {
+      const offset = date.getTimezoneOffset()
+      const localDate = new Date(date.getTime() - (offset * 60 * 1000))
+      return localDate.toISOString().split('T')[0]
+    }
+
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0)
+    
+    const startDateStr = toLocalDateString(startDate)
+    const endDateStr = toLocalDateString(endDate)
 
     const jokers = await WorkScheduleJoker.findAll({
       where: {
         project_id: projectId,
         date: {
-          [Op.between]: [startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
+          [Op.between]: [startDateStr, endDateStr]
         }
       },
       order: [['date', 'ASC'], ['id', 'ASC']]
@@ -555,14 +641,23 @@ exports.getMonthlySummary = async (req, res) => {
     const { projectId } = req.params
     const { year, month } = req.query
 
+    const toLocalDateString = (date) => {
+      const offset = date.getTimezoneOffset()
+      const localDate = new Date(date.getTime() - (offset * 60 * 1000))
+      return localDate.toISOString().split('T')[0]
+    }
+
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0)
+
+    const startDateStr = toLocalDateString(startDate)
+    const endDateStr = toLocalDateString(endDate)
 
     const schedules = await WorkSchedule.findAll({
       where: {
         project_id: projectId,
         date: {
-          [Op.between]: [startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
+          [Op.between]: [startDateStr, endDateStr]
         }
       },
       include: [{ model: Employee, as: 'employee' }]
@@ -610,8 +705,17 @@ exports.getCompanyWorkScheduleStats = async (req, res) => {
       return res.status(400).json({ error: 'Year and month are required' })
     }
 
+    const toLocalDateString = (date) => {
+      const offset = date.getTimezoneOffset()
+      const localDate = new Date(date.getTime() - (offset * 60 * 1000))
+      return localDate.toISOString().split('T')[0]
+    }
+
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0)
+
+    const startDateStr = toLocalDateString(startDate)
+    const endDateStr = toLocalDateString(endDate)
 
     // Get all projects for this company
     const projects = await Project.findAll({
@@ -633,7 +737,7 @@ exports.getCompanyWorkScheduleStats = async (req, res) => {
       where: {
         project_id: { [Op.in]: projectIds },
         date: {
-          [Op.between]: [startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
+          [Op.between]: [startDateStr, endDateStr]
         }
       }
     })
@@ -800,8 +904,54 @@ exports.getEmployeeWorkSchedule = async (req, res) => {
     })
 
     const attendanceMap = {}
+    
+    // Group attendances by date
+    const dailyAttendances = {}
     attendances.forEach(a => {
-      attendanceMap[a.date] = a
+      if (!dailyAttendances[a.date]) dailyAttendances[a.date] = []
+      dailyAttendances[a.date].push(a)
+    })
+
+    // Aggregate into single daily summary
+    Object.keys(dailyAttendances).forEach(date => {
+        const dayAtts = dailyAttendances[date]
+        dayAtts.sort((a, b) => new Date(a.check_in_time) - new Date(b.check_in_time))
+        
+        let totalHours = 0
+        const statuses = new Set()
+        
+        dayAtts.forEach(a => {
+            statuses.add(a.status)
+            if (a.actual_hours) {
+                totalHours += parseFloat(a.actual_hours)
+            } else if (a.check_in_time && a.check_out_time) {
+                const diff = new Date(a.check_out_time) - new Date(a.check_in_time)
+                totalHours += (diff / (1000 * 60 * 60))
+            } 
+            // If active (no check_out), maybe add accumulated time so far? 
+            // For historical table, usually we show what's done. 
+            // If active, technically actual_hours is 0 in DB until closed.
+        })
+        
+        // Determine merged status
+        // Priority: Late > Early Leave > Present
+        let mergedStatus = 'present'
+        if (statuses.has('late')) mergedStatus = 'late'
+        else if (statuses.has('early_leave')) mergedStatus = 'early_leave'
+        else if (statuses.has('absent')) mergedStatus = 'absent'
+        
+        const first = dayAtts[0]
+        const last = dayAtts[dayAtts.length - 1]
+        
+        attendanceMap[date] = {
+            id: first.id, // Reference to first
+            date: date,
+            status: mergedStatus,
+            check_in_time: first.check_in_time,
+            check_out_time: last.check_out_time,
+            actual_hours: totalHours.toFixed(2),
+            verification_method: first.verification_method
+        }
     })
 
     res.json({

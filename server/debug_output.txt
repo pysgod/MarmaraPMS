@@ -1,0 +1,33 @@
+Connecting to database...
+Connection established successfully.
+Found Employee: Ensar Bildik (ID: 1)
+
+--- Active Project Assignments ---
+- Project ID: 2, Name: Kapı Güvenliği, Status: active
+
+--- Work Schedules (Total: 28) ---
+
+Project ID: 2 (Kapı Güvenliği) - ACTIVE ASSIGNMENT
+Total Schedules: 28
+No overtime records for this project.
+
+--- Duplicate Check ---
+No duplicates found for (Project + Date).
+
+--- Attendance Records ---
+Total Attendance Records: 5
+- Date: 2026-01-23, Status: present
+  In: Fri Jan 23 2026 23:05:27 GMT+0300 (GMT+03:00), Out: null (Method: qr)
+  Planned: 0.00, Actual: 0.00, Overtime: 0.00
+- Date: 2026-01-17, Status: absent
+  In: null, Out: null (Method: manual)
+  Planned: 12.00, Actual: 0.00, Overtime: 0.00
+- Date: 2026-01-08, Status: absent
+  In: null, Out: null (Method: manual)
+  Planned: 12.00, Actual: 0.00, Overtime: 0.00
+- Date: 2026-01-06, Status: absent
+  In: null, Out: null (Method: manual)
+  Planned: 12.00, Actual: 0.00, Overtime: 0.00
+- Date: 2026-01-05, Status: absent
+  In: null, Out: null (Method: manual)
+  Planned: 12.00, Actual: 0.00, Overtime: 0.00

@@ -3,6 +3,7 @@ const Attendance = require('../models/Attendance')
 const Employee = require('../models/Employee')
 const WorkSchedule = require('../models/WorkSchedule')
 const ShiftType = require('../models/ShiftType')
+const EmployeeHistory = require('../models/EmployeeHistory')
 
 /**
  * Record a QR scan for attendance (Entry or Exit)
@@ -11,14 +12,48 @@ const ShiftType = require('../models/ShiftType')
  */
 const recordScan = async (req, res) => {
   try {
+    // Helper to parsing "HH:mm:ss" to Date on a specific day
+    const parseTime = (dateStr, timeStr) => {
+      if (!timeStr) return null
+      return new Date(`${dateStr}T${timeStr}`)
+    }
+
+    // Helper to calculate overlap in minutes between two ranges [start1, end1] and [start2, end2]
+    const getOverlapMinutes = (start1, end1, start2, end2) => {
+      const maxStart = new Date(Math.max(start1, start2))
+      const minEnd = new Date(Math.min(end1, end2))
+      if (maxStart < minEnd) {
+        return (minEnd - maxStart) / (1000 * 60)
+      }
+      return 0
+    }
+
     const { projectId, employeeId, type } = req.body
 
+    console.log(`[SCAN ATTEMPT] Project: ${projectId}, Employee: ${employeeId}, Type: ${type}`)
+
     if (!projectId || !employeeId || !type) {
+      console.warn('[SCAN ERROR] Missing fields')
       return res.status(400).json({ message: 'projectId, employeeId, and type are required' })
     }
 
-    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+    // Use local date to match database records (stored as YYYY-MM-DD based on local time)
+    const toLocalDateString = (date) => {
+      const offset = date.getTimezoneOffset()
+      const localDate = new Date(date.getTime() - (offset * 60 * 1000))
+      return localDate.toISOString().split('T')[0]
+    }
+
     const now = new Date()
+    const today = toLocalDateString(now)
+    console.log(`[SCAN DATE] Local Date for DB Query: ${today}, Time: ${now.toLocaleTimeString()}`)
+
+    // Check if employee exists
+    const employee = await Employee.findByPk(employeeId)
+    if (!employee) {
+       console.error(`[SCAN ERROR] Employee not found: ${employeeId}`)
+       return res.status(404).json({ message: 'Personel bulunamadı' })
+    }
 
     // Find or create today's attendance record
     let attendance = await Attendance.findOne({
@@ -29,8 +64,25 @@ const recordScan = async (req, res) => {
       }
     })
 
+    // Get today's work schedule with BOTH shift types
+    const workSchedule = await WorkSchedule.findOne({
+      where: {
+        project_id: projectId,
+        employee_id: employeeId,
+        date: today
+      },
+      include: [
+        { model: ShiftType, as: 'shiftType' },
+        { model: ShiftType, as: 'mesaiShiftType' }
+      ]
+    })
+
+    console.log(`[SCAN DATA] Found Attendance: ${attendance ? 'Yes' : 'No'}`)
+
+    // --- ENTRY LOGIC ---
     if (type === 'entry') {
       if (attendance && attendance.check_in_time) {
+        console.warn(`[SCAN WARNING] Entry already exists for ${employeeId}`)
         return res.status(400).json({ message: 'Giriş zaten yapılmış', attendance })
       }
 
@@ -40,85 +92,190 @@ const recordScan = async (req, res) => {
           employee_id: employeeId,
           date: today,
           check_in_time: now,
-          status: 'incomplete',
+          status: 'incomplete', // Will update to late/present based on schedule
           verification_method: 'qr'
         })
+        console.log(`[SCAN SUCCESS] Created new attendance for ${employeeId}`)
       } else {
         attendance.check_in_time = now
+        attendance.status = 'incomplete' // Reset status on re-entry attempt if needed
         await attendance.save()
+        console.log(`[SCAN SUCCESS] Updated existing attendance entry for ${employeeId}`)
       }
 
-      // Check lateness - get today's work schedule with shift type
-      const workSchedule = await WorkSchedule.findOne({
-        where: {
-          project_id: projectId,
-          employee_id: employeeId,
-          date: today
-        },
-        include: [{
-          model: ShiftType,
-          as: 'shiftType'
-        }]
-      })
+      // Determine Start Context (Regular vs Overtime)
+      let logMessage = `QR ile giriş yapıldı. Saat: ${now.toLocaleTimeString('tr-TR')}`
+      let isLate = false
+      let expectedStart = null
+      let context = 'Normal'
 
-      if (workSchedule && workSchedule.shiftType && workSchedule.shiftType.start_time) {
-        const shiftStart = new Date(`${today}T${workSchedule.shiftType.start_time}`)
-        const gracePeriod = 15 * 60 * 1000 // 15 minutes grace
-        if (now > new Date(shiftStart.getTime() + gracePeriod)) {
-          attendance.status = 'late'
-          await attendance.save()
+      if (workSchedule) {
+        const regularStart = workSchedule.shiftType ? parseTime(today, workSchedule.shiftType.start_time) : null
+        const mesaiStart = workSchedule.mesaiShiftType ? parseTime(today, workSchedule.mesaiShiftType.start_time) : null
+
+        // Determine which one we are starting closest to (or if we are late for one)
+        // Simple heuristic: If now is before regularStart, and mesaiStart is even earlier, check logic
+        
+        let targetStart = regularStart
+        // If we have both, and Mesai is strictly earlier than Regular, and we are entering roughly before Regular
+        if (mesaiStart && regularStart && mesaiStart < regularStart) {
+            // Mesai is first (Morning Overtime)
+            // If we are closer to Mesai start than Regular start?
+            // Or simply: if now < (RegularStart - buffer), assume starting for Mesai
+            if (now < new Date(regularStart.getTime() - 30 * 60000)) { 
+                context = 'Mesai'
+                targetStart = mesaiStart
+            }
+        } else if (mesaiStart && regularStart && mesaiStart > regularStart) {
+             // Mesai is after (Evening Overtime) -> Standard start is Regular
+             context = 'Vardiya'
+             targetStart = regularStart
+        } else if (mesaiStart && !regularStart) {
+             context = 'Mesai'
+             targetStart = mesaiStart
+        } else if (regularStart) {
+             context = 'Vardiya'
+             targetStart = regularStart
+        }
+
+        if (context === 'Mesai') {
+            logMessage += ` (Tespit Edilen: Mesai Başlangıcı)`
+        } else if (context === 'Vardiya') {
+            logMessage += ` (Tespit Edilen: Vardiya Başlangıcı)`
+        }
+
+        // Lateness Check (Grace Period 15m)
+        if (targetStart) {
+           const gracePeriod = 15 * 60 * 1000
+           if (now > new Date(targetStart.getTime() + gracePeriod)) {
+             isLate = true
+             attendance.status = 'late'
+             await attendance.save()
+             logMessage += ` [GEÇ KALDI - ${context}]`
+           }
         }
       }
 
-      return res.json({ message: 'Giriş kaydedildi', attendance })
+      // Log to archive
+      try {
+        await EmployeeHistory.create({
+          employee_id: employeeId,
+          project_id: projectId,
+          company_id: employee.company_id, // Ensure company_id is logged if possible, usually inferred
+          action: 'shift_entry',
+          notes: logMessage
+        })
+      } catch (historyError) {
+        console.error('Failed to log entry to history:', historyError)
+      }
+
+      let responseMessage = 'Giriş kaydedildi'
+      if (context === 'Mesai') {
+        responseMessage = 'Mesai Başlangıcı Kaydedildi'
+      } else if (context === 'Vardiya') {
+        responseMessage = 'Vardiya Başlangıcı Kaydedildi'
+      }
+      
+      return res.json({ 
+        message: responseMessage, 
+        attendance,
+        context: context // Sending context explicitly if frontend wants to use it for coloring etc.
+      })
     }
 
+    // --- EXIT LOGIC ---
     if (type === 'exit') {
       if (!attendance) {
+        console.warn(`[SCAN ERROR] Exit attempted without entry for ${employeeId}`)
         return res.status(400).json({ message: 'Önce giriş yapılmalı' })
       }
 
       if (attendance.check_out_time) {
+        console.warn(`[SCAN WARNING] Exit already exists for ${employeeId}`)
         return res.status(400).json({ message: 'Çıkış zaten yapılmış', attendance })
       }
 
       attendance.check_out_time = now
-
-      // Calculate actual worked hours
+      
+      // Calculate Total Actual Hours
       const checkIn = new Date(attendance.check_in_time)
       const diffMs = now - checkIn
-      const actualHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100 // Round to 2 decimals
+      const actualHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100
       attendance.actual_hours = actualHours
 
-      // Get planned hours from shift type
-      const workSchedule = await WorkSchedule.findOne({
-        where: {
-          project_id: projectId,
-          employee_id: employeeId,
-          date: today
-        },
-        include: [{
-          model: ShiftType,
-          as: 'shiftType'
-        }]
-      })
-
+      // Calculate Planned (Regular) Hours
       let plannedHours = 0
+      let regularShiftWindowBytes = 0 // Just for logging overlap
+      let mesaiShiftWindowBytes = 0 // Just for logging overlap
+
       if (workSchedule && workSchedule.shiftType && workSchedule.shiftType.hours) {
         plannedHours = parseFloat(workSchedule.shiftType.hours)
       }
       attendance.planned_hours = plannedHours
 
-      // Calculate overtime (if actual > planned)
+      // Calculate Overtime (Standard Payroll Rule: Actual - Planned)
       const overtime = actualHours > plannedHours ? Math.round((actualHours - plannedHours) * 100) / 100 : 0
       attendance.overtime_hours = overtime
 
-      // If was incomplete, mark as present (or keep late if it was late)
-      if (attendance.status === 'incomplete') {
-        attendance.status = 'present'
+      // Detailed Breakdown for Logging
+      let breakdownMsg = `Çalışılan: ${actualHours} sa, Mesai: ${overtime} sa`
+      
+      // Try to compute overlap if windows exist
+      if (workSchedule) {
+          const regStart = workSchedule.shiftType ? parseTime(today, workSchedule.shiftType.start_time) : null
+          const regEnd = workSchedule.shiftType ? parseTime(today, workSchedule.shiftType.end_time) : null
+          const mesStart = workSchedule.mesaiShiftType ? parseTime(today, workSchedule.mesaiShiftType.start_time) : null
+          const mesEnd = workSchedule.mesaiShiftType ? parseTime(today, workSchedule.mesaiShiftType.end_time) : null
+          
+          // Handle midnight crossing for End times if End < Start
+          if (regStart && regEnd && regEnd < regStart) regEnd.setDate(regEnd.getDate() + 1)
+          if (mesStart && mesEnd && mesEnd < mesStart) mesEnd.setDate(mesEnd.getDate() + 1)
+
+          let regOverlap = 0
+          let mesOverlap = 0
+
+          if (regStart && regEnd) {
+             regOverlap = getOverlapMinutes(checkIn, now, regStart, regEnd)
+          }
+          if (mesStart && mesEnd) {
+             mesOverlap = getOverlapMinutes(checkIn, now, mesStart, mesEnd)
+          }
+
+          const regH = Math.round((regOverlap / 60) * 100) / 100
+          const mesH = Math.round((mesOverlap / 60) * 100) / 100
+
+          breakdownMsg += ` (Dağılım: Vardiya ~${regH}s, Mesai Tanımı ~${mesH}s)`
+          
+          // Intelligence: Determine which "started" first for the log
+          let startContext = 'Bilinmeyen'
+          if (mesStart && checkIn < new Date(regStart ? regStart.getTime() - 60000 : 0)) startContext = 'Mesai'
+          else startContext = 'Vardiya'
+          
+          breakdownMsg += ` [Başlangıç: ${startContext}]`
+      }
+
+      // Final Status Update
+      if (attendance.status === 'incomplete' || attendance.status === 'late') {
+         // If late, keep it? Or if they made up time? Usually keep 'late' flag if they were late.
+         // If incomplete, set to present.
+         if (attendance.status === 'incomplete') attendance.status = 'present'
       }
 
       await attendance.save()
+      console.log(`[SCAN SUCCESS] Exit recorded. ${breakdownMsg}`)
+
+      // Log to archive
+      try {
+        await EmployeeHistory.create({
+          employee_id: employeeId,
+          project_id: projectId,
+          company_id: employee.company_id,
+          action: 'shift_exit',
+          notes: `QR ile çıkış yapıldı. Giriş: ${checkIn.toLocaleTimeString('tr-TR')}, Çıkış: ${now.toLocaleTimeString('tr-TR')}, ${breakdownMsg}`
+        })
+      } catch (historyError) {
+        console.error('Failed to log exit to history:', historyError)
+      }
 
       return res.json({ 
         message: 'Çıkış kaydedildi', 
@@ -134,7 +291,7 @@ const recordScan = async (req, res) => {
     return res.status(400).json({ message: 'type must be "entry" or "exit"' })
   } catch (error) {
     console.error('Attendance scan error:', error)
-    res.status(500).json({ message: 'Server error', error: error.message })
+    res.status(500).json({ message: 'Sunucu hatası: ' + error.message, error: error.message })
   }
 }
 

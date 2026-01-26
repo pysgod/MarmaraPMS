@@ -40,7 +40,14 @@ const EmployeeHistory = sequelize.define('EmployeeHistory', {
       'assigned_to_company',
       'removed_from_company',
       'assigned_to_project',
-      'removed_from_project'
+      'removed_from_project',
+      // New shift-related actions
+      'shift_entry',        // QR ile giriş yapıldı
+      'shift_exit',         // QR ile çıkış yapıldı
+      'shift_completed',    // Vardiya tamamlandı
+      'shift_deleted',      // Vardiya silindi (eski veriler arşivlendi)
+      'overtime_completed', // Mesai tamamlandı
+      'auto_checkout'       // Sistem tarafından otomatik çıkış
     ),
     allowNull: false
   },

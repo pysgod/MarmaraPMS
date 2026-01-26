@@ -83,9 +83,48 @@ export default function ProjectWorkSchedule({ projectId }) {
       
       // Map for quick lookup: key = "employeeId-date"
       const map = {}
+      
+      // Aggregate multi-session attendances
+      const grouping = {}
       attendances.forEach(a => {
-        map[`${a.employee_id}-${a.date}`] = a
+        const key = `${a.employee_id}-${a.date}`
+        if(!grouping[key]) grouping[key] = []
+        grouping[key].push(a)
       })
+      
+      Object.entries(grouping).forEach(([key, list]) => {
+          // Sort by check in
+          list.sort((x, y) => new Date(x.check_in_time) - new Date(y.check_in_time))
+          
+          let totalActual = 0
+          let totalOvertime = 0
+          const statuses = new Set()
+          
+          list.forEach(item => {
+              if (item.actual_hours) totalActual += parseFloat(item.actual_hours)
+              if (item.overtime_hours) totalOvertime += parseFloat(item.overtime_hours)
+              statuses.add(item.status)
+          })
+          
+          // Merge Status: Late > Early > Present
+          let mergedStatus = 'present'
+          if (statuses.has('late')) mergedStatus = 'late'
+          else if (statuses.has('early_leave')) mergedStatus = 'early_leave'
+          else if (statuses.has('absent')) mergedStatus = 'absent'
+          else if (statuses.has('incomplete')) mergedStatus = 'incomplete'
+          
+          const first = list[0]
+          // Create synthetic attendance object with totals
+          map[key] = {
+              ...first,
+              status: mergedStatus,
+              actual_hours: totalActual.toFixed(2),
+              overtime_hours: totalOvertime.toFixed(2),
+              check_in_time: first.check_in_time,
+              check_out_time: list[list.length - 1].check_out_time
+          }
+      })
+      
       setAttendanceMap(map)
     } catch (error) {
       console.error('Attendance yüklenirken hata:', error)
@@ -101,6 +140,30 @@ export default function ProjectWorkSchedule({ projectId }) {
   const getCellData = (employeeId, date) => {
     const key = `${employeeId}-${date}`
     return data.scheduleMap[key] || { shift_type_id: null, leave_type: null, mesai_hours: 0, gozetim_hours: 0, mesai_shift_type_id: null }
+  }
+
+  // --- TIME FORMATTING HELPER ---
+  const formatDuration = (hours, type = 'cell') => {
+      const val = parseFloat(hours) || 0
+      if (val === 0) return type === 'card' ? '0 sa 0 dk' : '-'
+      
+      const h = Math.floor(val)
+      const m = Math.round((val - h) * 60)
+      
+      if (type === 'card') {
+          // Format: "7 sa 30 dk"
+          return `${h} sa ${m} dk`
+      } else {
+          // Cell Format
+          // If less than 1 hour -> "45dk"
+          if (val < 1) {
+              return `${Math.round(val * 60)}dk`
+          }
+          // Else -> "07:30"
+          const hStr = h.toString().padStart(2, '0')
+          const mStr = m.toString().padStart(2, '0')
+          return `${hStr}:${mStr}`
+      }
   }
 
   const getShiftTypeDetails = (id) => {
@@ -383,19 +446,24 @@ export default function ProjectWorkSchedule({ projectId }) {
          ))}
       </div>
 
-      <div className="border border-theme-border-primary rounded-xl overflow-hidden bg-theme-bg-secondary">
+      <div className="border border-theme-border-primary rounded-xl overflow-hidden bg-theme-bg-secondary shadow-lg">
         <div className="overflow-auto max-h-[calc(100vh-400px)]">
           <table className="w-full border-collapse text-xs">
             <thead className="sticky top-0 z-20 bg-theme-bg-hover shadow-sm">
               <tr>
                 <th className="sticky left-0 z-30 bg-theme-bg-hover min-w-[200px] px-3 py-2 text-left font-semibold text-theme-text-muted uppercase tracking-wider border-b border-r border-theme-border-primary">
-                  <Users size={14} className="inline mr-1" /> Personel
+                  <div className="flex items-center gap-2 pl-2">
+                     <Users size={14} /> 
+                     <span>Personel Listesi</span>
+                  </div>
                 </th>
-                <th className="min-w-[60px] px-2 py-2 text-center font-semibold text-theme-text-muted border-b border-theme-border-primary bg-theme-bg-tertiary/50">Plan</th>
+                <th className="w-12 px-1 py-3 text-center font-bold text-theme-text-muted border-b border-r border-theme-border-primary bg-theme-bg-tertiary/50">Tip</th>
                 {data.days.map(day => (
-                  <th key={day.date} className={`min-w-[40px] px-1 py-2 text-center border-b border-theme-border-primary ${day.isWeekend ? 'bg-red-500/10' : ''}`}>
-                    <div className="font-bold text-theme-text-primary">{day.day}</div>
-                    <div className="text-[9px] text-theme-text-muted">{day.dayName}</div>
+                  <th key={day.date} className={`w-10 min-w-[40px] px-0 py-2 text-center border-b border-theme-border-primary ${day.isWeekend ? 'bg-red-500/10' : ''}`}>
+                    <div className="flex flex-col items-center justify-center">
+                        <span className={`text-base font-bold ${day.isWeekend ? 'text-red-400' : 'text-theme-text-primary'}`}>{day.day}</span>
+                        <span className="text-[10px] text-theme-text-muted uppercase tracking-tighter">{day.dayName}</span>
+                    </div>
                   </th>
                 ))}
               </tr>
@@ -406,27 +474,27 @@ export default function ProjectWorkSchedule({ projectId }) {
                 return (
                   <React.Fragment key={employee.id}>
                     {/* Row 1: Gözetim (Shift) */}
-                    <tr className={idx % 2 === 0 ? 'bg-theme-bg-secondary' : 'bg-theme-bg-tertiary/20'}>
+                    <tr className="group">
                       {/* Name Cell - Spans 2 Rows */}
-                      <td rowSpan={2} className={`sticky left-0 z-10 px-3 py-2 border-r border-theme-border-primary border-b ${idx % 2 === 0 ? 'bg-theme-bg-secondary' : 'bg-theme-bg-tertiary/20'}`}>
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent">
+                      <td rowSpan={2} className={`sticky left-0 z-10 px-4 py-3 border-r border-theme-border-primary border-b bg-theme-bg-secondary group-hover:bg-theme-bg-hover/20 transition-colors`}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center text-xs font-bold text-accent border border-accent/10 shadow-sm">
                             {employee.first_name?.[0]}{employee.last_name?.[0]}
                           </div>
                           <div>
-                            <p className="font-medium text-theme-text-primary truncate max-w-[140px]">{employee.first_name} {employee.last_name}</p>
-                            <p className="text-sm text-theme-text-muted truncate max-w-[140px]">{employee.title || 'Personel'}</p>
-                            <div className="flex gap-2 mt-1 text-[9px]">
-                               <span className="text-green-400 font-bold">{totals.gozetim}s</span>
-                               <span className="text-orange-400 font-bold">{totals.mesai}s</span>
+                            <p className="font-bold text-theme-text-primary truncate max-w-[130px]">{employee.first_name} {employee.last_name}</p>
+                            <p className="text-[10px] text-theme-text-muted truncate max-w-[130px] uppercase tracking-wide">{employee.title || 'Personel'}</p>
+                            <div className="flex gap-2 mt-1.5 text-[9px]">
+                               <span className="bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded border border-green-500/20 font-bold">{totals.gozetim}s</span>
+                               <span className="bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded border border-orange-500/20 font-bold">{totals.mesai}s</span>
                             </div>
                           </div>
                         </div>
                       </td>
                       
                       {/* Gözetim Label */}
-                      <td className="text-center border-r border-theme-border-secondary/30 text-[10px] font-bold text-green-500 bg-green-500/5">
-                        Gözetim
+                      <td className="w-12 h-10 text-center border-b border-t border-r border-theme-border-primary text-[10px] font-bold text-emerald-400 bg-emerald-500/5 tracking-wider">
+                        GÖZETİM
                       </td>
 
                       {/* Gözetim Cells */}
@@ -440,10 +508,15 @@ export default function ProjectWorkSchedule({ projectId }) {
                              key={`gozetim-${employee.id}-${day.date}`}
                              onClick={(e) => handleCellClick(employee.id, day.date, 'shift')}
                              onContextMenu={(e) => handleCellRightClick(e, employee.id, day.date, 'shift')}
-                             className={`min-w-[40px] h-9 text-center cursor-pointer select-none border-l border-theme-border-secondary/30 hover:ring-2 hover:ring-white/30 hover:z-10 ${day.isWeekend && !leaveInfo ? 'opacity-80' : ''} ${leaveInfo ? leaveInfo.color : ''}`}
-                             style={!leaveInfo && shiftInfo.isHex ? { backgroundColor: shiftInfo.color, color: '#fff' } : {}}
+                             className={`w-10 h-10 p-0.5 border-b border-r border-theme-border-primary cursor-pointer select-none relative group/cell ${day.isWeekend && !leaveInfo ? 'bg-theme-bg-tertiary/10' : ''}`}
                            >
-                              <div className={`w-full h-full flex items-center justify-center font-bold ${!leaveInfo && !shiftInfo.isHex ? shiftInfo.color : ''}`}>
+                              <div className={`w-full h-full flex items-center justify-center rounded-md font-bold text-xs transition-all duration-200 
+                                  ${leaveInfo ? leaveInfo.color + ' border border-current shadow-sm' : ''}
+                                  ${!leaveInfo && !shiftInfo.isHex && !cellData.shift_type_id ? 'group-hover/cell:bg-theme-bg-hover text-theme-text-placeholder' : ''}
+                                  ${!leaveInfo && !shiftInfo.isHex && cellData.shift_type_id ? shiftInfo.color : ''}
+                              `}
+                              style={!leaveInfo && shiftInfo.isHex ? { backgroundColor: shiftInfo.color, color: '#fff' } : {}}
+                              >
                                  {leaveInfo ? leaveInfo.label : shiftInfo.label}
                               </div>
                            </td>
@@ -452,10 +525,10 @@ export default function ProjectWorkSchedule({ projectId }) {
                     </tr>
 
                     {/* Row 2: Mesai (Overtime) */}
-                    <tr className={`border-b border-theme-border-primary ${idx % 2 === 0 ? 'bg-theme-bg-secondary' : 'bg-theme-bg-tertiary/20'}`}>
+                    <tr className="group">
                       {/* Mesai Label */}
-                      <td className="text-center border-r border-theme-border-secondary/30 text-[10px] font-bold text-orange-500 bg-orange-500/5">
-                        Mesai
+                      <td className="w-12 h-10 text-center border-b border-r border-theme-border-primary text-[10px] font-bold text-orange-400 bg-orange-500/5 tracking-wider">
+                        MESAİ
                       </td>
 
                       {/* Mesai Cells */}
@@ -469,16 +542,20 @@ export default function ProjectWorkSchedule({ projectId }) {
                              key={`mesai-${employee.id}-${day.date}`}
                              onClick={(e) => handleCellClick(employee.id, day.date, 'overtime')}
                              onContextMenu={(e) => handleCellRightClick(e, employee.id, day.date, 'overtime')}
-                             className={`min-w-[40px] h-9 text-center cursor-pointer select-none border-l border-theme-border-secondary/30 hover:ring-2 hover:ring-white/30 hover:z-10 transition-all ${!hasMesai ? 'hover:bg-orange-500/10' : ''}`}
-                             style={hasMesai && mesaiShiftInfo.isHex ? { backgroundColor: mesaiShiftInfo.color, color: '#fff' } : {}}
+                             className={`w-10 h-10 p-0.5 border-b border-r border-theme-border-primary cursor-pointer select-none group/cell ${day.isWeekend ? 'bg-theme-bg-tertiary/10' : ''}`}
                            >
-                              {hasMesai ? (
-                                <div className={`w-full h-full flex items-center justify-center font-bold ${!mesaiShiftInfo.isHex ? mesaiShiftInfo.color : ''}`}>
-                                   {mesaiShiftInfo.label}
-                                </div>
-                              ) : (
-                                <span className="text-transparent hover:text-gray-500/50 text-[10px]">+</span>
-                              )}
+                              <div className={`w-full h-full flex items-center justify-center rounded-md transition-all duration-200
+                                  ${hasMesai && !mesaiShiftInfo.isHex ? mesaiShiftInfo.color + ' border border-white/10 shadow-sm' : ''}
+                                  ${!hasMesai ? 'hover:bg-orange-500/10' : ''}
+                              `}
+                              style={hasMesai && mesaiShiftInfo.isHex ? { backgroundColor: mesaiShiftInfo.color, color: '#fff' } : {}}
+                              >
+                               {hasMesai ? (
+                                   <span className="font-bold text-xs">{mesaiShiftInfo.label}</span>
+                               ) : (
+                                 <span className="text-transparent group-hover/cell:text-orange-500/40 text-[16px] leading-none">+</span>
+                               )}
+                              </div>
                            </td>
                          )
                       })}
@@ -490,17 +567,20 @@ export default function ProjectWorkSchedule({ projectId }) {
               {/* JOKER SECTION */}
                {data.employees.length > 0 && (
                 <>
-                  <tr className="border-t-4 border-theme-border-primary"><td colSpan={data.days.length + 2} className="h-2"></td></tr>
+                  <tr className="h-4"></tr> {/* Spacer */}
                   
                    {/* Joker Row 1: Gözetim */}
-                   <tr className="bg-yellow-500/5">
-                      <td rowSpan={2} className="sticky left-0 z-10 px-3 py-2 border-r border-theme-border-primary border-b bg-yellow-500/10">
-                        <div className="flex items-center gap-2">
-                           <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center font-bold text-yellow-500">J</div>
-                           <span className="font-medium text-yellow-500">Joker Slot</span>
+                   <tr className="group">
+                      <td rowSpan={2} className="sticky left-0 z-10 px-4 py-3 border-r border-theme-border-primary border-b bg-yellow-500/5 border-l-4 border-l-yellow-500/50">
+                        <div className="flex items-center gap-3">
+                           <div className="w-9 h-9 rounded-xl bg-yellow-500/20 flex items-center justify-center font-bold text-yellow-500 text-lg shadow-[0_0_10px_rgba(234,179,8,0.2)]">J</div>
+                           <div>
+                              <p className="font-bold text-yellow-500 text-sm">Joker Slot</p>
+                              <p className="text-[10px] text-yellow-500/60 uppercase tracking-widest">Ekstra</p>
+                           </div>
                         </div>
                       </td>
-                      <td className="text-center border-r border-theme-border-secondary/30 text-[10px] font-bold text-yellow-600 bg-yellow-500/10">Gözetim</td>
+                      <td className="w-12 h-10 text-center border-b border-t border-r border-theme-border-primary text-[10px] font-bold text-yellow-600 bg-yellow-500/10 tracking-wider">GÖZETİM</td>
                       {data.days.map(day => {
                         const joker = getJokerForDate(day.date)
                         const shiftInfo = getShiftTypeDetails(joker?.shift_type_id)
@@ -509,19 +589,27 @@ export default function ProjectWorkSchedule({ projectId }) {
                              key={`joker-gozetim-${day.date}`}
                              onClick={() => handleCellClick(null, day.date, 'shift', true)}
                              onContextMenu={(e) => handleCellRightClick(e, null, day.date, 'shift', true)}
-                             className="min-w-[40px] h-9 text-center cursor-pointer select-none border-l border-theme-border-secondary/30 hover:ring-2 hover:ring-yellow-400/50"
-                             style={joker?.shift_type_id && shiftInfo.isHex ? { backgroundColor: shiftInfo.color, color: '#fff', opacity: 0.9 } : {}}
+                             className="w-10 h-10 p-0.5 border-b border-r border-theme-border-primary cursor-pointer select-none group/cell bg-yellow-500/5"
                            >
-                              <div className={`w-full h-full flex items-center justify-center font-bold ${!shiftInfo.isHex ? shiftInfo.color : ''}`}>
-                                {joker?.shift_type_id ? shiftInfo.label : '○'}
+                              <div className={`w-full h-full flex items-center justify-center rounded-md transition-all duration-200
+                                  ${joker?.shift_type_id && !shiftInfo.isHex ? shiftInfo.color + ' border border-current' : ''}
+                                  ${!joker?.shift_type_id ? 'hover:bg-yellow-500/10' : ''}
+                              `}
+                              style={joker?.shift_type_id && shiftInfo.isHex ? { backgroundColor: shiftInfo.color, color: '#fff', opacity: 0.95 } : {}}
+                              >
+                                {joker?.shift_type_id ? (
+                                    <span className="font-bold text-xs">{shiftInfo.label}</span>
+                                ) : (
+                                    <span className="text-yellow-500/20 group-hover/cell:text-yellow-500/50 text-xs">○</span>
+                                )}
                               </div>
                           </td>
                         )
                       })}
                    </tr>
                    {/* Joker Row 2: Mesai */}
-                   <tr className="bg-yellow-500/5 border-b border-theme-border-primary">
-                      <td className="text-center border-r border-theme-border-secondary/30 text-[10px] font-bold text-yellow-600/70 bg-yellow-500/10">Mesai</td>
+                   <tr className="group">
+                      <td className="w-12 h-10 text-center border-b border-r border-theme-border-primary text-[10px] font-bold text-yellow-600/70 bg-yellow-500/10 tracking-wider">MESAİ</td>
                       {data.days.map(day => {
                          const joker = getJokerForDate(day.date)
                          const hasMesai = joker?.mesai_shift_type_id
@@ -532,16 +620,20 @@ export default function ProjectWorkSchedule({ projectId }) {
                                key={`joker-mesai-${day.date}`} 
                                onClick={() => handleCellClick(null, day.date, 'overtime', true)}
                                onContextMenu={(e) => handleCellRightClick(e, null, day.date, 'overtime', true)}
-                               className={`min-w-[40px] h-9 text-center cursor-pointer select-none border-l border-theme-border-secondary/30 hover:ring-2 hover:ring-yellow-400/50 transition-all ${!hasMesai ? 'hover:bg-yellow-500/20' : ''}`}
-                               style={hasMesai && mesaiShiftInfo.isHex ? { backgroundColor: mesaiShiftInfo.color, color: '#fff' } : {}}
+                               className="w-10 h-10 p-0.5 border-b border-r border-theme-border-primary cursor-pointer select-none group/cell bg-yellow-500/5"
                             >
+                               <div className={`w-full h-full flex items-center justify-center rounded-md transition-all duration-200
+                                  ${hasMesai && !mesaiShiftInfo.isHex ? mesaiShiftInfo.color + ' border border-current' : ''}
+                                  ${!hasMesai ? 'hover:bg-orange-500/10' : ''}
+                               `}
+                               style={hasMesai && mesaiShiftInfo.isHex ? { backgroundColor: mesaiShiftInfo.color, color: '#fff' } : {}}
+                               >
                                {hasMesai ? (
-                                 <div className={`w-full h-full flex items-center justify-center font-bold ${!mesaiShiftInfo.isHex ? mesaiShiftInfo.color : ''}`}>
-                                    {mesaiShiftInfo.label}
-                                 </div>
+                                   <span className="font-bold text-xs">{mesaiShiftInfo.label}</span>
                                ) : (
-                                  <span className="text-transparent hover:text-yellow-600/50 text-[10px]">+</span>
+                                  <span className="text-transparent group-hover/cell:text-orange-500/40 text-[16px] leading-none">+</span>
                                )}
+                               </div>
                             </td>
                          )
                       })}
@@ -704,18 +796,15 @@ export default function ProjectWorkSchedule({ projectId }) {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
                     <p className="text-[10px] text-theme-text-muted mb-1">Planlanan</p>
-                    <p className="text-2xl font-bold text-green-400">{totalPlannedGozetimHours.toFixed(0)}</p>
-                    <p className="text-[10px] text-green-400/70">saat</p>
+                    <p className="text-xl font-bold text-green-400">{formatDuration(totalPlannedGozetimHours, 'card')}</p>
                   </div>
                   <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-center">
                     <p className="text-[10px] text-theme-text-muted mb-1">Yapılan</p>
-                    <p className="text-2xl font-bold text-emerald-400">{totalActualGozetimHours.toFixed(0)}</p>
-                    <p className="text-[10px] text-emerald-400/70">saat</p>
+                    <p className="text-xl font-bold text-emerald-400">{formatDuration(totalActualGozetimHours, 'card')}</p>
                   </div>
                   <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
                     <p className="text-[10px] text-theme-text-muted mb-1">Kaçırılan</p>
-                    <p className="text-2xl font-bold text-red-400">{totalMissedGozetimHours.toFixed(0)}</p>
-                    <p className="text-[10px] text-red-400/70">saat</p>
+                    <p className="text-xl font-bold text-red-400">{formatDuration(totalMissedGozetimHours, 'card')}</p>
                   </div>
                 </div>
               </div>
@@ -729,18 +818,15 @@ export default function ProjectWorkSchedule({ projectId }) {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 text-center">
                     <p className="text-[10px] text-theme-text-muted mb-1">Planlanan</p>
-                    <p className="text-2xl font-bold text-orange-400">{totalPlannedMesaiHours.toFixed(0)}</p>
-                    <p className="text-[10px] text-orange-400/70">saat</p>
+                    <p className="text-xl font-bold text-orange-400">{formatDuration(totalPlannedMesaiHours, 'card')}</p>
                   </div>
                   <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-center">
                     <p className="text-[10px] text-theme-text-muted mb-1">Yapılan</p>
-                    <p className="text-2xl font-bold text-emerald-400">{totalActualMesaiHours.toFixed(0)}</p>
-                    <p className="text-[10px] text-emerald-400/70">saat</p>
+                    <p className="text-xl font-bold text-emerald-400">{formatDuration(totalActualMesaiHours, 'card')}</p>
                   </div>
                   <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-center">
                     <p className="text-[10px] text-theme-text-muted mb-1">Kaçırılan</p>
-                    <p className="text-2xl font-bold text-rose-400">{totalMissedMesaiHours.toFixed(0)}</p>
-                    <p className="text-[10px] text-rose-400/70">saat</p>
+                    <p className="text-xl font-bold text-rose-400">{formatDuration(totalMissedMesaiHours, 'card')}</p>
                   </div>
                 </div>
               </div>
@@ -817,7 +903,7 @@ export default function ProjectWorkSchedule({ projectId }) {
                             </td>
                             
                             {/* Gözetim Totals */}
-                            <td className="text-center border-r border-theme-border-secondary/30 bg-green-500/5 px-0">
+                            <td className="text-center border-r border-theme-border-primary bg-green-500/5 px-0">
                               <div className="flex flex-col items-center text-[8px] leading-tight">
                                 <span className="text-green-400 font-bold">{plannedGozetimHours.toFixed(0)}</span>
                                 <span className="text-emerald-400">{actualGozetimHours.toFixed(0)}</span>
@@ -847,11 +933,12 @@ export default function ProjectWorkSchedule({ projectId }) {
                                 tooltip = 'Vardiya yok'
                               } else if (attendance) {
                                 const status = ATTENDANCE_STATUS[attendance.status] || ATTENDANCE_STATUS.incomplete
-                                const actualHours = attendance.actual_hours || 0
-                                cellText = actualHours > 0 ? `${actualHours}` : status.label
+                                const actualHours = parseFloat(attendance.actual_hours) || 0
+                                
+                                cellText = actualHours > 0 ? formatDuration(actualHours, 'cell') : status.label
                                 cellBg = status.color
                                 
-                                let tooltipParts = [status.name, `Planlanan: ${shiftInfo?.hours || 0} saat`, `Çalışılan: ${actualHours} saat`]
+                                let tooltipParts = [status.name, `Planlanan: ${shiftInfo?.hours || 0} saat`, `Çalışılan: ${formatDuration(actualHours, 'card')}`]
                                 if (attendance.check_in_time) tooltipParts.push(`Giriş: ${new Date(attendance.check_in_time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`)
                                 if (attendance.check_out_time) tooltipParts.push(`Çıkış: ${new Date(attendance.check_out_time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`)
                                 tooltip = tooltipParts.join('\n')
@@ -876,9 +963,9 @@ export default function ProjectWorkSchedule({ projectId }) {
                                 <td 
                                   key={`gozetim-${employee.id}-${day.date}`}
                                   title={tooltip}
-                                  className={`min-w-[28px] w-[28px] h-7 text-center border-l border-theme-border-secondary/30 ${cellBg} ${cellColor} ${day.isWeekend && !leaveInfo ? 'opacity-80' : ''}`}
+                                  className={`min-w-[40px] w-[40px] h-7 text-center border-l border-theme-border-primary ${cellBg} ${cellColor} ${day.isWeekend && !leaveInfo ? 'opacity-80' : ''}`}
                                 >
-                                  <div className="w-full h-full flex items-center justify-center font-bold text-[8px]">
+                                  <div className="w-full h-full flex items-center justify-center font-bold text-[9px] tracking-tight">
                                     {cellText}
                                   </div>
                                 </td>
@@ -889,7 +976,7 @@ export default function ProjectWorkSchedule({ projectId }) {
                           {/* Row 2: Mesai (Fazla Çalışma) */}
                           <tr className={`border-b border-theme-border-primary ${idx % 2 === 0 ? 'bg-theme-bg-secondary' : 'bg-theme-bg-tertiary/20'}`}>
                             {/* Mesai Totals */}
-                            <td className="text-center border-r border-theme-border-secondary/30 bg-orange-500/5 px-0">
+                            <td className="text-center border-r border-theme-border-primary bg-orange-500/5 px-0">
                               <div className="flex flex-col items-center text-[8px] leading-tight">
                                 <span className="text-orange-400 font-bold">{stats.plannedMesai.toFixed(0)}</span>
                                 <span className="text-emerald-400">{stats.actualMesai.toFixed(0)}</span>
@@ -917,9 +1004,9 @@ export default function ProjectWorkSchedule({ projectId }) {
                               } else if (attendance) {
                                 if (actualMesaiHours >= plannedMesaiHours && plannedMesaiHours > 0) {
                                   cellBg = 'bg-emerald-500/30'
-                                  cellText = `+${actualMesaiHours}`
+                                  cellText = `+${formatDuration(actualMesaiHours, 'cell')}`
                                   cellColor = 'text-emerald-400'
-                                  tooltip = `Mesai Tamamlandı\nPlanlanan: ${plannedMesaiHours} saat\nYapılan: ${actualMesaiHours} saat`
+                                  tooltip = `Mesai Tamamlandı\nPlanlanan: ${plannedMesaiHours} saat\nYapılan: ${formatDuration(actualMesaiHours, 'card')}`
                                 } else if (dayDate < today && plannedMesaiHours > 0) {
                                   cellBg = 'bg-rose-500/30'
                                   cellText = `${actualMesaiHours}/${plannedMesaiHours}`
@@ -927,14 +1014,14 @@ export default function ProjectWorkSchedule({ projectId }) {
                                   tooltip = `Mesai Eksik\nPlanlanan: ${plannedMesaiHours} saat\nYapılan: ${actualMesaiHours} saat\nKaçırılan: ${plannedMesaiHours - actualMesaiHours} saat`
                                 } else if (actualMesaiHours > 0) {
                                   cellBg = 'bg-emerald-500/30'
-                                  cellText = `+${actualMesaiHours}`
+                                  cellText = `+${formatDuration(actualMesaiHours, 'cell')}`
                                   cellColor = 'text-emerald-400'
-                                  tooltip = `Mesai Yapıldı\nYapılan: ${actualMesaiHours} saat`
+                                  tooltip = `Mesai Yapıldı\nYapılan: ${formatDuration(actualMesaiHours, 'card')}`
                                 } else if (plannedMesaiHours > 0) {
                                   cellBg = 'bg-orange-500/10'
-                                  cellText = `${plannedMesaiHours}`
+                                  cellText = `${formatDuration(plannedMesaiHours, 'cell')}`
                                   cellColor = 'text-orange-400'
-                                  tooltip = `Mesai Planlandı\nPlanlanan: ${plannedMesaiHours} saat`
+                                  tooltip = `Mesai Planlandı\nPlanlanan: ${formatDuration(plannedMesaiHours, 'card')}`
                                 }
                               } else {
                                 if (dayDate < today && plannedMesaiHours > 0) {
@@ -959,7 +1046,7 @@ export default function ProjectWorkSchedule({ projectId }) {
                                 <td 
                                   key={`mesai-${employee.id}-${day.date}`}
                                   title={tooltip}
-                                  className={`min-w-[28px] w-[28px] h-7 text-center border-l border-theme-border-secondary/30 ${cellBg} ${cellColor} ${day.isWeekend ? 'opacity-80' : ''}`}
+                                  className={`min-w-[28px] w-[28px] h-7 text-center border-l border-theme-border-primary ${cellBg} ${cellColor} ${day.isWeekend ? 'opacity-80' : ''}`}
                                 >
                                   <div className="w-full h-full flex items-center justify-center font-bold text-[8px]">
                                     {cellText}

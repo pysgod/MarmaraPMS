@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api'
+  const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 class ApiService {
   constructor() {
@@ -315,6 +315,12 @@ class ApiService {
     return this.request(`/employees/${employeeId}/unassign-company`, {
       method: 'PUT',
       body: JSON.stringify({ notes }),
+    })
+  }
+
+  async generateActivationCode(employeeId) {
+    return this.request(`/mobile/generate-code/${employeeId}`, {
+      method: 'POST'
     })
   }
 

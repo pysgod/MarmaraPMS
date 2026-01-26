@@ -28,7 +28,8 @@ import {
   Link,
   Unlink,
   AlertTriangle,
-  History
+  History,
+  Smartphone
 } from 'lucide-react'
 
 export default function EmployeeDetail() {
@@ -49,6 +50,7 @@ export default function EmployeeDetail() {
   const [companyProjects, setCompanyProjects] = useState([])
   const [selectedProjectId, setSelectedProjectId] = useState('')
   const [assignLoading, setAssignLoading] = useState(false)
+  const [generatingCode, setGeneratingCode] = useState(false)
 
   useEffect(() => {
     loadEmployee()
@@ -131,6 +133,22 @@ export default function EmployeeDetail() {
       alert('Çıkarma hatası: ' + error.message)
     }
     setAssignLoading(false)
+  }
+
+  const handleGenerateCode = async () => {
+    setGeneratingCode(true)
+    try {
+      const res = await api.generateActivationCode(employee.id)
+      if (res.success && res.data) {
+        setEmployee(prev => ({ ...prev, activation_code: res.data.activation_code }))
+        alert('Aktivasyon kodu oluşturuldu: ' + res.data.activation_code)
+      } else {
+        throw new Error(res.message || 'Bilinmeyen hata')
+      }
+    } catch (error) {
+      alert('Kod oluşturma hatası: ' + error.message)
+    }
+    setGeneratingCode(false)
   }
 
   const handleStatusChange = async (newStatus) => {
@@ -469,6 +487,7 @@ export default function EmployeeDetail() {
         <div className="p-6">
             {/* 1. GENEL BİLGİLER */}
             {activeTab === 'general' && (
+               <>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
                      <h3 className="text-lg font-medium text-accent border-b border-theme-border-primary pb-2">Kişisel Bilgiler</h3>
@@ -495,7 +514,44 @@ export default function EmployeeDetail() {
                      <DetailRow label="Çocuk Sayısı" value={employee.children_count} />
                    </div>
                </div>
-            )}
+           
+               {/* Mobil Uygulama Erişimi */}
+               <div className="bg-theme-bg-tertiary/30 rounded-xl p-6 border border-theme-border-secondary mt-8">
+                 <h3 className="text-lg font-medium text-accent border-b border-theme-border-primary pb-2 mb-4">Mobil Uygulama Erişimi</h3>
+                 <div className="flex items-center justify-between flex-wrap gap-4">
+                   <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                       <Smartphone size={24} className="text-accent" />
+                     </div>
+                     <div>
+                       <p className="font-medium text-theme-text-primary">Aktivasyon Kodu</p>
+                       <p className="text-2xl font-bold tracking-widest text-theme-text-primary mt-1">
+                         {employee.activation_code || '----'}
+                       </p>
+                       <p className="text-xs text-theme-text-muted">Bu kod ile mobil uygulamaya giriş yapılabilir.</p>
+                     </div>
+                   </div>
+                   <button 
+                     onClick={handleGenerateCode} 
+                     className="px-6 py-2.5 bg-accent hover:bg-accent-dark rounded-lg text-white transition-colors disabled:opacity-50 flex items-center gap-2 font-medium"
+                     disabled={generatingCode}
+                   >
+                     {generatingCode ? (
+                       <>
+                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                         Oluşturuluyor...
+                       </>
+                     ) : (
+                       <>
+                         {employee.activation_code ? <History size={18} /> : <Smartphone size={18} />}
+                         {employee.activation_code ? 'Yeni Kod Oluştur' : 'Kod Oluştur'}
+                       </>
+                     )}
+                   </button>
+                  </div>
+                </div>
+                </>
+             )}
 
             {/* 2. İLETİŞİM */}
             {activeTab === 'contact' && (

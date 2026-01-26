@@ -19,6 +19,7 @@ const shiftRoutes = require('./routes/shifts')
 const workScheduleRoutes = require('./routes/workSchedule')
 const shiftTypeRoutes = require('./routes/shiftTypes')
 const attendanceRoutes = require('./routes/attendance')
+const mobileRoutes = require('./routes/mobile')
 const app = express()
 
 // Middleware
@@ -57,6 +58,7 @@ app.use('/api/work-schedule', workScheduleRoutes)
 app.use('/api/shift-types', shiftTypeRoutes)
 app.use('/api/attendance', attendanceRoutes)
 app.use('/api/data-view', require('./routes/dataView'))
+app.use('/api/mobile', mobileRoutes)
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -81,7 +83,7 @@ async function start() {
     console.log('✅ Veritabanı senkronize edildi (Veriler korundu)')
     
     // Initialize scheduled jobs
-    require('./services/schedulerService').initScheduledJobs()
+    require('./services/scheduler')
 
     // Run seed after sync
     // await require('./scripts/seedDb').seed()

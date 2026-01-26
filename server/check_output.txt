@@ -1,0 +1,5 @@
+--- RESULT ---
+WorkSchedule Mesai: 0.00
+Attendance In: Fri Jan 23 2026 23:05:27 GMT+0300 (GMT+03:00)
+Attendance Out: null
+Duration (Calculated): 169 minutes (from check-in to NOW)

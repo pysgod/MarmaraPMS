@@ -153,6 +153,10 @@ ShiftType.belongsTo(Project, { foreignKey: 'project_id', as: 'project' })
 WorkSchedule.belongsTo(ShiftType, { foreignKey: 'shift_type_id', as: 'shiftType' })
 ShiftType.hasMany(WorkSchedule, { foreignKey: 'shift_type_id', as: 'workSchedules' })
 
+// WorkSchedule belongs to ShiftType (Overtime)
+WorkSchedule.belongsTo(ShiftType, { foreignKey: 'mesai_shift_type_id', as: 'mesaiShiftType' })
+ShiftType.hasMany(WorkSchedule, { foreignKey: 'mesai_shift_type_id', as: 'mesaiWorkSchedules' })
+
 // WorkScheduleJoker belongs to ShiftType
 WorkScheduleJoker.belongsTo(ShiftType, { foreignKey: 'shift_type_id', as: 'shiftType' })
 ShiftType.hasMany(WorkScheduleJoker, { foreignKey: 'shift_type_id', as: 'jokerSlots' })

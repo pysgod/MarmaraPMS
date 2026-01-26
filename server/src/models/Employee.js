@@ -93,12 +93,30 @@ const Employee = sequelize.define('Employee', {
 
   // --- Kart Bilgisi ---
   card_type: { type: DataTypes.STRING(50) },
-  card_no: { type: DataTypes.STRING(50) }
+  card_no: { type: DataTypes.STRING(50) },
+
+  // Mobil Uygulama
+  // 4 haneli benzersiz aktivasyon kodu
+  activation_code: {
+    type: DataTypes.STRING(4),
+    allowNull: true,
+    comment: 'Mobil uygulama giriş kodu (4 haneli)'
+  }
 
 }, {
   tableName: 'employees',
   timestamps: true,
   underscored: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['activation_code']
+    },
+    {
+      unique: true,
+      fields: ['tc_no']
+    }
+  ],
   hooks: {
     beforeSave: (employee) => {
       // Auto-update full name field for backward compatibility

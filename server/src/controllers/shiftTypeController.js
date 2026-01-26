@@ -23,15 +23,17 @@ exports.createShiftType = async (req, res) => {
     // Get max order to append
     const maxOrder = await ShiftType.max('order', { where: { project_id } }) || 0
     
+    const newOrder = maxOrder + 1
+    
     const shiftType = await ShiftType.create({
       project_id,
       name,
-      short_code,
+      short_code: String(newOrder), // Force sequential short_code
       color,
       hours: hours || 8,
       start_time,
       end_time,
-      order: maxOrder + 1
+      order: newOrder
     })
     
     res.status(201).json(shiftType)
