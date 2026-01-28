@@ -49,6 +49,12 @@ export default function ProjectWorkSchedule({ projectId }) {
   // Context Menu State: { x, y, employeeId, date, isJoker, rowType: 'shift' | 'overtime' }
   const [contextMenu, setContextMenu] = useState(null)
   const [showShiftManager, setShowShiftManager] = useState(false)
+  
+  // Daily attendance detail - selected day state
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })
 
   useEffect(() => {
     loadSchedule()
@@ -1152,6 +1158,203 @@ export default function ProjectWorkSchedule({ projectId }) {
         </div>
         )
        })()}
+
+      {/* ==================== GÜNLÜK YOKLAMA DETAYI ==================== */}
+      {(() => {
+        // Generate 24 hourly slots from 08:00 to 08:00 next day
+        const hourlySlots = []
+        for (let i = 0; i < 24; i++) {
+          const hour = (8 + i) % 24
+          const nextHour = (hour + 1) % 24
+          hourlySlots.push({
+            start: hour,
+            end: nextHour,
+            label: `${String(hour).padStart(2, '0')}-${String(nextHour).padStart(2, '0')}`
+          })
+        }
+        
+        // Helper to check if a time falls within a slot
+        const isInSlot = (time, slotStart, slotEnd) => {
+          if (!time) return false
+          const hour = new Date(time).getHours()
+          if (slotEnd < slotStart) {
+            // Crosses midnight
+            return hour >= slotStart || hour < slotEnd
+          }
+          return hour >= slotStart && hour < slotEnd
+        }
+        
+        // Helper to determine cell status for an employee at a specific hour
+        const getCellStatus = (employeeId, slotStart, slotEnd) => {
+          const att = getAttendanceData(employeeId, selectedDay)
+          const cellData = getCellData(employeeId, selectedDay)
+          const now = new Date()
+          const selectedDate = new Date(selectedDay)
+          const isToday = selectedDate.toDateString() === now.toDateString()
+          const isPast = selectedDate < now && !isToday
+          
+          // Get shift windows
+          const shiftInfo = cellData.shift_type_id ? getShiftTypeDetails(cellData.shift_type_id) : null
+          const mesaiInfo = cellData.mesai_shift_type_id ? getShiftTypeDetails(cellData.mesai_shift_type_id) : null
+          
+          // Check if this slot is within planned shift/mesai time
+          let isPlannedShift = false
+          let isPlannedMesai = false
+          
+          if (shiftInfo && shiftInfo.start_time && shiftInfo.end_time) {
+            const shiftStartHour = parseInt(shiftInfo.start_time.split(':')[0])
+            const shiftEndHour = parseInt(shiftInfo.end_time.split(':')[0])
+            if (slotStart >= shiftStartHour && slotStart < shiftEndHour) {
+              isPlannedShift = true
+            }
+          }
+          
+          if (mesaiInfo && mesaiInfo.start_time && mesaiInfo.end_time) {
+            const mesaiStartHour = parseInt(mesaiInfo.start_time.split(':')[0])
+            const mesaiEndHour = parseInt(mesaiInfo.end_time.split(':')[0])
+            if (slotStart >= mesaiStartHour && slotStart < mesaiEndHour) {
+              isPlannedMesai = true
+            }
+          }
+          
+          if (!att) {
+            // No attendance record
+            if (isPast && (isPlannedShift || isPlannedMesai)) {
+              return { status: 'missed', color: 'bg-red-500/40', icon: null }
+            }
+            if (isPlannedShift || isPlannedMesai) {
+              return { status: 'planned', color: 'bg-orange-500/30', icon: null }
+            }
+            return { status: 'empty', color: '', icon: null }
+          }
+          
+          // Has attendance
+          const checkIn = att.check_in_time ? new Date(att.check_in_time) : null
+          const checkOut = att.check_out_time ? new Date(att.check_out_time) : null
+          const breakStart = att.break_start_time ? new Date(att.break_start_time) : null
+          const breakEnd = att.break_end_time ? new Date(att.break_end_time) : null
+          
+          // Check if this slot is a break
+          if (breakStart) {
+            const breakStartHour = breakStart.getHours()
+            const breakEndHour = breakEnd ? breakEnd.getHours() : now.getHours()
+            
+            if (slotStart >= breakStartHour && slotStart < breakEndHour) {
+              // On break during this slot
+              if (breakEnd) {
+                return { status: 'break_done', color: 'bg-amber-500/20', icon: '☕' }
+              } else {
+                return { status: 'break_active', color: 'bg-yellow-500/40', icon: '☕' }
+              }
+            }
+          }
+          
+          // Check if worked during this slot
+          if (checkIn) {
+            const checkInHour = checkIn.getHours()
+            const checkOutHour = checkOut ? checkOut.getHours() : now.getHours()
+            
+            if (slotStart >= checkInHour && slotStart < checkOutHour) {
+              // Worked during this slot
+              if (checkOut) {
+                return { status: 'completed', color: 'bg-green-500/40', icon: null }
+              } else if (isToday) {
+                return { status: 'working', color: 'bg-emerald-500/50', icon: null }
+              }
+            }
+          }
+          
+          // If planned but not worked
+          if (isPast && (isPlannedShift || isPlannedMesai)) {
+            return { status: 'missed', color: 'bg-red-500/40', icon: null }
+          }
+          
+          if (isPlannedShift || isPlannedMesai) {
+            return { status: 'planned', color: 'bg-orange-500/30', icon: null }
+          }
+          
+          return { status: 'empty', color: '', icon: null }
+        }
+        
+        return (
+          <div className="mt-6 space-y-4">
+            {/* Section Header */}
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <Clock size={18} className="text-blue-400" />
+                <h3 className="text-base font-semibold text-theme-text-primary">Günlük Yoklama Detayı</h3>
+              </div>
+              
+              {/* Day Selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-theme-text-muted">Gün:</span>
+                <select 
+                  value={selectedDay}
+                  onChange={(e) => setSelectedDay(e.target.value)}
+                  className="px-3 py-1.5 rounded-lg bg-theme-bg-tertiary border border-theme-border-primary text-sm text-theme-text-primary"
+                >
+                  {data.days.map(day => (
+                    <option key={day.date} value={day.date}>
+                      {day.day} {monthNames[selectedMonth - 1]} ({day.dayName})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            {/* Legend */}
+            <div className="flex items-center gap-4 text-xs flex-wrap">
+              <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-orange-500/30"></div><span className="text-theme-text-muted">Planlanmış</span></div>
+              <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-green-500/40"></div><span className="text-theme-text-muted">Tamamlanmış</span></div>
+              <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-red-500/40"></div><span className="text-theme-text-muted">Eksik/Gelmedi</span></div>
+              <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-yellow-500/40"></div><span className="text-theme-text-muted">☕ Aktif Mola</span></div>
+              <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-amber-500/20"></div><span className="text-theme-text-muted">☕ Biten Mola</span></div>
+            </div>
+            
+            {/* Hourly Grid Table */}
+            <div className="border border-theme-border-primary rounded-xl overflow-hidden bg-theme-bg-secondary">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-xs">
+                  <thead className="sticky top-0 z-10 bg-theme-bg-hover">
+                    <tr>
+                      <th className="sticky left-0 z-20 bg-theme-bg-hover w-[130px] px-3 py-2 text-left font-semibold text-theme-text-muted border-b border-r border-theme-border-primary">
+                        Personel
+                      </th>
+                      {hourlySlots.map(slot => (
+                        <th key={slot.label} className="min-w-[36px] px-1 py-2 text-center font-medium text-theme-text-muted border-b border-theme-border-primary text-[9px]">
+                          {slot.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.employees.map((employee, idx) => (
+                      <tr key={employee.id} className={idx % 2 === 0 ? 'bg-theme-bg-secondary' : 'bg-theme-bg-tertiary/20'}>
+                        <td className="sticky left-0 z-10 px-3 py-2 border-r border-b border-theme-border-primary bg-theme-bg-secondary">
+                          <span className="font-medium text-theme-text-primary truncate max-w-[130px] block">
+                            {employee.first_name} {employee.last_name}
+                          </span>
+                        </td>
+                        {hourlySlots.map(slot => {
+                          const cellStatus = getCellStatus(employee.id, slot.start, slot.end)
+                          return (
+                            <td 
+                              key={slot.label} 
+                              className={`h-8 w-9 text-center border-b border-theme-border-primary ${cellStatus.color}`}
+                            >
+                              {cellStatus.icon && <span className="text-sm">{cellStatus.icon}</span>}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {showShiftManager && <ShiftTypeManager projectId={projectId} onClose={() => setShowShiftManager(false)} onUpdate={() => loadSchedule()} />}
     </div>

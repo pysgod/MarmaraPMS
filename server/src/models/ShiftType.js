@@ -41,6 +41,11 @@ const ShiftType = sequelize.define('ShiftType', {
     type: DataTypes.TIME,
     allowNull: true
   },
+  break_duration: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    comment: 'Mola süresi (dakika)'
+  },
   order: {
     type: DataTypes.INTEGER,
     defaultValue: 0

@@ -117,7 +117,7 @@ router.get('/dashboard/:employeeId', async (req, res) => {
     const projectAssignment = await ProjectEmployee.findOne({
       where: { 
         employee_id: employeeId,
-        is_active: true
+        status: 'active'
       },
       include: [
         { model: Project, as: 'project' }
@@ -136,7 +136,7 @@ router.get('/dashboard/:employeeId', async (req, res) => {
         // Use logic: WorkSchedule is what matters for "Employee has shift".
     })
 
-    // Re-query WorkSchedule with more broad check
+    // Re-query WorkSchedule with more broad check - include mesaiShiftType
     const schedule = await WorkSchedule.findOne({
       where: {
         employee_id: employeeId,
@@ -144,12 +144,16 @@ router.get('/dashboard/:employeeId', async (req, res) => {
       },
       include: [
         { model: ShiftType, as: 'shiftType' },
+        { model: ShiftType, as: 'mesaiShiftType' },
         { model: Project, as: 'project' } 
       ]
     })
     
     // Fallback or Main Logic
     const activeRecord = schedule; 
+    
+    // Mesai (Overtime) Info
+    let todayMesai = null
     
     if (activeRecord) {
         if (activeRecord.leave_type) {
@@ -159,7 +163,8 @@ router.get('/dashboard/:employeeId', async (req, res) => {
                 status: 'leave',
                 start_time: '00:00',
                 end_time: '00:00',
-                planned_hours: 0
+                planned_hours: 0,
+                break_duration: 0
             }
         } else if (activeRecord.shiftType) {
              // 2. Standard Shift Type
@@ -176,6 +181,7 @@ router.get('/dashboard/:employeeId', async (req, res) => {
                start_time: activeRecord.shiftType.start_time,
                end_time: activeRecord.shiftType.end_time,
                planned_hours: durationHours,
+               break_duration: activeRecord.shiftType.break_duration || 0,
                status: 'scheduled'
              }
         } else if (parseFloat(activeRecord.gozetim_hours) > 0) {
@@ -185,8 +191,28 @@ router.get('/dashboard/:employeeId', async (req, res) => {
                 status: 'scheduled',
                 start_time: '00:00', 
                 end_time: '00:00',
-                planned_hours: parseFloat(activeRecord.gozetim_hours).toFixed(1)
+                planned_hours: parseFloat(activeRecord.gozetim_hours).toFixed(1),
+                break_duration: 0
              }
+        }
+        
+        // Mesai (Overtime) Info
+        if (activeRecord.mesaiShiftType) {
+            const [mh1, mm1] = activeRecord.mesaiShiftType.start_time.split(':')
+            const [mh2, mm2] = activeRecord.mesaiShiftType.end_time.split(':')
+            let mStart = parseInt(mh1) * 60 + parseInt(mm1)
+            let mEnd = parseInt(mh2) * 60 + parseInt(mm2)
+            if (mEnd < mStart) mEnd += 24 * 60
+            
+            const mesaiDurationHours = ((mEnd - mStart) / 60).toFixed(1)
+            
+            todayMesai = {
+                shift_name: activeRecord.mesaiShiftType.name,
+                start_time: activeRecord.mesaiShiftType.start_time,
+                end_time: activeRecord.mesaiShiftType.end_time,
+                planned_hours: mesaiDurationHours,
+                break_duration: activeRecord.mesaiShiftType.break_duration || 0
+            }
         }
     }
     // --- SHIFT LOGIC END ---
@@ -205,6 +231,9 @@ router.get('/dashboard/:employeeId', async (req, res) => {
     let isActive = false
     let currentSessionCheckIn = null
     let lastCheckOut = null
+    let isOnBreak = false
+    let activeAttendance = null
+    let totalBreakMinutes = 0
     
     todayAttendances.forEach(att => {
         if (att.check_in_time) {
@@ -213,15 +242,40 @@ router.get('/dashboard/:employeeId', async (req, res) => {
             
             const diffMs = checkOut - checkIn
             workedHours += (diffMs / (1000 * 60 * 60))
+            totalBreakMinutes += att.total_break_minutes || 0
             
             if (!att.check_out_time) {
                 isActive = true
+                activeAttendance = att
                 currentSessionCheckIn = att.check_in_time
+                
+                // Check if on break
+                if (att.break_start_time && !att.break_end_time) {
+                    isOnBreak = true
+                }
             } else {
                 lastCheckOut = att.check_out_time
             }
         }
     })
+    
+    // Determine button states
+    // leftButton: 'start_shift' | 'start_break' | 'end_break'
+    // rightButton: 'end_shift' (only enabled when active)
+    let leftButtonAction = 'start_shift'
+    let leftButtonLabel = 'Vardiya Başlat'
+    let rightButtonEnabled = false
+    
+    if (isActive) {
+        rightButtonEnabled = true
+        if (isOnBreak) {
+            leftButtonAction = 'end_break'
+            leftButtonLabel = 'Mola Bitir'
+        } else {
+            leftButtonAction = 'start_break'
+            leftButtonLabel = 'Mola Başlat'
+        }
+    }
     
     // Formatting
     const displayCheckIn = isActive ? currentSessionCheckIn : (todayAttendances.length > 0 ? todayAttendances[0].check_in_time : null)
@@ -236,17 +290,27 @@ router.get('/dashboard/:employeeId', async (req, res) => {
           last_name: employee.last_name,
           title: employee.title,
           company_name: employee.company?.name || null,
-          project_name: projectAssignment?.project?.name || null
+          project_name: projectAssignment?.project?.name || null,
+          project_id: projectAssignment?.project?.id || null
         },
         today_shift: todayShift,
+        today_mesai: todayMesai,
         attendance: todayAttendances.length > 0 ? {
           check_in: displayCheckIn,
           check_out: displayCheckOut,
           status: isActive ? 'working' : (todayAttendances[todayAttendances.length-1].status),
           worked_hours: workedHours.toFixed(2),
           is_active: isActive,
+          is_on_break: isOnBreak,
+          total_break_minutes: totalBreakMinutes,
           session_count: todayAttendances.length
         } : null,
+        button_states: {
+          left_action: leftButtonAction,
+          left_label: leftButtonLabel,
+          right_enabled: rightButtonEnabled,
+          right_label: 'Vardiya Bitir'
+        },
         alerts: [] 
       }
     })
@@ -838,6 +902,101 @@ router.post('/attendance/confirm', async (req, res) => {
   } catch (error) {
     console.error('Attendance confirm error:', error)
     res.status(500).json({ success: false, message: 'İşlem hatası' })
+  }
+})
+
+/**
+ * POST /api/mobile/attendance/break
+ * Mola Başlat/Bitir
+ * Body: { employeeId, action: 'start' | 'end' }
+ */
+router.post('/attendance/break', async (req, res) => {
+  try {
+    const { employeeId, action } = req.body
+    
+    const today = new Date()
+    const dateStr = [
+          today.getFullYear(),
+          String(today.getMonth() + 1).padStart(2, '0'),
+          String(today.getDate()).padStart(2, '0')
+       ].join('-')
+    
+    // Find active attendance session
+    const attendance = await Attendance.findOne({
+      where: {
+        employee_id: employeeId,
+        date: dateStr,
+        check_out_time: null // Active session
+      }
+    })
+    
+    if (!attendance) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Aktif vardiya bulunamadı. Önce vardiya başlatın.' 
+      })
+    }
+    
+    const now = new Date()
+    
+    if (action === 'start') {
+      // Check if already on break
+      if (attendance.break_start_time && !attendance.break_end_time) {
+        return res.status(400).json({
+          success: false,
+          message: 'Zaten molada olduğunuz görünüyor.'
+        })
+      }
+      
+      await attendance.update({
+        break_start_time: now,
+        break_end_time: null
+      })
+      
+      return res.json({ 
+        success: true, 
+        message: 'Mola Başlatıldı',
+        data: { break_start_time: now }
+      })
+    }
+    
+    if (action === 'end') {
+      // Check if on break
+      if (!attendance.break_start_time || attendance.break_end_time) {
+        return res.status(400).json({
+          success: false,
+          message: 'Aktif mola bulunamadı.'
+        })
+      }
+      
+      const breakStart = new Date(attendance.break_start_time)
+      const breakDurationMs = now - breakStart
+      const breakMinutes = Math.round(breakDurationMs / (1000 * 60))
+      
+      // Add to total break minutes
+      const totalBreakMinutes = (attendance.total_break_minutes || 0) + breakMinutes
+      
+      await attendance.update({
+        break_end_time: now,
+        total_break_minutes: totalBreakMinutes
+      })
+      
+      return res.json({ 
+        success: true, 
+        message: `Mola Bitirildi (${breakMinutes} dakika)`,
+        data: { 
+          break_end_time: now,
+          break_duration: breakMinutes,
+          total_break_minutes: totalBreakMinutes
+        }
+      })
+    }
+    
+    res.status(400).json({ success: false, message: 'Geçersiz action. "start" veya "end" olmalı.' })
+    
+  } catch (error) {
+    console.error('Break error:', error)
+    res.status(500).json({ success: false, message: 'Mola işlemi başarısız' })
   }
 })
 

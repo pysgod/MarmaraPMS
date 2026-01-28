@@ -14,7 +14,8 @@ export default function ShiftTypeManager({ projectId, onClose, onUpdate }) {
     color: '#3B82F6',
     hours: 8,
     start_time: '',
-    end_time: ''
+    end_time: '',
+    break_duration: 0
   })
 
   useEffect(() => {
@@ -114,7 +115,8 @@ export default function ShiftTypeManager({ projectId, onClose, onUpdate }) {
         color: '#3B82F6',
         hours: 8,
         start_time: '',
-        end_time: ''
+        end_time: '',
+        break_duration: 0
       })
       await fetchShiftTypes()
       if (onUpdate) onUpdate()
@@ -332,9 +334,20 @@ export default function ShiftTypeManager({ projectId, onClose, onUpdate }) {
                  </div>
               </div>
 
-              <div className="md:col-span-3 ms-3">
+              <div className="md:col-span-1">
                  <label className="block text-xs mb-1 dark:text-slate-400">Süre</label>
                  <div className="text-sm font-medium dark:text-white py-2">{formatDuration(newShift.hours)}</div>
+              </div>
+              <div className="md:col-span-2">
+                 <label className="block text-xs mb-1 dark:text-slate-400">Mola (dk)</label>
+                 <input
+                   type="number"
+                   min="0"
+                   placeholder="0"
+                   className="w-full px-3 py-2 border rounded-md text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                   value={newShift.break_duration}
+                   onChange={e => setNewShift({...newShift, break_duration: parseInt(e.target.value) || 0})}
+                 />
               </div>
             </form>
             {/* Ekle Button - Separate Row */}
@@ -381,6 +394,7 @@ export default function ShiftTypeManager({ projectId, onClose, onUpdate }) {
                               <div className="font-medium text-sm dark:text-white">{type.name}</div>
                               <div className="text-xs text-slate-500 dark:text-slate-400">
                                 {type.start_time?.slice(0, 5)} - {type.end_time?.slice(0, 5)} ({formatDuration(type.hours)})
+                                {type.break_duration > 0 && <span className="ml-2 text-amber-500">☕ {type.break_duration}dk</span>}
                               </div>
                             </div>
                           </div>

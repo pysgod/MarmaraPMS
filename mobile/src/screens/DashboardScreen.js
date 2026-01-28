@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Calendar, AlertTriangle, Clock, MapPin, ChevronRight, LogOut } from 'lucide-react-native';
+import { User, Clock, MapPin, ChevronRight, LogOut, Play, Pause, Square, Coffee } from 'lucide-react-native';
 import Colors from '../theme/Colors';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,6 +10,7 @@ export default function DashboardScreen({ navigation }) {
   const [dashboardData, setDashboardData] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -54,17 +55,82 @@ export default function DashboardScreen({ navigation }) {
     });
   };
 
+  // Action Handlers
+  const handleLeftButtonPress = async () => {
+    const buttonStates = dashboardData?.button_states;
+    if (!buttonStates) return;
+
+    const action = buttonStates.left_action;
+    
+    if (action === 'start_shift') {
+      // Navigate to QR Scanner for shift start
+      navigation.navigate('Scan', { actionType: 'start_shift' });
+    } else if (action === 'start_break') {
+      // Call break API directly
+      setActionLoading(true);
+      try {
+        const response = await fetch(`${API_URL}/mobile/attendance/break`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ employeeId: user.id, action: 'start' })
+        });
+        const result = await response.json();
+        Alert.alert(result.success ? 'Başarılı' : 'Hata', result.message);
+        await fetchDashboardData();
+      } catch (error) {
+        Alert.alert('Hata', 'Mola başlatılamadı');
+      } finally {
+        setActionLoading(false);
+      }
+    } else if (action === 'end_break') {
+      // Call break API directly
+      setActionLoading(true);
+      try {
+        const response = await fetch(`${API_URL}/mobile/attendance/break`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ employeeId: user.id, action: 'end' })
+        });
+        const result = await response.json();
+        Alert.alert(result.success ? 'Başarılı' : 'Hata', result.message);
+        await fetchDashboardData();
+      } catch (error) {
+        Alert.alert('Hata', 'Mola bitirilemedi');
+      } finally {
+        setActionLoading(false);
+      }
+    }
+  };
+
+  const handleRightButtonPress = () => {
+    // Navigate to QR Scanner for shift end
+    navigation.navigate('Scan', { actionType: 'end_shift' });
+  };
+
   const todayShift = dashboardData?.today_shift;
+  const todayMesai = dashboardData?.today_mesai;
   const attendance = dashboardData?.attendance;
   const profile = dashboardData?.profile || user;
+  const buttonStates = dashboardData?.button_states;
 
   const isActiveShift = attendance?.is_active || false;
+  const isOnBreak = attendance?.is_on_break || false;
   
   // Calculate Progress
   const worked = attendance?.worked_hours ? parseFloat(attendance.worked_hours) : 0;
   const planned = todayShift?.planned_hours ? parseFloat(todayShift.planned_hours) : 0;
-  
   const progressPercent = planned > 0 ? Math.min((worked / planned) * 100, 100) : 0;
+
+  // Get button icon
+  const getLeftButtonIcon = () => {
+    if (!buttonStates) return <Play size={20} color="#fff" />;
+    switch (buttonStates.left_action) {
+      case 'start_shift': return <Play size={20} color="#fff" />;
+      case 'start_break': return <Coffee size={20} color="#fff" />;
+      case 'end_break': return <Coffee size={20} color="#fff" />;
+      default: return <Play size={20} color="#fff" />;
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -113,68 +179,121 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </TouchableOpacity>
 
-        {/* Shift & Status Card */}
+        {/* Shift Info Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-                 <Clock size={20} color={Colors.primary} />
-                 <Text style={styles.cardTitle}>Vardiya Durumu</Text>
+              <Clock size={20} color={Colors.primary} />
+              <Text style={styles.cardTitle}>Vardiya Bilgisi</Text>
             </View>
-            
-            {/* Active Status Badge */}
-            {isActiveShift ? (
-                <View style={styles.statusBadgeActive}>
-                    <Text style={styles.statusTextActive}>AKTİF VARDİYA</Text>
-                </View>
-            ) : (
-                <View style={styles.statusBadgeInactive}>
-                    <Text style={styles.statusTextInactive}>MESAİ DIŞI</Text>
-                </View>
+            {isActiveShift && !isOnBreak && (
+              <View style={styles.statusBadgeActive}>
+                <Text style={styles.statusTextActive}>AKTİF</Text>
+              </View>
+            )}
+            {isOnBreak && (
+              <View style={styles.statusBadgeBreak}>
+                <Text style={styles.statusTextBreak}>MOLADA</Text>
+              </View>
             )}
           </View>
           
           {todayShift ? (
             <View>
               <View style={styles.shiftRow}>
-                 <View>
-                    <Text style={styles.shiftLabel}>Vardiya Saati</Text>
-                    <Text style={styles.shiftValue}>{todayShift.start_time?.slice(0,5)} - {todayShift.end_time?.slice(0,5)}</Text>
-                 </View>
-                 <View style={{alignItems: 'flex-end'}}>
-                    <Text style={styles.shiftLabel}>Vardiya Tipi</Text>
-                    <Text style={styles.shiftValue}>{todayShift.shift_name}</Text>
-                 </View>
+                <View>
+                  <Text style={styles.shiftLabel}>Saat Aralığı</Text>
+                  <Text style={styles.shiftValue}>{todayShift.start_time?.slice(0,5)} - {todayShift.end_time?.slice(0,5)}</Text>
+                </View>
+                <View style={{alignItems: 'flex-end'}}>
+                  <Text style={styles.shiftLabel}>Mola Hakkı</Text>
+                  <Text style={styles.shiftValue}>{todayShift.break_duration || 0} dk</Text>
+                </View>
               </View>
 
-              {/* Progress Section */}
-              <View style={{ marginTop: 8 }}>
+              {/* Progress */}
+              {isActiveShift && (
+                <View style={{ marginTop: 12 }}>
                   <View style={styles.progressContainer}>
-                      <View style={[styles.progressBar, { width: `${progressPercent}%` }]} />
+                    <View style={[styles.progressBar, { width: `${progressPercent}%` }]} />
                   </View>
                   <View style={styles.progressText}>
-                      <Text style={styles.hoursText}>{worked} Saat <Text style={{fontWeight:'normal', fontSize:12, color:Colors.textSecondary}}>Tamamlanan</Text></Text>
-                      <Text style={styles.totalHoursText}>/ {planned} Saat</Text>
+                    <Text style={styles.hoursText}>{worked.toFixed(1)} Saat</Text>
+                    <Text style={styles.totalHoursText}>/ {planned} Saat</Text>
                   </View>
-              </View>
+                </View>
+              )}
             </View>
           ) : (
-            <Text style={styles.noShiftText}>Bugün için planlanmış vardiya bulunmamaktadır.</Text>
+            <Text style={styles.noShiftText}>Bugün için planlanmış vardiya yok.</Text>
           )}
         </View>
 
-        {/* Risk Status */}
-        <View style={styles.card}>
-          <View style={[styles.cardHeader, {borderBottomWidth:0, paddingBottom:0, marginBottom:10}]}>
-             <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-                <AlertTriangle size={20} color={Colors.warning} />
-                <Text style={styles.cardTitle}>Bildirimler</Text>
-             </View>
+        {/* Mesai (Overtime) Info Card */}
+        {todayMesai && (
+          <View style={[styles.card, { borderLeftWidth: 3, borderLeftColor: Colors.warning }]}>
+            <View style={styles.cardHeader}>
+              <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+                <Clock size={20} color={Colors.warning} />
+                <Text style={[styles.cardTitle, { color: Colors.warning }]}>Mesai Bilgisi</Text>
+              </View>
+            </View>
+            <View style={styles.shiftRow}>
+              <View>
+                <Text style={styles.shiftLabel}>Saat Aralığı</Text>
+                <Text style={styles.shiftValue}>{todayMesai.start_time?.slice(0,5)} - {todayMesai.end_time?.slice(0,5)}</Text>
+              </View>
+              <View style={{alignItems: 'flex-end'}}>
+                <Text style={styles.shiftLabel}>Süre</Text>
+                <Text style={styles.shiftValue}>{todayMesai.planned_hours} Saat</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.riskStatus}>
-            <View style={styles.riskIndicator} />
-            <Text style={styles.riskText}>Güvendesiniz. Risk bildirimi yok.</Text>
-          </View>
+        )}
+
+        {/* Action Buttons */}
+        <View style={styles.actionButtonsContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.actionButton, 
+              styles.leftButton,
+              isOnBreak && styles.breakButton,
+              actionLoading && styles.disabledButton
+            ]}
+            onPress={handleLeftButtonPress}
+            disabled={actionLoading}
+          >
+            {getLeftButtonIcon()}
+            <Text style={styles.actionButtonText}>
+              {buttonStates?.left_label || 'Vardiya Başlat'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[
+              styles.actionButton, 
+              styles.rightButton,
+              !buttonStates?.right_enabled && styles.disabledButton
+            ]}
+            onPress={handleRightButtonPress}
+            disabled={!buttonStates?.right_enabled}
+          >
+            <Square size={20} color="#fff" />
+            <Text style={styles.actionButtonText}>
+              {buttonStates?.right_label || 'Vardiya Bitir'}
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        {/* Break Status */}
+        {attendance?.total_break_minutes > 0 && (
+          <View style={styles.breakInfo}>
+            <Coffee size={16} color={Colors.textSecondary} />
+            <Text style={styles.breakInfoText}>
+              Bugün toplam {attendance.total_break_minutes} dk mola kullandınız
+            </Text>
+          </View>
+        )}
 
       </ScrollView>
     </SafeAreaView>
@@ -188,13 +307,12 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    gap: 20,
+    gap: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 0,
   },
   greeting: {
     fontSize: 14,
@@ -212,7 +330,6 @@ const styles = StyleSheet.create({
   },
   timeSection: {
     alignItems: 'center',
-    marginBottom: 0,
     paddingVertical: 10,
   },
   timeText: {
@@ -259,10 +376,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.textPrimary,
   },
-  profileTitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
   projectBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -278,7 +391,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
     paddingBottom: 12,
@@ -297,32 +410,30 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(16, 185, 129, 0.3)',
   },
   statusTextActive: {
-    color: '#34D399', // Emerald 400
-    fontSize: 12,
+    color: '#34D399',
+    fontSize: 11,
     fontWeight: '700',
-    textTransform: 'uppercase',
   },
-  statusBadgeInactive: {
-    backgroundColor: 'rgba(107, 114, 128, 0.15)',
+  statusBadgeBreak: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(107, 114, 128, 0.3)',
+    borderColor: 'rgba(245, 158, 11, 0.3)',
   },
-  statusTextInactive: {
-    color: '#9CA3AF',
-    fontSize: 12,
-    fontWeight: '600',
+  statusTextBreak: {
+    color: '#F59E0B',
+    fontSize: 11,
+    fontWeight: '700',
   },
   shiftRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
   },
   shiftLabel: {
     color: Colors.textSecondary,
-    fontSize: 13,
+    fontSize: 12,
     marginBottom: 4,
   },
   shiftValue: {
@@ -358,24 +469,50 @@ const styles = StyleSheet.create({
   noShiftText: {
     color: Colors.textSecondary,
     textAlign: 'center',
-    padding: 20,
+    padding: 16,
     fontStyle: 'italic',
   },
-    riskStatus: {
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 16,
+  },
+  leftButton: {
+    backgroundColor: Colors.primary,
+  },
+  rightButton: {
+    backgroundColor: '#EF4444',
+  },
+  breakButton: {
+    backgroundColor: '#F59E0B',
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  breakInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
     backgroundColor: 'rgba(55, 65, 81, 0.3)',
-    borderRadius: 8,
+    borderRadius: 12,
   },
-  riskIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.success,
-  },
-  riskText: {
-    color: Colors.textPrimary,
+  breakInfoText: {
+    color: Colors.textSecondary,
+    fontSize: 13,
   },
 });

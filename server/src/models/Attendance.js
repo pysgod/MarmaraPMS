@@ -58,6 +58,26 @@ const Attendance = sequelize.define('Attendance', {
     allowNull: true,
     defaultValue: 0,
     comment: 'Extra hours beyond planned shift (actual - planned)'
+  },
+  break_start_time: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Mola başlangıç zamanı'
+  },
+  break_end_time: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Mola bitiş zamanı'
+  },
+  total_break_minutes: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    comment: 'Toplam mola süresi (dakika)'
+  },
+  session_type: {
+    type: DataTypes.STRING(20),
+    defaultValue: 'shift',
+    comment: 'Oturum tipi: vardiya veya mesai'
   }
 }, {
   tableName: 'attendances',

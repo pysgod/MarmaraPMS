@@ -205,20 +205,19 @@ const recordScan = async (req, res) => {
 
       // Calculate Planned (Regular) Hours
       let plannedHours = 0
-      let regularShiftWindowBytes = 0 // Just for logging overlap
-      let mesaiShiftWindowBytes = 0 // Just for logging overlap
+      let plannedMesaiHours = 0
 
       if (workSchedule && workSchedule.shiftType && workSchedule.shiftType.hours) {
         plannedHours = parseFloat(workSchedule.shiftType.hours)
       }
+      if (workSchedule && workSchedule.mesaiShiftType && workSchedule.mesaiShiftType.hours) {
+        plannedMesaiHours = parseFloat(workSchedule.mesaiShiftType.hours)
+      }
       attendance.planned_hours = plannedHours
 
-      // Calculate Overtime (Standard Payroll Rule: Actual - Planned)
-      const overtime = actualHours > plannedHours ? Math.round((actualHours - plannedHours) * 100) / 100 : 0
-      attendance.overtime_hours = overtime
-
-      // Detailed Breakdown for Logging
-      let breakdownMsg = `Çalışılan: ${actualHours} sa, Mesai: ${overtime} sa`
+      // Calculate actual hours using OVERLAP with shift windows
+      let actualShiftHours = 0
+      let actualMesaiHours = 0
       
       // Try to compute overlap if windows exist
       if (workSchedule) {
@@ -231,22 +230,35 @@ const recordScan = async (req, res) => {
           if (regStart && regEnd && regEnd < regStart) regEnd.setDate(regEnd.getDate() + 1)
           if (mesStart && mesEnd && mesEnd < mesStart) mesEnd.setDate(mesEnd.getDate() + 1)
 
-          let regOverlap = 0
-          let mesOverlap = 0
-
+          // Calculate overlap with each window
           if (regStart && regEnd) {
-             regOverlap = getOverlapMinutes(checkIn, now, regStart, regEnd)
+             const regOverlap = getOverlapMinutes(checkIn, now, regStart, regEnd)
+             actualShiftHours = Math.round((regOverlap / 60) * 100) / 100
           }
           if (mesStart && mesEnd) {
-             mesOverlap = getOverlapMinutes(checkIn, now, mesStart, mesEnd)
+             const mesOverlap = getOverlapMinutes(checkIn, now, mesStart, mesEnd)
+             actualMesaiHours = Math.round((mesOverlap / 60) * 100) / 100
           }
+      }
+      
+      // If no mesai shift defined, use the old calculation: overtime = actual - planned
+      if (!workSchedule?.mesaiShiftType) {
+          actualShiftHours = actualHours > plannedHours ? plannedHours : actualHours
+          actualMesaiHours = actualHours > plannedHours ? Math.round((actualHours - plannedHours) * 100) / 100 : 0
+      }
+      
+      // Store values - actual_hours is total, overtime_hours is mesai portion
+      attendance.actual_hours = actualHours // Total time worked
+      attendance.overtime_hours = actualMesaiHours // Mesai time specifically
 
-          const regH = Math.round((regOverlap / 60) * 100) / 100
-          const mesH = Math.round((mesOverlap / 60) * 100) / 100
-
-          breakdownMsg += ` (Dağılım: Vardiya ~${regH}s, Mesai Tanımı ~${mesH}s)`
+      // Detailed Breakdown for Logging
+      let breakdownMsg = `Toplam: ${actualHours} sa (Vardiya: ${actualShiftHours}s, Mesai: ${actualMesaiHours}s)`
+      
+      // Intelligence: Determine which "started" first for the log
+      if (workSchedule) {
+          const mesStart = workSchedule.mesaiShiftType ? parseTime(today, workSchedule.mesaiShiftType.start_time) : null
+          const regStart = workSchedule.shiftType ? parseTime(today, workSchedule.shiftType.start_time) : null
           
-          // Intelligence: Determine which "started" first for the log
           let startContext = 'Bilinmeyen'
           if (mesStart && checkIn < new Date(regStart ? regStart.getTime() - 60000 : 0)) startContext = 'Mesai'
           else startContext = 'Vardiya'
