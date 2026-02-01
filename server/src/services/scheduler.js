@@ -12,8 +12,8 @@ const formatDuration = (hours) => {
     return `${m} dk`;
 };
 
-// Run every 5 minutes for responsive auto-checkout
-const task = cron.schedule('*/5 * * * *', async () => {
+// Run every minute for responsive auto-checkout
+const task = cron.schedule('*/1 * * * *', async () => {
     console.log('Running auto-checkout scheduler...');
     
     try {
@@ -129,8 +129,8 @@ const task = cron.schedule('*/5 * * * *', async () => {
                  continue;
              }
              
-             // For today: Add 10 mins buffer
-             const autoCheckoutThreshold = new Date(effectiveEndDate.getTime() + 10 * 60000);
+             // For today: Add 1 min buffer
+             const autoCheckoutThreshold = new Date(effectiveEndDate.getTime() + 1 * 60000);
 
              // 3. Check if current time > Effective End + 10 mins
              if (now > autoCheckoutThreshold) {

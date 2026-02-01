@@ -9,6 +9,7 @@ const ProjectCustomerRep = require('./ProjectCustomerRep')
 const Patrol = require('./Patrol')
 const PatrolAssignment = require('./PatrolAssignment')
 const PatrolLog = require('./PatrolLog')
+const PatrolSection = require('./PatrolSection')
 const Notification = require('./Notification')
 const ReportType = require('./ReportType')
 const DocumentCategory = require('./DocumentCategory')
@@ -93,6 +94,14 @@ PatrolLog.belongsTo(Patrol, { foreignKey: 'patrol_id', as: 'patrol' })
 // PatrolLog belongs to Employee
 PatrolLog.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' })
 Employee.hasMany(PatrolLog, { foreignKey: 'employee_id', as: 'patrolLogs' })
+
+// Patrol has many sections
+Patrol.hasMany(PatrolSection, { foreignKey: 'patrol_id', as: 'sections' })
+PatrolSection.belongsTo(Patrol, { foreignKey: 'patrol_id', as: 'patrol' })
+
+// PatrolLog belongs to Section
+PatrolLog.belongsTo(PatrolSection, { foreignKey: 'section_id', as: 'section' })
+PatrolSection.hasMany(PatrolLog, { foreignKey: 'section_id', as: 'logs' })
 
 // ==========================================
 // User/Notification Associations
@@ -184,6 +193,7 @@ module.exports = {
   Patrol,
   PatrolAssignment,
   PatrolLog,
+  PatrolSection,
   Notification,
   ReportType,
   DocumentCategory,

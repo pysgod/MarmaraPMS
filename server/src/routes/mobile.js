@@ -537,7 +537,7 @@ router.get('/patrols/:employeeId', async (req, res) => {
  */
 router.post('/scan', async (req, res) => {
   try {
-    const { employeeId, code, location } = req.body
+    const { employeeId, code, location, actionType } = req.body
 
     // 1. Checkpoint taraması (Örn: "CP-12345")
     if (code.startsWith('CP-')) {
@@ -732,6 +732,15 @@ router.post('/scan', async (req, res) => {
        if (!openSession) {
           // --- CHECK IN SCENARIO (New Session) ---
 
+
+          // KURAL 0: Explicit Action Type Checks
+          if (actionType === 'end_shift' || actionType === 'end_mesai') {
+              return res.status(400).json({
+                  success: false,
+                  message: 'Aktif bir vardiyanız yok, çıkış işlemi yapamazsınız.'
+              })
+          }
+
           // KURAL 1: QR Exit Type Check
           if (scannedType === 'exit') {
               return res.status(400).json({
@@ -777,6 +786,7 @@ router.post('/scan', async (req, res) => {
              data: {
                 type: 'attendance_check_in',
                 action: 'check_in',
+                session_type: actionType === 'start_mesai' ? 'mesai' : 'shift',
                 project_id: activeSchedule ? activeSchedule.project_id : (scannedProjectId || 0), 
                 shift_time: `${effectiveShiftStart.slice(0,5)} - ${effectiveShiftEnd.slice(0,5)}`,
                 title: "Giriş İşlemi",
@@ -789,7 +799,26 @@ router.post('/scan', async (req, res) => {
           
        } else {
           // --- CHECK OUT SCENARIO (Close Session) ---
+
+          // SPECIAL LOGIC: If action is 'start_mesai' but we have an open session
+          if (actionType === 'start_mesai') {
+              return res.json({
+                  success: true,
+                  data: {
+                      type: 'attendance_switch',
+                      action: 'check_out_and_start_mesai', // New Action
+                      project_id: openSession.project_id,
+                      shift_time: `${effectiveShiftStart.slice(0,5)} - ${effectiveShiftEnd.slice(0,5)}`,
+                      title: "Vardiya Bitir & Mesai Başlat",
+                      message: "⚠️ Açık vardiyanız kapatılıp YENİ Mesai oturumu başlatılacak.",
+                      status_type: "warning",
+                      attendance_status: "present",
+                      can_confirm: true
+                  }
+              })
+          }
           
+          // STANDARD CHECK OUT
           const diffMs = now - endDt
           const diffMins = Math.floor(diffMs / 60000)
           
@@ -845,7 +874,7 @@ router.post('/scan', async (req, res) => {
  */
 router.post('/attendance/confirm', async (req, res) => {
   try {
-    const { employeeId, projectId, action, attendanceStatus } = req.body
+    const { employeeId, projectId, action, attendanceStatus, session_type } = req.body
     
     const today = new Date()
     const dateStr = [
@@ -860,7 +889,9 @@ router.post('/attendance/confirm', async (req, res) => {
             date: dateStr,
             project_id: projectId,
             check_in_time: new Date(),
+            check_in_time: new Date(),
             status: attendanceStatus,
+            session_type: session_type || 'shift',
             verification_method: 'qr'
         })
         
@@ -890,11 +921,51 @@ router.post('/attendance/confirm', async (req, res) => {
             await attendance.update({
                 check_out_time: checkOutTime,
                 status: finalStatus,
-                actual_hours: actualHours
+                actual_hours: actualHours,
+                notes: (attendance.notes || '') + ' [Mobil Çıkış]'
             })
             return res.json({ success: true, message: 'Çıkış Başarıyla Yapıldı' })
         }
         return res.status(404).json({ success: false, message: 'Aktif giriş kaydı bulunamadı' })
+    }
+
+    if (action === 'check_out_and_start_mesai') {
+        // 1. Close Open Session
+        const openSession = await Attendance.findOne({
+            where: {
+                employee_id: employeeId,
+                date: dateStr,
+                check_out_time: null
+            }
+        })
+
+        if (openSession) {
+             const checkOutTime = new Date()
+             const checkInTime = new Date(openSession.check_in_time)
+             const durationMs = checkOutTime - checkInTime
+             const actualHours = (durationMs / (1000 * 60 * 60)).toFixed(2)
+
+             await openSession.update({
+                check_out_time: checkOutTime,
+                status: 'present',
+                actual_hours: actualHours,
+                notes: (openSession.notes || '') + ' [Oto-Kapanış: Mesai Geçişi]'
+             })
+        }
+
+        // 2. Start New Mesai Session
+        const newSession = await Attendance.create({
+            employee_id: employeeId,
+            date: dateStr,
+            project_id: projectId,
+            check_in_time: new Date(),
+            status: 'present',
+            session_type: 'mesai',
+            verification_method: 'qr',
+            notes: 'Mesai Başlangıcı'
+        })
+
+        return res.json({ success: true, message: 'Vardiya Kapatıldı, Mesai Başlatıldı' })
     }
     
     res.status(400).json({ success: false, message: 'Geçersiz işlem' })

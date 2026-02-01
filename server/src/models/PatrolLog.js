@@ -23,6 +23,14 @@ const PatrolLog = sequelize.define('PatrolLog', {
       key: 'id'
     }
   },
+  section_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'patrol_sections',
+      key: 'id'
+    }
+  },
   check_time: {
     type: DataTypes.DATE,
     allowNull: false,

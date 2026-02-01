@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import api from '../../services/api'
 import AddEmployeeWizard from './AddEmployeeWizard'
-import EmployeeScheduleTable from '../../components/EmployeeScheduleTable'
+import EmployeePuantaj from '../../components/EmployeePuantaj'
 import { 
   User, 
   ArrowLeft, 
@@ -207,7 +207,7 @@ export default function EmployeeDetail() {
     { id: 'clothing', name: 'Kıyafet', icon: Shirt },
     { id: 'account', name: 'Hesap & Kart', icon: CreditCard },
     { id: 'projects', name: 'Projeler', icon: FolderKanban },
-    { id: 'shifts', name: 'Vardiyalar', icon: Clock },
+    { id: 'shifts', name: 'Aylık Puantaj', icon: Clock },
     { id: 'patrols', name: 'Devriyeler', icon: Shield },
   ]
 
@@ -689,10 +689,10 @@ export default function EmployeeDetail() {
                 </div>
              )}
 
-            {/* 8. VARDİYALAR */}
+            {/* 8. AYLIK PUANTAJ */}
             {activeTab === 'shifts' && (
                <div className="space-y-4">
-                 <EmployeeScheduleTable employee={employee} />
+                 <EmployeePuantaj employee={employee} />
                </div>
             )}
         </div>

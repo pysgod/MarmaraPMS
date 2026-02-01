@@ -31,6 +31,23 @@ const Patrol = sequelize.define('Patrol', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  schedule_start_time: {
+    type: DataTypes.TIME,
+    allowNull: true
+  },
+  schedule_end_time: {
+    type: DataTypes.TIME,
+    allowNull: true
+  },
+  interval_minutes: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 60
+  },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
   status: {
     type: DataTypes.ENUM('active', 'inactive', 'completed'),
     defaultValue: 'active'

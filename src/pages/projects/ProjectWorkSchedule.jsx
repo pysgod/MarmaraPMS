@@ -18,8 +18,8 @@ const ATTENDANCE_STATUS = {
   present: { label: '✓', name: 'Zamanında', color: 'bg-green-500/30 text-green-400', icon: CheckCircle },
   late: { label: 'G', name: 'Geç Kaldı', color: 'bg-amber-500/30 text-amber-400', icon: Clock },
   early_leave: { label: 'E', name: 'Erken Çıktı', color: 'bg-orange-500/30 text-orange-400', icon: AlertTriangle },
-  absent: { label: '✗', name: 'Gelmedi', color: 'bg-red-500/30 text-red-400', icon: XCircle },
-  incomplete: { label: '?', name: 'Eksik', color: 'bg-gray-500/30 text-gray-400', icon: Clock },
+  absent: { label: '✗', name: 'Gelmedi', color: 'bg-red-600/40 text-red-400', icon: XCircle },
+  incomplete: { label: '?', name: 'Eksik Giriş/Çıkış', color: 'bg-purple-500/30 text-purple-400', icon: Clock },
   off_day_work: { label: 'E+', name: 'Tatilde Çalıştı', color: 'bg-purple-500/30 text-purple-400', icon: CheckCircle },
 }
 
@@ -151,21 +151,22 @@ export default function ProjectWorkSchedule({ projectId }) {
   // --- TIME FORMATTING HELPER ---
   const formatDuration = (hours, type = 'cell') => {
       const val = parseFloat(hours) || 0
-      if (val === 0) return type === 'card' ? '0 sa 0 dk' : '-'
+      if (val === 0) return type === 'card' ? '0s 0dk' : '-'
       
       const h = Math.floor(val)
       const m = Math.round((val - h) * 60)
       
-      if (type === 'card') {
-          // Format: "7 sa 30 dk"
-          return `${h} sa ${m} dk`
+      if (type === 'card' || type === 'short') {
+          // Format: "7s 30dk"
+          if (h > 0 && m > 0) return `${h}s ${m}dk`
+          if (h > 0) return `${h}s`
+          return `${m}dk`
       } else {
-          // Cell Format
+          // Cell Format: 07:30
           // If less than 1 hour -> "45dk"
           if (val < 1) {
               return `${Math.round(val * 60)}dk`
           }
-          // Else -> "07:30"
           const hStr = h.toString().padStart(2, '0')
           const mStr = m.toString().padStart(2, '0')
           return `${hStr}:${mStr}`
@@ -491,8 +492,8 @@ export default function ProjectWorkSchedule({ projectId }) {
                             <p className="font-bold text-theme-text-primary truncate max-w-[130px]">{employee.first_name} {employee.last_name}</p>
                             <p className="text-[10px] text-theme-text-muted truncate max-w-[130px] uppercase tracking-wide">{employee.title || 'Personel'}</p>
                             <div className="flex gap-2 mt-1.5 text-[9px]">
-                               <span className="bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded border border-green-500/20 font-bold">{totals.gozetim}s</span>
-                               <span className="bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded border border-orange-500/20 font-bold">{totals.mesai}s</span>
+                               <span className="bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded border border-green-500/20 font-bold">{formatDuration(totals.gozetim, 'short')}</span>
+                               <span className="bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded border border-orange-500/20 font-bold">{formatDuration(totals.mesai, 'short')}</span>
                             </div>
                           </div>
                         </div>
@@ -885,7 +886,7 @@ export default function ProjectWorkSchedule({ projectId }) {
                           const shiftInfo = getShiftTypeDetails(cellData.shift_type_id)
                           missedGozetimHours += shiftInfo.hours || 0
                         }
-                      })
+                      })  
                       
                       return (
                         <React.Fragment key={employee.id}>
@@ -901,8 +902,8 @@ export default function ProjectWorkSchedule({ projectId }) {
                                   <p className="font-medium text-theme-text-primary truncate max-w-[100px] text-[10px]">{employee.first_name} {employee.last_name}</p>
                                   <p className="text-[8px] text-theme-text-muted truncate max-w-[100px]">{employee.title || 'Personel'}</p>
                                   <div className="flex gap-2 mt-1 text-[9px]">
-                                    <span className="text-green-400 font-bold" title="Gözetim Saati">{actualGozetimHours.toFixed(0)}s</span>
-                                    <span className="text-orange-400 font-bold" title="Mesai Saati">{stats.actualMesai.toFixed(0)}s</span>
+                                    <span className="text-green-400 font-bold" title="Gözetim Saati">{formatDuration(actualGozetimHours, 'short')}</span>
+                                    <span className="text-orange-400 font-bold" title="Mesai Saati">{formatDuration(stats.actualMesai, 'short')}</span>
                                   </div>
                                 </div>
                               </div>
@@ -911,9 +912,9 @@ export default function ProjectWorkSchedule({ projectId }) {
                             {/* Gözetim Totals */}
                             <td className="text-center border-r border-theme-border-primary bg-green-500/5 px-0">
                               <div className="flex flex-col items-center text-[8px] leading-tight">
-                                <span className="text-green-400 font-bold">{plannedGozetimHours.toFixed(0)}</span>
-                                <span className="text-emerald-400">{actualGozetimHours.toFixed(0)}</span>
-                                {missedGozetimHours > 0 && <span className="text-red-400">-{missedGozetimHours.toFixed(0)}</span>}
+                                <span className="text-green-400 font-bold">{formatDuration(plannedGozetimHours, 'short')}</span>
+                                <span className="text-emerald-400">{formatDuration(actualGozetimHours, 'short')}</span>
+                                {missedGozetimHours > 0 && <span className="text-red-400">-{formatDuration(missedGozetimHours, 'short')}</span>}
                               </div>
                             </td>
 
@@ -959,7 +960,7 @@ export default function ProjectWorkSchedule({ projectId }) {
                                   cellColor = 'text-blue-400'
                                   tooltip = `Bugün - Bekleniyor\nPlanlanan: ${shiftInfo?.hours || 0} saat`
                                 } else {
-                                  cellText = `${shiftInfo?.hours || 0}`
+                                  cellText = formatDuration(shiftInfo?.hours || 0, 'short')
                                   cellColor = 'text-gray-400'
                                   tooltip = `Planlı\nPlanlanan: ${shiftInfo?.hours || 0} saat`
                                 }
@@ -984,9 +985,9 @@ export default function ProjectWorkSchedule({ projectId }) {
                             {/* Mesai Totals */}
                             <td className="text-center border-r border-theme-border-primary bg-orange-500/5 px-0">
                               <div className="flex flex-col items-center text-[8px] leading-tight">
-                                <span className="text-orange-400 font-bold">{stats.plannedMesai.toFixed(0)}</span>
-                                <span className="text-emerald-400">{stats.actualMesai.toFixed(0)}</span>
-                                {stats.missedMesai > 0 && <span className="text-rose-400">-{stats.missedMesai.toFixed(0)}</span>}
+                                <span className="text-orange-400 font-bold">{formatDuration(stats.plannedMesai, 'short')}</span>
+                                <span className="text-emerald-400">{formatDuration(stats.actualMesai, 'short')}</span>
+                                {stats.missedMesai > 0 && <span className="text-rose-400">-{formatDuration(stats.missedMesai, 'short')}</span>}
                               </div>
                             </td>
 
@@ -1169,7 +1170,7 @@ export default function ProjectWorkSchedule({ projectId }) {
           hourlySlots.push({
             start: hour,
             end: nextHour,
-            label: `${String(hour).padStart(2, '0')}-${String(nextHour).padStart(2, '0')}`
+            label: `${String(hour).padStart(2, '')}`
           })
         }
         
@@ -1191,7 +1192,12 @@ export default function ProjectWorkSchedule({ projectId }) {
           const now = new Date()
           const selectedDate = new Date(selectedDay)
           const isToday = selectedDate.toDateString() === now.toDateString()
-          const isPast = selectedDate < now && !isToday
+          const isPastDay = selectedDate < now && !isToday
+          
+          // Check if this specific hour has passed (real-time check for today)
+          const slotEndDateTime = new Date(selectedDay)
+          slotEndDateTime.setHours(slotEnd, 0, 0, 0)
+          const isSlotPast = now > slotEndDateTime
           
           // Get shift windows
           const shiftInfo = cellData.shift_type_id ? getShiftTypeDetails(cellData.shift_type_id) : null
@@ -1200,80 +1206,215 @@ export default function ProjectWorkSchedule({ projectId }) {
           // Check if this slot is within planned shift/mesai time
           let isPlannedShift = false
           let isPlannedMesai = false
+          let shiftStartHour = null
+          let shiftEndHour = null
           
           if (shiftInfo && shiftInfo.start_time && shiftInfo.end_time) {
-            const shiftStartHour = parseInt(shiftInfo.start_time.split(':')[0])
-            const shiftEndHour = parseInt(shiftInfo.end_time.split(':')[0])
-            if (slotStart >= shiftStartHour && slotStart < shiftEndHour) {
-              isPlannedShift = true
+            shiftStartHour = parseInt(shiftInfo.start_time.split(':')[0])
+            shiftEndHour = parseInt(shiftInfo.end_time.split(':')[0])
+            
+            if (shiftEndHour <= shiftStartHour) {
+                // Crosses midnight logic
+                if (slotStart >= shiftStartHour || slotStart < shiftEndHour) {
+                     isPlannedShift = true
+                }
+            } else {
+                 // Standard logic
+                 if (slotStart >= shiftStartHour && slotStart < shiftEndHour) {
+                    isPlannedShift = true
+                 }
             }
           }
           
           if (mesaiInfo && mesaiInfo.start_time && mesaiInfo.end_time) {
             const mesaiStartHour = parseInt(mesaiInfo.start_time.split(':')[0])
             const mesaiEndHour = parseInt(mesaiInfo.end_time.split(':')[0])
-            if (slotStart >= mesaiStartHour && slotStart < mesaiEndHour) {
-              isPlannedMesai = true
+             if (mesaiEndHour <= mesaiStartHour) {
+                // Crosses midnight logic
+                if (slotStart >= mesaiStartHour || slotStart < mesaiEndHour) {
+                     isPlannedMesai = true
+                }
+            } else {
+                 // Standard logic
+                 if (slotStart >= mesaiStartHour && slotStart < mesaiEndHour) {
+                    isPlannedMesai = true
+                 }
             }
           }
           
+          const isPlanned = isPlannedShift || isPlannedMesai
+          const planType = isPlannedShift ? 'Gözetim' : (isPlannedMesai ? 'Mesai' : '')
+          
+          // Build tooltip
+          let tooltip = ''
+          const slotLabel = `${String(slotStart).padStart(2, '0')}:00 - ${String(slotEnd).padStart(2, '0')}:00`
+          
+          // NO ATTENDANCE RECORD
           if (!att) {
-            // No attendance record
-            if (isPast && (isPlannedShift || isPlannedMesai)) {
-              return { status: 'missed', color: 'bg-red-500/40', icon: null }
+            if ((isPastDay || (isToday && isSlotPast)) && isPlanned) {
+              tooltip = `❌ GELMEDİ\n${slotLabel}\n${planType} vardiyası geçti, giriş yapılmadı`
+              return { status: 'missed', color: 'bg-red-600/50', icon: null, tooltip }
             }
-            if (isPlannedShift || isPlannedMesai) {
-              return { status: 'planned', color: 'bg-orange-500/30', icon: null }
+            if (isPlanned) {
+              tooltip = `📅 PLANLANMIŞ\n${slotLabel}\n${planType} için bekleniyor`
+              return { status: 'planned', color: 'bg-orange-500/30', icon: null, tooltip }
             }
-            return { status: 'empty', color: '', icon: null }
+            return { status: 'empty', color: '', icon: null, tooltip: 'Vardiya planlanmamış' }
           }
           
-          // Has attendance
+          // HAS ATTENDANCE RECORD
           const checkIn = att.check_in_time ? new Date(att.check_in_time) : null
           const checkOut = att.check_out_time ? new Date(att.check_out_time) : null
           const breakStart = att.break_start_time ? new Date(att.break_start_time) : null
           const breakEnd = att.break_end_time ? new Date(att.break_end_time) : null
           
+          const checkInHour = checkIn ? checkIn.getHours() : null
+          const checkInMinute = checkIn ? checkIn.getMinutes() : 0
+          const checkOutHour = checkOut ? checkOut.getHours() : null
+          const checkOutMinute = checkOut ? checkOut.getMinutes() : 0
+          
+          // Employee checked out - so they are definitely done working
+          const hasCheckedOut = checkOut !== null
+          
           // Check if this slot is a break
           if (breakStart) {
             const breakStartHour = breakStart.getHours()
-            const breakEndHour = breakEnd ? breakEnd.getHours() : now.getHours()
+            const breakEndHour = breakEnd ? breakEnd.getHours() + (breakEnd.getMinutes() > 0 ? 1 : 0) : now.getHours() + 1
             
             if (slotStart >= breakStartHour && slotStart < breakEndHour) {
-              // On break during this slot
               if (breakEnd) {
-                return { status: 'break_done', color: 'bg-amber-500/20', icon: '☕' }
+                tooltip = `☕ MOLA YAPILDI\n${slotLabel}\nMola: ${breakStart.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})} - ${breakEnd.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}`
+                return { status: 'break_done', color: 'bg-amber-500/20', icon: '☕', tooltip }
               } else {
-                return { status: 'break_active', color: 'bg-yellow-500/40', icon: '☕' }
+                tooltip = `☕ MOLADA\n${slotLabel}\nMola başlangıcı: ${breakStart.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}`
+                return { status: 'break_active', color: 'bg-yellow-500/40', icon: '☕', tooltip }
               }
             }
           }
           
-          // Check if worked during this slot
-          if (checkIn) {
-            const checkInHour = checkIn.getHours()
-            const checkOutHour = checkOut ? checkOut.getHours() : now.getHours()
+          // SLOT ANALYSIS
+          if (checkIn && isPlanned) {
+            // Helper: Check if we have a midnight-crossing shift
+            const isMidnightCrossing = shiftStartHour !== null && shiftEndHour !== null && shiftEndHour <= shiftStartHour
             
-            if (slotStart >= checkInHour && slotStart < checkOutHour) {
-              // Worked during this slot
-              if (checkOut) {
-                return { status: 'completed', color: 'bg-green-500/40', icon: null }
+            // Helper: Compare slots/hours considering midnight crossing
+            // Returns true if hour1 is "before" hour2 in shift context
+            const isBeforeInShift = (h1, h2) => {
+              if (!isMidnightCrossing) return h1 < h2
+              // For midnight crossing: hours after midnight (0-shiftEnd) come "after" hours before midnight (shiftStart-23)
+              const h1AfterMidnight = h1 < shiftEndHour
+              const h2AfterMidnight = h2 < shiftEndHour
+              if (h1AfterMidnight && !h2AfterMidnight) return false // h1 (e.g., 2) is after h2 (e.g., 23)
+              if (!h1AfterMidnight && h2AfterMidnight) return true  // h1 (e.g., 23) is before h2 (e.g., 2)
+              return h1 < h2 // Same side of midnight
+            }
+            
+            // Helper: Check if slot is between checkIn and checkOut considering midnight
+            const isSlotBetween = (slot, startH, endH) => {
+              if (!isMidnightCrossing) return slot >= startH && slot < endH
+              // Midnight crossing: slot is between if (slot >= startH OR slot < endH when startH > endH)
+              const slotAfterMidnight = slot < shiftEndHour
+              const startAfterMidnight = startH < shiftEndHour
+              const endAfterMidnight = endH < shiftEndHour
+              
+              if (slotAfterMidnight === startAfterMidnight && slotAfterMidnight === endAfterMidnight) {
+                // All on same side
+                return slot >= startH && slot < endH
+              }
+              
+              if (startAfterMidnight === endAfterMidnight) {
+                // Start and end on same side, slot on other side
+                return !startAfterMidnight && slotAfterMidnight // slot is after midnight portion
+              }
+              
+              // Start before midnight, end after midnight
+              if (!startAfterMidnight && endAfterMidnight) {
+                return slot >= startH || slot < endH
+              }
+              
+              return slot >= startH && slot < endH
+            }
+            
+            // CASE 1: Slot is BEFORE check-in hour (employee was supposed to be here but wasn't)
+            // Example: Shift 23-09, employee came at 00:15 -> 23-00 slot = MISSED (red)
+            if (isBeforeInShift(slotStart, checkInHour) && !isBeforeInShift(slotStart, shiftStartHour)) {
+              tooltip = `❌ GELMEDİ\n${slotLabel}\nGiriş: ${checkIn.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}\nBu saat çalışılmadı (geç giriş)`
+              return { status: 'missed_before_checkin', color: 'bg-red-600/50', icon: null, tooltip }
+            }
+            
+            // CASE 2: Slot contains check-in (late entry marker)
+            // Example: Shift 23-09, employee came at 00:15 -> 00-01 slot = LATE ENTRY (purple)
+            const isLateEntry = slotStart === checkInHour && shiftStartHour !== null && 
+              (isMidnightCrossing ? 
+                (checkInHour !== shiftStartHour) : // For midnight crossing, any entry not at shift start is late
+                (checkInHour > shiftStartHour))    // For normal shifts
+            
+            if (isLateEntry) {
+              tooltip = `⚠️ GEÇ GİRİŞ\n${slotLabel}\nPlanlanan: ${shiftInfo?.start_time?.slice(0,5) || '?'}\nGiriş: ${checkIn.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}`
+              return { status: 'late_entry', color: 'bg-purple-500/40', icon: null, tooltip }
+            }
+            
+            // CASE 3: Slot is AFTER check-out hour (employee already left)
+            // Example: Shift 23-09, employee left at 05:00 -> 06-07, 07-08, 08-09 slots = MISSED (red)
+            if (hasCheckedOut) {
+              const effectiveCheckOutSlot = checkOutHour + (checkOutMinute > 0 ? 1 : 0)
+              const isAfterCheckout = isMidnightCrossing ?
+                (isBeforeInShift(effectiveCheckOutSlot, slotStart) || effectiveCheckOutSlot === slotStart && checkOutMinute === 0) :
+                (slotStart >= effectiveCheckOutSlot)
+              
+              if (isAfterCheckout && isBeforeInShift(slotStart, shiftEndHour)) {
+                tooltip = `❌ KAÇIRILDI\n${slotLabel}\nÇıkış: ${checkOut.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}\nErken çıkış nedeniyle çalışılmadı`
+                return { status: 'missed_after_checkout', color: 'bg-red-600/50', icon: null, tooltip }
+              }
+            }
+            
+            // CASE 4: Slot contains check-out (early exit marker)
+            // Example: Shift 23-09, employee left at 05:15 -> 05-06 slot = EARLY EXIT (purple)
+            const isEarlyExit = hasCheckedOut && slotStart === checkOutHour && shiftEndHour !== null &&
+              (isMidnightCrossing ?
+                (checkOutHour !== shiftEndHour - 1 && checkOutHour !== shiftEndHour) : // Not at shift end
+                (checkOutHour < shiftEndHour))
+            
+            if (isEarlyExit) {
+              tooltip = `⚠️ ERKEN ÇIKIŞ\n${slotLabel}\nÇıkış: ${checkOut.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}\nPlanlanan bitiş: ${shiftInfo?.end_time?.slice(0,5) || '?'}`
+              return { status: 'early_exit', color: 'bg-purple-500/40', icon: null, tooltip }
+            }
+            
+            // CASE 5: Slot is within worked time (check-in to check-out)
+            // Example: Shift 23-09, came 00:15, left 05:15 -> 01-02, 02-03, 03-04, 04-05 = WORKED (green)
+            const effectiveCheckOutHour = hasCheckedOut ? checkOutHour : (isToday ? now.getHours() : 23)
+            const effectiveEndWithMinutes = effectiveCheckOutHour + (checkOutMinute > 0 || !hasCheckedOut ? 1 : 0)
+            
+            if (isSlotBetween(slotStart, checkInHour, effectiveEndWithMinutes)) {
+              if (hasCheckedOut) {
+                const totalHours = parseFloat(att.actual_hours) || 0
+                tooltip = `✅ ÇALIŞILDI\n${slotLabel}\nGiriş: ${checkIn.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}\nÇıkış: ${checkOut.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}\nToplam: ${formatDuration(totalHours, 'card')}`
+                return { status: 'worked', color: 'bg-green-500/40', icon: null, tooltip }
               } else if (isToday) {
-                return { status: 'working', color: 'bg-emerald-500/50', icon: null }
+                tooltip = `🔄 ÇALIŞIYOR\n${slotLabel}\nGiriş: ${checkIn.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}\nŞu anda aktif çalışıyor`
+                return { status: 'working', color: 'bg-emerald-500/50', icon: null, tooltip }
               }
             }
           }
           
-          // If planned but not worked
-          if (isPast && (isPlannedShift || isPlannedMesai)) {
-            return { status: 'missed', color: 'bg-red-500/40', icon: null }
+          // CASE 6: Slot is in planned time but after checkout (or no checkout yet but slot is past)
+          if (isPlanned) {
+            if (hasCheckedOut) {
+              // Employee already left, remaining planned slots are missed
+              tooltip = `❌ KAÇIRILDI\n${slotLabel}\nÇıkış: ${checkOut.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}\nErken çıkış nedeniyle çalışılmadı`
+              return { status: 'missed_after_checkout', color: 'bg-red-600/50', icon: null, tooltip }
+            }
+            
+            if (isPastDay || (isToday && isSlotPast)) {
+              tooltip = `❌ KAÇIRILDI\n${slotLabel}\n${planType} saati geçti, çalışılmadı`
+              return { status: 'missed', color: 'bg-red-600/50', icon: null, tooltip }
+            }
+            
+            tooltip = `📅 PLANLANMIŞ\n${slotLabel}\n${planType} için bekleniyor`
+            return { status: 'planned', color: 'bg-orange-500/30', icon: null, tooltip }
           }
           
-          if (isPlannedShift || isPlannedMesai) {
-            return { status: 'planned', color: 'bg-orange-500/30', icon: null }
-          }
-          
-          return { status: 'empty', color: '', icon: null }
+          return { status: 'empty', color: '', icon: null, tooltip: 'Vardiya planlanmamış' }
         }
         
         return (
@@ -1306,7 +1447,9 @@ export default function ProjectWorkSchedule({ projectId }) {
             <div className="flex items-center gap-4 text-xs flex-wrap">
               <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-orange-500/30"></div><span className="text-theme-text-muted">Planlanmış</span></div>
               <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-green-500/40"></div><span className="text-theme-text-muted">Tamamlanmış</span></div>
-              <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-red-500/40"></div><span className="text-theme-text-muted">Eksik/Gelmedi</span></div>
+              <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-emerald-500/50"></div><span className="text-theme-text-muted">Çalışıyor (Aktif)</span></div>
+              <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-red-600/50"></div><span className="text-theme-text-muted">Gelmedi</span></div>
+              <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-purple-500/40"></div><span className="text-theme-text-muted">Eksik (Geç/Erken)</span></div>
               <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-yellow-500/40"></div><span className="text-theme-text-muted">☕ Aktif Mola</span></div>
               <div className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-amber-500/20"></div><span className="text-theme-text-muted">☕ Biten Mola</span></div>
             </div>
@@ -1321,8 +1464,8 @@ export default function ProjectWorkSchedule({ projectId }) {
                         Personel
                       </th>
                       {hourlySlots.map(slot => (
-                        <th key={slot.label} className="min-w-[36px] px-1 py-2 text-center font-medium text-theme-text-muted border-b border-theme-border-primary text-[9px]">
-                          {slot.label}
+                        <th key={slot.label} className="min-w-[36px] px-1 py-2 text-center font-medium text-theme-text-muted border-b border-theme-border-primary text-[11px]">
+                          {slot.label}-{slot.end}
                         </th>
                       ))}
                     </tr>
@@ -1335,17 +1478,23 @@ export default function ProjectWorkSchedule({ projectId }) {
                             {employee.first_name} {employee.last_name}
                           </span>
                         </td>
-                        {hourlySlots.map(slot => {
-                          const cellStatus = getCellStatus(employee.id, slot.start, slot.end)
-                          return (
-                            <td 
-                              key={slot.label} 
-                              className={`h-8 w-9 text-center border-b border-theme-border-primary ${cellStatus.color}`}
-                            >
-                              {cellStatus.icon && <span className="text-sm">{cellStatus.icon}</span>}
-                            </td>
+                        {hourlySlots.map(slot => 
+                            {
+                                const cellStatus = getCellStatus(employee.id, slot.start, slot.end)
+                                return (
+                                  <td 
+                                    key={slot.label} 
+                                    title={cellStatus.tooltip}
+                                    className="h-9 w-9 p-[1px] text-center border-b border-theme-border-primary cursor-pointer"
+                                  >
+                                    <div className={`w-full h-full flex items-center justify-center rounded-sm ${cellStatus.color} hover:ring-1 hover:ring-white/30 transition-all`}>
+                                      {cellStatus.icon && <span className="text-sm">{cellStatus.icon}</span>}
+                                    </div>
+                                  </td>
+                                )
+                            }
                           )
-                        })}
+                        }
                       </tr>
                     ))}
                   </tbody>

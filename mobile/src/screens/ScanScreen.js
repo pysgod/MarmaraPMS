@@ -9,13 +9,16 @@ import { useAuth } from '../context/AuthContext';
 const { width } = Dimensions.get('window');
 const SCAN_AREA_SIZE = width * 0.7;
 
-export default function ScanScreen({ navigation }) {
+export default function ScanScreen({ navigation, route }) {
     const { user, API_URL } = useAuth();
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
     const [flash, setFlash] = useState(false);
     const [loading, setLoading] = useState(false);
     
+    // Get action type from navigation params (e.g., 'start_shift', 'end_shift', 'start_mesai')
+    const { actionType } = route.params || {};
+
     // Modal State
     const [modalVisible, setModalVisible] = useState(false);
     const [scanResult, setScanResult] = useState(null);
@@ -60,7 +63,8 @@ export default function ScanScreen({ navigation }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     employeeId: user.id,
-                    code: data
+                    code: data,
+                    actionType: actionType // Send intended action type
                 })
             });
 
@@ -243,7 +247,9 @@ export default function ScanScreen({ navigation }) {
                                         onPress={confirmAction}
                                     >
                                         <Text style={styles.btnTextConfirm}>
-                                            {scanResult.action === 'check_in' ? 'BAŞLAT' : 'BİTİR'}
+                                            {scanResult.action === 'check_in' ? 'BAŞLAT' : 
+                                             scanResult.action === 'check_out' ? 'BİTİR' :
+                                             scanResult.action === 'check_out_and_start_mesai' ? 'ONAYLA & BAŞLAT' : 'ONAYLA'}
                                         </Text>
                                     </TouchableOpacity>
                                 </View>

@@ -45,7 +45,7 @@ export default function ShiftTypeManager({ projectId, onClose, onUpdate }) {
       const start = new Date(`${today}T${updated.start_time}`)
       let end = new Date(`${today}T${updated.end_time}`)
       
-      if (end < start) {
+      if (end <= start) {
         end = new Date(`2000-01-02T${updated.end_time}`) // Next day
       }
       

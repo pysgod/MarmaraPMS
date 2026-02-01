@@ -16,6 +16,53 @@ const formatDuration = (hours) => {
   return `${m} dk`
 }
 
+// Helper to check if a shift has already passed and create absent record if needed
+const checkAndMarkPastShiftAsAbsent = async (project_id, employee_id, date, shift_type_id) => {
+  if (!shift_type_id) return // No shift assigned, skip
+  
+  try {
+    const shiftType = await ShiftType.findByPk(shift_type_id)
+    if (!shiftType || !shiftType.end_time) return
+    
+    // Get current time in Turkey timezone (UTC+3)
+    const now = new Date()
+    const turkeyOffset = 3 * 60 // UTC+3 in minutes
+    const localOffset = now.getTimezoneOffset()
+    const turkeyNow = new Date(now.getTime() + (turkeyOffset + localOffset) * 60 * 1000)
+    
+    // Parse the shift end time
+    const [endHour, endMinute] = shiftType.end_time.split(':').map(Number)
+    
+    // Create the shift end datetime
+    const shiftEndDate = new Date(date)
+    shiftEndDate.setHours(endHour, endMinute, 0, 0)
+    
+    // Check if shift has already passed
+    if (turkeyNow > shiftEndDate) {
+      // Check if attendance record already exists
+      const existingAttendance = await Attendance.findOne({
+        where: { project_id, employee_id, date }
+      })
+      
+      if (!existingAttendance) {
+        // Create absent attendance record for past shift
+        await Attendance.create({
+          project_id,
+          employee_id,
+          date,
+          status: 'absent',
+          actual_hours: 0,
+          overtime_hours: 0,
+          notes: 'Vardiya geçmişte olduğu için otomatik gelmedi olarak işaretlendi'
+        })
+        console.log(`[AUTO-ABSENT] Past shift marked as absent for Employee ${employee_id} on ${date}`)
+      }
+    }
+  } catch (error) {
+    console.error('Error checking past shift:', error)
+  }
+}
+
 // Get work schedule for a project and month
 exports.getProjectWorkSchedule = async (req, res) => {
   try {
@@ -246,6 +293,12 @@ exports.updateWorkSchedule = async (req, res) => {
       
       await schedule.update(updateData)
     }
+    
+    // Check if this is a past shift and mark as absent if needed
+    const finalShiftTypeId = schedule.shift_type_id
+    if (finalShiftTypeId && !schedule.leave_type) {
+      await checkAndMarkPastShiftAsAbsent(project_id, employee_id, date, finalShiftTypeId)
+    }
 
     res.json(schedule)
   } catch (error) {
@@ -350,6 +403,12 @@ exports.toggleWorkSchedule = async (req, res) => {
         leave_type: null,
         gozetim_hours: nextHours
       })
+      
+      // Check if this is a past shift and mark as absent if needed
+      if (nextShiftTypeId) {
+        await checkAndMarkPastShiftAsAbsent(project_id, employee_id, date, nextShiftTypeId)
+      }
+      
       return res.json(existing)
     }
 
@@ -360,6 +419,11 @@ exports.toggleWorkSchedule = async (req, res) => {
       shift_type_id: nextShiftTypeId,
       gozetim_hours: nextHours
     })
+    
+    // Check if this is a past shift and mark as absent if needed
+    if (nextShiftTypeId) {
+      await checkAndMarkPastShiftAsAbsent(project_id, employee_id, date, nextShiftTypeId)
+    }
 
     res.status(201).json(schedule)
   } catch (error) {

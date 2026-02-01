@@ -198,8 +198,36 @@ const recordScan = async (req, res) => {
       attendance.check_out_time = now
       
       // Calculate Total Actual Hours
+      // Use effective start time: if employee checked in early, use shift start time
+      // This prevents counting extra time when someone arrives early (within 5min buffer)
       const checkIn = new Date(attendance.check_in_time)
-      const diffMs = now - checkIn
+      
+      // Get shift start time if available
+      let effectiveStartTime = checkIn // Default to actual check-in
+      
+      if (workSchedule) {
+        const regStart = workSchedule.shiftType ? parseTime(today, workSchedule.shiftType.start_time) : null
+        const mesStart = workSchedule.mesaiShiftType ? parseTime(today, workSchedule.mesaiShiftType.start_time) : null
+        
+        // Determine which shift starts first (could be mesai before regular or vice versa)
+        let earliestShiftStart = null
+        if (regStart && mesStart) {
+          earliestShiftStart = regStart < mesStart ? regStart : mesStart
+        } else if (regStart) {
+          earliestShiftStart = regStart
+        } else if (mesStart) {
+          earliestShiftStart = mesStart
+        }
+        
+        // If employee checked in BEFORE the shift start, use shift start time
+        // This ensures early arrivals (within buffer) don't get extra hours
+        if (earliestShiftStart && checkIn < earliestShiftStart) {
+          effectiveStartTime = earliestShiftStart
+          console.log(`[HOUR CALC] Early check-in adjusted: ${checkIn.toLocaleTimeString()} → ${earliestShiftStart.toLocaleTimeString()}`)
+        }
+      }
+      
+      const diffMs = now - effectiveStartTime
       const actualHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100
       attendance.actual_hours = actualHours
 
@@ -219,7 +247,7 @@ const recordScan = async (req, res) => {
       let actualShiftHours = 0
       let actualMesaiHours = 0
       
-      // Try to compute overlap if windows exist
+      // Try to compute overlap if windows exist - use effectiveStartTime for fair calculation
       if (workSchedule) {
           const regStart = workSchedule.shiftType ? parseTime(today, workSchedule.shiftType.start_time) : null
           const regEnd = workSchedule.shiftType ? parseTime(today, workSchedule.shiftType.end_time) : null
@@ -230,13 +258,13 @@ const recordScan = async (req, res) => {
           if (regStart && regEnd && regEnd < regStart) regEnd.setDate(regEnd.getDate() + 1)
           if (mesStart && mesEnd && mesEnd < mesStart) mesEnd.setDate(mesEnd.getDate() + 1)
 
-          // Calculate overlap with each window
+          // Calculate overlap with each window - use effectiveStartTime for fair calculation
           if (regStart && regEnd) {
-             const regOverlap = getOverlapMinutes(checkIn, now, regStart, regEnd)
+             const regOverlap = getOverlapMinutes(effectiveStartTime, now, regStart, regEnd)
              actualShiftHours = Math.round((regOverlap / 60) * 100) / 100
           }
           if (mesStart && mesEnd) {
-             const mesOverlap = getOverlapMinutes(checkIn, now, mesStart, mesEnd)
+             const mesOverlap = getOverlapMinutes(effectiveStartTime, now, mesStart, mesEnd)
              actualMesaiHours = Math.round((mesOverlap / 60) * 100) / 100
           }
       }
@@ -248,7 +276,7 @@ const recordScan = async (req, res) => {
       }
       
       // Store values - actual_hours is total, overtime_hours is mesai portion
-      attendance.actual_hours = actualHours // Total time worked
+      attendance.actual_hours = actualHours // Total time worked (from effective start)
       attendance.overtime_hours = actualMesaiHours // Mesai time specifically
 
       // Detailed Breakdown for Logging

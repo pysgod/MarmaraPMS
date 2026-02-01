@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Clock, MapPin, ChevronRight, LogOut, Play, Pause, Square, Coffee } from 'lucide-react-native';
+import { User, Clock, MapPin, ChevronRight, LogOut, Play, Pause, Square, Coffee, RefreshCw, Timer, Check, AlertTriangle } from 'lucide-react-native';
 import Colors from '../theme/Colors';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,6 +11,7 @@ export default function DashboardScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [actionLoading, setActionLoading] = useState(false);
+  const [mesaiActionLoading, setMesaiActionLoading] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -21,7 +22,7 @@ export default function DashboardScreen({ navigation }) {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (!user) return;
     try {
       const response = await fetch(`${API_URL}/mobile/dashboard/${user.id}`);
@@ -32,12 +33,19 @@ export default function DashboardScreen({ navigation }) {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [user, API_URL]);
 
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchDashboardData();
     setRefreshing(false);
+  };
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    await fetchDashboardData();
+    setRefreshing(false);
+    Alert.alert('Güncellendi', 'Tüm veriler yenilendi.');
   };
 
   const formatTime = (date) => {
@@ -55,7 +63,38 @@ export default function DashboardScreen({ navigation }) {
     });
   };
 
-  // Action Handlers
+  const formatHoursDisplay = (hours) => {
+    if (!hours || isNaN(hours)) return '0dk';
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    if (h > 0 && m > 0) return `${h}s ${m}dk`;
+    if (h > 0) return `${h} saat`;
+    return `${m}dk`;
+  };
+
+  const calculateRemainingTime = (plannedHours, workedHours) => {
+    const remaining = plannedHours - workedHours;
+    if (remaining <= 0) return { hours: 0, minutes: 0, isComplete: true };
+    const hours = Math.floor(remaining);
+    const minutes = Math.round((remaining - hours) * 60);
+    return { hours, minutes, isComplete: false };
+  };
+
+  const isShiftEnded = (endTime) => {
+    if (!endTime) return false;
+    const [h, m] = endTime.split(':').map(Number);
+    const now = new Date();
+    const endDate = new Date(now);
+    endDate.setHours(h, m, 0, 0);
+    
+    const [startH] = (dashboardData?.today_shift?.start_time || '00:00').split(':').map(Number);
+    if (h < startH) {
+      endDate.setDate(endDate.getDate() + 1);
+    }
+    
+    return now > endDate;
+  };
+
   const handleLeftButtonPress = async () => {
     const buttonStates = dashboardData?.button_states;
     if (!buttonStates) return;
@@ -63,10 +102,8 @@ export default function DashboardScreen({ navigation }) {
     const action = buttonStates.left_action;
     
     if (action === 'start_shift') {
-      // Navigate to QR Scanner for shift start
-      navigation.navigate('Scan', { actionType: 'start_shift' });
+      navigation.navigate('Tara', { actionType: 'start_shift' });
     } else if (action === 'start_break') {
-      // Call break API directly
       setActionLoading(true);
       try {
         const response = await fetch(`${API_URL}/mobile/attendance/break`, {
@@ -83,7 +120,6 @@ export default function DashboardScreen({ navigation }) {
         setActionLoading(false);
       }
     } else if (action === 'end_break') {
-      // Call break API directly
       setActionLoading(true);
       try {
         const response = await fetch(`${API_URL}/mobile/attendance/break`, {
@@ -103,8 +139,15 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const handleRightButtonPress = () => {
-    // Navigate to QR Scanner for shift end
-    navigation.navigate('Scan', { actionType: 'end_shift' });
+    navigation.navigate('Tara', { actionType: 'end_shift' });
+  };
+
+  const handleMesaiStart = () => {
+    navigation.navigate('Tara', { actionType: 'start_mesai' });
+  };
+
+  const handleMesaiEnd = () => {
+    navigation.navigate('Tara', { actionType: 'end_mesai' });
   };
 
   const todayShift = dashboardData?.today_shift;
@@ -116,12 +159,14 @@ export default function DashboardScreen({ navigation }) {
   const isActiveShift = attendance?.is_active || false;
   const isOnBreak = attendance?.is_on_break || false;
   
-  // Calculate Progress
   const worked = attendance?.worked_hours ? parseFloat(attendance.worked_hours) : 0;
   const planned = todayShift?.planned_hours ? parseFloat(todayShift.planned_hours) : 0;
   const progressPercent = planned > 0 ? Math.min((worked / planned) * 100, 100) : 0;
+  
+  const remainingTime = calculateRemainingTime(planned, worked);
+  const shiftTimeEnded = todayShift && isShiftEnded(todayShift.end_time);
+  const isShiftComplete = remainingTime.isComplete || (shiftTimeEnded && !isActiveShift);
 
-  // Get button icon
   const getLeftButtonIcon = () => {
     if (!buttonStates) return <Play size={20} color="#fff" />;
     switch (buttonStates.left_action) {
@@ -131,6 +176,25 @@ export default function DashboardScreen({ navigation }) {
       default: return <Play size={20} color="#fff" />;
     }
   };
+
+  const getVardiyaStatus = () => {
+    if (isActiveShift && !isOnBreak) {
+      return { text: 'AKTİF', style: styles.statusBadgeActive, textStyle: styles.statusTextActive };
+    }
+    if (isOnBreak) {
+      return { text: 'MOLADA', style: styles.statusBadgeBreak, textStyle: styles.statusTextBreak };
+    }
+    if (isShiftComplete) {
+      return { text: 'TAMAMLANDI', style: styles.statusBadgeComplete, textStyle: styles.statusTextComplete };
+    }
+    if (shiftTimeEnded) {
+      return { text: 'SONA ERDİ', style: styles.statusBadgeEnded, textStyle: styles.statusTextEnded };
+    }
+    return null;
+  };
+
+  const vardiyaStatus = getVardiyaStatus();
+  const showVardiyaButtons = todayShift && !isShiftComplete && !shiftTimeEnded;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -146,9 +210,22 @@ export default function DashboardScreen({ navigation }) {
             <Text style={styles.greeting}>Hoş Geldiniz,</Text>
             <Text style={styles.userName}>{user?.first_name}</Text>
           </View>
-          <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-            <LogOut size={20} color={Colors.textSecondary} />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              onPress={handleManualRefresh} 
+              style={styles.refreshBtn}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <RefreshCw size={20} color={Colors.primary} />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+              <LogOut size={20} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Time Card */}
@@ -179,21 +256,16 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </TouchableOpacity>
 
-        {/* Shift Info Card */}
+        {/* VARDİYA BİLGİSİ */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
               <Clock size={20} color={Colors.primary} />
               <Text style={styles.cardTitle}>Vardiya Bilgisi</Text>
             </View>
-            {isActiveShift && !isOnBreak && (
-              <View style={styles.statusBadgeActive}>
-                <Text style={styles.statusTextActive}>AKTİF</Text>
-              </View>
-            )}
-            {isOnBreak && (
-              <View style={styles.statusBadgeBreak}>
-                <Text style={styles.statusTextBreak}>MOLADA</Text>
+            {vardiyaStatus && (
+              <View style={vardiyaStatus.style}>
+                <Text style={vardiyaStatus.textStyle}>{vardiyaStatus.text}</Text>
               </View>
             )}
           </View>
@@ -211,16 +283,71 @@ export default function DashboardScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Progress */}
-              {isActiveShift && (
+              <View style={styles.remainingTimeContainer}>
+                <Timer size={16} color={remainingTime.isComplete ? Colors.success : Colors.warning} />
+                <Text style={[
+                  styles.remainingTimeText,
+                  remainingTime.isComplete && styles.remainingTimeComplete
+                ]}>
+                  {remainingTime.isComplete 
+                    ? '✓ Vardiya tamamlandı' 
+                    : `Kalan: ${remainingTime.hours} saat ${remainingTime.minutes} dk`
+                  }
+                </Text>
+              </View>
+
+              {(isActiveShift || worked > 0) && (
                 <View style={{ marginTop: 12 }}>
                   <View style={styles.progressContainer}>
-                    <View style={[styles.progressBar, { width: `${progressPercent}%` }]} />
+                    <View style={[
+                      styles.progressBar, 
+                      { width: `${progressPercent}%` },
+                      progressPercent >= 100 && styles.progressBarComplete
+                    ]} />
                   </View>
                   <View style={styles.progressText}>
-                    <Text style={styles.hoursText}>{worked.toFixed(1)} Saat</Text>
-                    <Text style={styles.totalHoursText}>/ {planned} Saat</Text>
+                    <Text style={styles.hoursText}>{formatHoursDisplay(worked)}</Text>
+                    <Text style={styles.totalHoursText}>/ {formatHoursDisplay(planned)}</Text>
                   </View>
+                </View>
+              )}
+
+              {showVardiyaButtons && (
+                <View style={styles.shiftActionButtons}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.shiftActionButton, 
+                      styles.leftButton,
+                      isOnBreak && styles.breakButton,
+                      actionLoading && styles.disabledButton
+                    ]}
+                    onPress={handleLeftButtonPress}
+                    disabled={actionLoading}
+                  >
+                    {getLeftButtonIcon()}
+                    <Text style={styles.actionButtonText}>
+                      {buttonStates?.left_label || 'Vardiya Başlat'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {isActiveShift && (
+                    <TouchableOpacity 
+                      style={[styles.shiftActionButton, styles.rightButton]}
+                      onPress={handleRightButtonPress}
+                    >
+                      <Square size={20} color="#fff" />
+                      <Text style={styles.actionButtonText}>Vardiya Bitir</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
+              {isShiftComplete && (
+                <View style={styles.shiftCompleteMessage}>
+                  <Check size={18} color={Colors.success} />
+                  <Text style={styles.shiftCompleteText}>
+                    Bugünkü vardiyayı tamamladınız.
+                  </Text>
                 </View>
               )}
             </View>
@@ -229,60 +356,67 @@ export default function DashboardScreen({ navigation }) {
           )}
         </View>
 
-        {/* Mesai (Overtime) Info Card */}
-        {todayMesai && (
-          <View style={[styles.card, { borderLeftWidth: 3, borderLeftColor: Colors.warning }]}>
-            <View style={styles.cardHeader}>
-              <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-                <Clock size={20} color={Colors.warning} />
-                <Text style={[styles.cardTitle, { color: Colors.warning }]}>Mesai Bilgisi</Text>
-              </View>
+        {/* MESAİ BİLGİSİ */}
+        <View style={[styles.card, styles.mesaiCard]}>
+          <View style={styles.cardHeader}>
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+              <Timer size={20} color={Colors.warning} />
+              <Text style={[styles.cardTitle, { color: Colors.warning }]}>Mesai Bilgisi</Text>
             </View>
-            <View style={styles.shiftRow}>
-              <View>
-                <Text style={styles.shiftLabel}>Saat Aralığı</Text>
-                <Text style={styles.shiftValue}>{todayMesai.start_time?.slice(0,5)} - {todayMesai.end_time?.slice(0,5)}</Text>
+            {todayMesai ? (
+              <View style={styles.statusBadgePending}>
+                <Text style={styles.statusTextPending}>PLANLI</Text>
               </View>
-              <View style={{alignItems: 'flex-end'}}>
-                <Text style={styles.shiftLabel}>Süre</Text>
-                <Text style={styles.shiftValue}>{todayMesai.planned_hours} Saat</Text>
+            ) : (
+              <View style={styles.statusBadgeEnded}>
+                <Text style={styles.statusTextEnded}>YOK</Text>
               </View>
-            </View>
+            )}
           </View>
-        )}
+          
+          {todayMesai ? (
+            <View>
+              <View style={styles.shiftRow}>
+                <View>
+                  <Text style={styles.shiftLabel}>Saat Aralığı</Text>
+                  <Text style={styles.shiftValue}>{todayMesai.start_time?.slice(0,5)} - {todayMesai.end_time?.slice(0,5)}</Text>
+                </View>
+                <View style={{alignItems: 'flex-end'}}>
+                  <Text style={styles.shiftLabel}>Planlanan Süre</Text>
+                  <Text style={styles.shiftValue}>{formatHoursDisplay(parseFloat(todayMesai.planned_hours))}</Text>
+                </View>
+              </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity 
-            style={[
-              styles.actionButton, 
-              styles.leftButton,
-              isOnBreak && styles.breakButton,
-              actionLoading && styles.disabledButton
-            ]}
-            onPress={handleLeftButtonPress}
-            disabled={actionLoading}
-          >
-            {getLeftButtonIcon()}
-            <Text style={styles.actionButtonText}>
-              {buttonStates?.left_label || 'Vardiya Başlat'}
-            </Text>
-          </TouchableOpacity>
+              <View style={styles.mesaiActionButtons}>
+                <TouchableOpacity 
+                  style={[styles.mesaiActionButton, styles.mesaiStartButton]}
+                  onPress={handleMesaiStart}
+                  disabled={mesaiActionLoading}
+                >
+                  <Play size={18} color="#fff" />
+                  <Text style={styles.mesaiButtonText}>Mesai Başlat</Text>
+                </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[
-              styles.actionButton, 
-              styles.rightButton,
-              !buttonStates?.right_enabled && styles.disabledButton
-            ]}
-            onPress={handleRightButtonPress}
-            disabled={!buttonStates?.right_enabled}
-          >
-            <Square size={20} color="#fff" />
-            <Text style={styles.actionButtonText}>
-              {buttonStates?.right_label || 'Vardiya Bitir'}
+                <TouchableOpacity 
+                  style={[styles.mesaiActionButton, styles.mesaiEndButton]}
+                  onPress={handleMesaiEnd}
+                  disabled={mesaiActionLoading}
+                >
+                  <Square size={18} color="#fff" />
+                  <Text style={styles.mesaiButtonText}>Mesai Bitir</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <Text style={styles.noShiftText}>Bugün için planlanmış mesai yok.</Text>
+          )}
+
+          <View style={styles.mesaiInfoNote}>
+            <AlertTriangle size={14} color={Colors.textSecondary} />
+            <Text style={styles.mesaiInfoText}>
+              Mesai saatleri vardiyadan ayrı takip edilmektedir.
             </Text>
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* Break Status */}
@@ -314,6 +448,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   greeting: {
     fontSize: 14,
     color: Colors.textSecondary,
@@ -322,6 +461,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: Colors.textPrimary,
+  },
+  refreshBtn: {
+    padding: 10,
+    backgroundColor: 'rgba(45, 212, 191, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(45, 212, 191, 0.3)',
   },
   logoutBtn: {
     padding: 10,
@@ -352,6 +498,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(55, 65, 81, 0.5)',
+  },
+  mesaiCard: {
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.warning,
   },
   profileHeader: {
     flexDirection: 'row',
@@ -427,6 +577,45 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  statusBadgeComplete: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  statusTextComplete: {
+    color: '#34D399',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  statusBadgeEnded: {
+    backgroundColor: 'rgba(107, 114, 128, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(107, 114, 128, 0.3)',
+  },
+  statusTextEnded: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  statusBadgePending: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+  },
+  statusTextPending: {
+    color: '#F59E0B',
+    fontSize: 11,
+    fontWeight: '700',
+  },
   shiftRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -441,6 +630,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  remainingTimeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+  },
+  remainingTimeText: {
+    color: Colors.warning,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  remainingTimeComplete: {
+    color: Colors.success,
+  },
   progressContainer: {
     height: 8,
     backgroundColor: 'rgba(255,255,255,0.1)',
@@ -452,6 +658,9 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: Colors.primary,
     borderRadius: 4,
+  },
+  progressBarComplete: {
+    backgroundColor: Colors.success,
   },
   progressText: {
     flexDirection: 'row',
@@ -472,18 +681,22 @@ const styles = StyleSheet.create({
     padding: 16,
     fontStyle: 'italic',
   },
-  actionButtonsContainer: {
+  shiftActionButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
   },
-  actionButton: {
+  shiftActionButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: 16,
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
   leftButton: {
     backgroundColor: Colors.primary,
@@ -500,7 +713,66 @@ const styles = StyleSheet.create({
   actionButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 14,
+  },
+  shiftCompleteMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
+  },
+  shiftCompleteText: {
+    color: Colors.success,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  mesaiActionButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+  },
+  mesaiActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  mesaiStartButton: {
+    backgroundColor: Colors.warning,
+  },
+  mesaiEndButton: {
+    backgroundColor: '#DC2626',
+  },
+  mesaiButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  mesaiInfoNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    padding: 10,
+    backgroundColor: 'rgba(55, 65, 81, 0.3)',
+    borderRadius: 8,
+  },
+  mesaiInfoText: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    flex: 1,
   },
   breakInfo: {
     flexDirection: 'row',
